@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Nimbus Weather</string>
+
+    <!-- Погода -->
+    <string name="feels_like">Ощущается</string>
+    <string name="humidity">Влажность</string>
+    <string name="pressure">Давление</string>
+    <string name="wind">Ветер</string>
+    <string name="wind_gusts">Порывы</string>
+    <string name="precipitation">Осадки</string>
+    <string name="sunrise">Восход</string>
+    <string name="sunset">Закат</string>
+    <string name="today">Сегодня</string>
+    <string name="forecast_7_days">Прогноз на 7 дней</string>
+    <string name="loading">Загрузка…</string>
+    <string name="error_loading">Ошибка загрузки данных</string>
+    <string name="retry">Повторить</string>
+
+    <!-- Настройки -->
+    <string name="settings">Настройки</string>
+    <string name="widget_temp_mode">Режим температуры в виджетах</string>
+    <string name="actual_temp">Фактическая</string>
+    <string name="feels_like_temp">По ощущению</string>
+    <string name="select_city">Выбрать город</string>
+    <string name="theme_mode">Тема оформления</string>
+    <string name="theme_system">Системная</string>
+    <string name="theme_light">Светлая</string>
+    <string name="theme_dark">Тёмная</string>
+    <string name="units_temperature">Единицы температуры</string>
+    <string name="units_wind">Единицы ветра</string>
+    <string name="units_pressure">Единицы давления</string>
+    <string name="celsius">°C</string>
+    <string name="fahrenheit">°F</string>
+    <string name="wind_ms">м/с</string>
+    <string name="wind_kmh">км/ч</string>
+    <string name="pressure_hpa">гПа</string>
+    <string name="pressure_mmhg">мм рт. ст.</string>
+
+    <!-- Поиск города -->
+    <string name="search_city">Поиск города…</string>
+    <string name="no_results">Ничего не найдено</string>
+    <string name="use_gps">Использовать GPS</string>
+    <string name="gps_permission_denied">Разрешение на определение местоположения не предоставлено</string>
+
+    <!-- Виджеты -->
+    <string name="widget_clock_temp_name">Часы и температура</string>
+    <string name="widget_clock_temp_desc">Текущее время и температура</string>
+    <string name="widget_temp_forecast_name">Погода и прогноз</string>
+    <string name="widget_temp_forecast_desc">Температура и недельный прогноз</string>
+
+    <!-- WMO коды погоды -->
+    <string name="wmo_0">Ясно</string>
+    <string name="wmo_1">Преимущественно ясно</string>
+    <string name="wmo_2">Переменная облачность</string>
+    <string name="wmo_3">Пасмурно</string>
+    <string name="wmo_45">Туман</string>
+    <string name="wmo_48">Изморозь</string>
+    <string name="wmo_51">Слабая морось</string>
+    <string name="wmo_53">Умеренная морось</string>
+    <string name="wmo_55">Сильная морось</string>
+    <string name="wmo_56">Ледяная морось</string>
+    <string name="wmo_57">Сильная ледяная морось</string>
+    <string name="wmo_61">Небольшой дождь</string>
+    <string name="wmo_63">Умеренный дождь</string>
+    <string name="wmo_65">Сильный дождь</string>
+    <string name="wmo_66">Ледяной дождь</string>
+    <string name="wmo_67">Сильный ледяной дождь</string>
+    <string name="wmo_71">Небольшой снег</string>
+    <string name="wmo_73">Умеренный снег</string>
+    <string name="wmo_75">Сильный снег</string>
+    <string name="wmo_77">Снежные зёрна</string>
+    <string name="wmo_80">Ливневый дождь</string>
+    <string name="wmo_81">Умеренный ливень</string>
+    <string name="wmo_82">Сильный ливень</string>
+    <string name="wmo_85">Снегопад</string>
+    <string name="wmo_86">Сильный снегопад</string>
+    <string name="wmo_95">Гроза</string>
+    <string name="wmo_96">Гроза с градом</string>
+    <string name="wmo_99">Сильная гроза с градом</string>
+</resources>

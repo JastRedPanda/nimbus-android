@@ -4,8 +4,6 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
-import java.time.format.TextStyle
-import java.util.Locale
 
 private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
@@ -21,9 +19,9 @@ fun formatTime(isoString: String): String {
 fun formatDayOfWeek(dateStr: String): String {
     return try {
         val date = LocalDate.parse(dateStr)
-        val locale = Locale.getDefault()
-        if (locale.language == "ru") {
-            when (date.dayOfWeek) {
+        val lang = LanguageHelper.getLocaleTag()
+        when (lang) {
+            "ru" -> when (date.dayOfWeek) {
                 DayOfWeek.MONDAY -> "Пн"
                 DayOfWeek.TUESDAY -> "Вт"
                 DayOfWeek.WEDNESDAY -> "Ср"
@@ -32,8 +30,24 @@ fun formatDayOfWeek(dateStr: String): String {
                 DayOfWeek.SATURDAY -> "Сб"
                 DayOfWeek.SUNDAY -> "Вс"
             }
-        } else {
-            date.dayOfWeek.getDisplayName(TextStyle.SHORT, locale)
+            "uk" -> when (date.dayOfWeek) {
+                DayOfWeek.MONDAY -> "Пн"
+                DayOfWeek.TUESDAY -> "Вт"
+                DayOfWeek.WEDNESDAY -> "Ср"
+                DayOfWeek.THURSDAY -> "Чт"
+                DayOfWeek.FRIDAY -> "Пт"
+                DayOfWeek.SATURDAY -> "Сб"
+                DayOfWeek.SUNDAY -> "Нд"
+            }
+            else -> when (date.dayOfWeek) {
+                DayOfWeek.MONDAY -> "Mon"
+                DayOfWeek.TUESDAY -> "Tue"
+                DayOfWeek.WEDNESDAY -> "Wed"
+                DayOfWeek.THURSDAY -> "Thu"
+                DayOfWeek.FRIDAY -> "Fri"
+                DayOfWeek.SATURDAY -> "Sat"
+                DayOfWeek.SUNDAY -> "Sun"
+            }
         }
     } catch (_: Exception) {
         ""
