@@ -3,7 +3,7 @@ package com.nimbus.weather.util
 import android.content.Context
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AcUnit
-import androidx.compose.material.icons.filled.Foggy
+import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.Thunderstorm
 import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material.icons.filled.WbCloudy
@@ -16,7 +16,7 @@ fun weatherIcon(code: Int): ImageVector {
         0, 1 -> Icons.Default.WbSunny
         2 -> Icons.Default.WbCloudy
         3 -> Icons.Default.WbCloudy
-        45, 48 -> Icons.Default.Foggy
+        45, 48 -> Icons.Default.Cloud
         51, 53, 55, 56, 57 -> Icons.Default.WaterDrop
         61, 63, 65, 66, 67 -> Icons.Default.WaterDrop
         71, 73, 75, 77 -> Icons.Default.AcUnit
