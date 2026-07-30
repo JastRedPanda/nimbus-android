@@ -1,11 +1,8 @@
-# Android
-*.iml
-.gradle
-/local.properties
-/.idea
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+PLAN.md
 local.properties
+app/build/
+build/
+.gradle/
+.idea/
+*.iml
+.DS_Store
