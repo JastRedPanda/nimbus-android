@@ -1,15 +1,30 @@
 package com.nimbus.weather.ui.home
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarBorder
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -19,16 +34,24 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import android.content.res.Configuration
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.nimbus.weather.R
+import com.nimbus.weather.ui.components.AqiCard
 import com.nimbus.weather.ui.components.CurrentWeatherCard
 import com.nimbus.weather.ui.components.DailyForecastCard
+import com.nimbus.weather.ui.components.HourlyForecastBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,6 +60,18 @@ fun HomeScreen(
     onSettingsClick: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
+    val isFavourite = state.favouriteCities.any { it.name == state.cityName }
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.loadWeather()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     Scaffold(
         topBar = {
@@ -46,6 +81,16 @@ fun HomeScreen(
                     containerColor = MaterialTheme.colorScheme.surface
                 ),
                 actions = {
+                    IconButton(onClick = {
+                        if (isFavourite) viewModel.removeFavouriteCity(state.cityName)
+                        else viewModel.addCurrentCityToFavourites()
+                    }) {
+                        Icon(
+                            imageVector = if (isFavourite) Icons.Default.Star else Icons.Default.StarBorder,
+                            contentDescription = if (isFavourite) "Remove from favourites" else "Add to favourites",
+                            tint = if (isFavourite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                     IconButton(onClick = onSettingsClick) {
                         Icon(
                             imageVector = Icons.Default.Settings,
@@ -68,43 +113,189 @@ fun HomeScreen(
                     )
                 }
                 state.error != null -> {
-                    Text(
-                        text = "${stringResource(R.string.error_loading)}: ${state.error}",
+                    Column(
                         modifier = Modifier.align(Alignment.Center),
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
-                else -> {
-                    state.current?.let { current ->
-                        LazyColumn(
-                            modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            item {
-                                CurrentWeatherCard(
-                                    current = current,
-                                    cityName = state.cityName,
-                                    sunrise = state.sunrise,
-                                    sunset = state.sunset,
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-                            }
-
-                            item {
-                                Text(
-                                    text = stringResource(R.string.forecast_7_days),
-                                    style = MaterialTheme.typography.titleMedium
-                                )
-                            }
-
-                            items(state.daily) { day ->
-                                DailyForecastCard(day = day)
-                            }
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = stringResource(R.string.error_loading),
+                            color = MaterialTheme.colorScheme.error
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Button(onClick = { viewModel.loadWeather() }) {
+                            Text(stringResource(R.string.retry))
                         }
                     }
                 }
+                else -> {
+                    WeatherContent(
+                        state = state,
+                        onCitySwitch = { viewModel.switchToCity(it) }
+                    )
+                }
             }
+        }
+    }
+}
+
+@Composable
+private fun WeatherContent(
+    state: HomeUiState,
+    onCitySwitch: (com.nimbus.weather.data.local.SettingsDataStore.FavouriteCity) -> Unit
+) {
+    val aqi = state.aqi
+
+    AnimatedVisibility(visible = true, enter = fadeIn()) {
+        state.current?.let { current ->
+            val config = LocalConfiguration.current
+            val isTablet = config.screenWidthDp >= 600
+
+            if (isTablet) {
+                TabletLayout(state, current, aqi, onCitySwitch)
+            } else {
+                PhoneLayout(state, current, aqi, onCitySwitch)
+            }
+        }
+    }
+}
+
+@Composable
+private fun TabletLayout(
+    state: HomeUiState,
+    current: com.nimbus.weather.data.model.CurrentWeather,
+    aqi: com.nimbus.weather.data.model.AirQualityCurrent?,
+    onCitySwitch: (com.nimbus.weather.data.local.SettingsDataStore.FavouriteCity) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Column(
+            modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            if (state.favouriteCities.size > 1) {
+                FavouriteCitiesRow(
+                    cities = state.favouriteCities,
+                    currentCity = state.cityName,
+                    onCityClick = onCitySwitch
+                )
+            }
+            CurrentWeatherCard(
+                current = current,
+                cityName = state.cityName,
+                sunrise = state.sunrise,
+                sunset = state.sunset,
+                tempUnit = state.tempUnit,
+                modifier = Modifier.fillMaxWidth()
+            )
+            if (state.hourly.isNotEmpty()) {
+                HourlyForecastBar(
+                    hourly = state.hourly,
+                    tempUnit = state.tempUnit,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+            if (aqi != null) {
+                AqiCard(aqi = aqi, modifier = Modifier.fillMaxWidth())
+            }
+        }
+        Column(
+            modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.forecast_7_days),
+                style = MaterialTheme.typography.titleMedium
+            )
+            state.daily.forEach { day ->
+                DailyForecastCard(day = day, tempUnit = state.tempUnit)
+            }
+        }
+    }
+}
+
+@Composable
+private fun PhoneLayout(
+    state: HomeUiState,
+    current: com.nimbus.weather.data.model.CurrentWeather,
+    aqi: com.nimbus.weather.data.model.AirQualityCurrent?,
+    onCitySwitch: (com.nimbus.weather.data.local.SettingsDataStore.FavouriteCity) -> Unit = {}
+) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        if (state.favouriteCities.size > 1) {
+            item {
+                FavouriteCitiesRow(
+                    cities = state.favouriteCities,
+                    currentCity = state.cityName,
+                    onCityClick = onCitySwitch
+                )
+            }
+        }
+        item {
+            CurrentWeatherCard(
+                current = current,
+                cityName = state.cityName,
+                sunrise = state.sunrise,
+                sunset = state.sunset,
+                tempUnit = state.tempUnit,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+        if (state.hourly.isNotEmpty()) {
+            item {
+                HourlyForecastBar(
+                    hourly = state.hourly,
+                    tempUnit = state.tempUnit,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
+        if (aqi != null) {
+            item {
+                AqiCard(aqi = aqi, modifier = Modifier.fillMaxWidth())
+            }
+        }
+        item {
+            Text(
+                text = stringResource(R.string.forecast_7_days),
+                style = MaterialTheme.typography.titleMedium
+            )
+        }
+        items(state.daily) { day ->
+            DailyForecastCard(day = day, tempUnit = state.tempUnit)
+        }
+    }
+}
+
+@Composable
+private fun FavouriteCitiesRow(
+    cities: List<com.nimbus.weather.data.local.SettingsDataStore.FavouriteCity>,
+    currentCity: String,
+    onCityClick: (com.nimbus.weather.data.local.SettingsDataStore.FavouriteCity) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        cities.forEach { city ->
+            AssistChip(
+                onClick = { onCityClick(city) },
+                label = {
+                    Text(
+                        text = city.name,
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                }
+            )
         }
     }
 }

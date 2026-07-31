@@ -20,7 +20,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.nimbus.weather.R
 import com.nimbus.weather.data.model.CurrentWeather
+import com.nimbus.weather.util.TemperatureUnit
+import com.nimbus.weather.util.displayString
 import com.nimbus.weather.util.formatTime
+import com.nimbus.weather.util.toCelsiusOrFahrenheit
 import com.nimbus.weather.util.weatherDescriptionRes
 
 @Composable
@@ -29,6 +32,7 @@ fun CurrentWeatherCard(
     cityName: String,
     sunrise: String,
     sunset: String,
+    tempUnit: TemperatureUnit = TemperatureUnit.CELSIUS,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -52,7 +56,7 @@ fun CurrentWeatherCard(
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
-                    text = "${current.temperature.toInt()}°",
+                    text = "${current.temperature.toCelsiusOrFahrenheit(tempUnit).toInt()}${tempUnit.displayString()}",
                     style = MaterialTheme.typography.displayLarge
                 )
                 Spacer(modifier = Modifier.width(8.dp))
@@ -65,7 +69,7 @@ fun CurrentWeatherCard(
             Spacer(modifier = Modifier.height(4.dp))
 
             Text(
-                text = "${stringResource(R.string.feels_like)} ${current.apparentTemperature.toInt()}°",
+                text = "${stringResource(R.string.feels_like)} ${current.apparentTemperature.toCelsiusOrFahrenheit(tempUnit).toInt()}${tempUnit.displayString()}",
                 style = MaterialTheme.typography.bodyMedium
             )
 
@@ -83,6 +87,10 @@ fun CurrentWeatherCard(
                     label = stringResource(R.string.humidity),
                     value = "${current.humidity.toInt()}%"
                 )
+                WeatherDetailItem(
+                    label = stringResource(R.string.uv_index),
+                    value = current.uvIndex.formatUvIndex()
+                )
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -93,11 +101,11 @@ fun CurrentWeatherCard(
             ) {
                 WeatherDetailItem(
                     label = stringResource(R.string.wind),
-                    value = "${current.windSpeed.toInt()} m/s"
+                    value = "${current.windSpeed.toInt()} ${stringResource(R.string.wind_ms)}"
                 )
                 WeatherDetailItem(
                     label = stringResource(R.string.pressure),
-                    value = "${current.pressure.toInt()} hPa"
+                    value = "${current.pressure.toInt()} ${stringResource(R.string.pressure_hpa)}"
                 )
             }
 

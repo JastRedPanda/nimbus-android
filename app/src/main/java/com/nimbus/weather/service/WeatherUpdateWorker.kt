@@ -8,6 +8,7 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.nimbus.weather.data.local.SettingsDataStore
 import com.nimbus.weather.data.repository.WeatherRepository
+import kotlinx.coroutines.flow.first
 import com.nimbus.weather.util.Constants
 import java.util.concurrent.TimeUnit
 
@@ -22,9 +23,14 @@ class WeatherUpdateWorker(
             val repository = WeatherRepository()
 
             val loc = settings.getLocationSnapshot()
-            val response = repository.getWeather(loc.lat, loc.lon)
+            val ctx = applicationContext
+            val response = repository.getWeather(loc.lat, loc.lon, ctx)
 
             WidgetUpdateManager.updateAllWidgets(applicationContext, response)
+
+            if (settings.notificationsEnabled.first()) {
+                NotificationHelper.showWeatherNotification(applicationContext, response)
+            }
 
             Result.success()
         } catch (_: Exception) {
@@ -34,14 +40,26 @@ class WeatherUpdateWorker(
 }
 
 object WeatherUpdateScheduler {
-    fun schedule(context: Context) {
+    fun schedule(context: Context, intervalHours: Int = 2) {
         val request = PeriodicWorkRequestBuilder<WeatherUpdateWorker>(
-            Constants.UPDATE_INTERVAL_MINUTES, TimeUnit.MINUTES
+            intervalHours.toLong(), TimeUnit.HOURS
         ).build()
 
         WorkManager.getInstance(context).enqueueUniquePeriodicWork(
             Constants.WEATHER_WORK_NAME,
             ExistingPeriodicWorkPolicy.KEEP,
+            request
+        )
+    }
+
+    fun reschedule(context: Context, intervalHours: Int) {
+        val request = PeriodicWorkRequestBuilder<WeatherUpdateWorker>(
+            intervalHours.toLong(), TimeUnit.HOURS
+        ).build()
+
+        WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+            Constants.WEATHER_WORK_NAME,
+            ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE,
             request
         )
     }

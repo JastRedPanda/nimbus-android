@@ -1,57 +1,114 @@
 package com.nimbus.weather.widget
 
-import android.appwidget.AppWidgetManager
-import android.appwidget.AppWidgetProvider
 import android.content.Context
-import android.widget.RemoteViews
-import com.nimbus.weather.R
+import android.content.res.Configuration
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.sp
+import androidx.glance.GlanceId
+import androidx.glance.GlanceModifier
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import androidx.glance.LocalSize
+import androidx.glance.appwidget.GlanceAppWidget
+import androidx.glance.appwidget.GlanceAppWidgetReceiver
+import androidx.glance.appwidget.provideContent
+import androidx.glance.background
+import androidx.glance.layout.Alignment
+import androidx.glance.layout.Column
+import androidx.glance.layout.Row
+import androidx.glance.layout.fillMaxSize
+import androidx.glance.layout.padding
+import androidx.glance.text.FontWeight
+import androidx.glance.text.Text
+import androidx.glance.text.TextStyle
+import androidx.glance.unit.ColorProvider
 import com.nimbus.weather.data.local.SettingsDataStore
 import com.nimbus.weather.service.WidgetUpdateManager
+import com.nimbus.weather.util.ThemeMode
+import com.nimbus.weather.util.displayString
 import com.nimbus.weather.util.formatDayOfWeek
+import com.nimbus.weather.util.toCelsiusOrFahrenheit
 import com.nimbus.weather.util.weatherDescription
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
+import kotlin.math.min
 
-class TempForecastWidget : AppWidgetProvider() {
+private val TALL_BREAKPOINT: Dp = 140.dp
 
-    override fun onUpdate(
-        context: Context,
-        appWidgetManager: AppWidgetManager,
-        appWidgetIds: IntArray
-    ) {
+class TempForecastWidget : GlanceAppWidget() {
+
+    override suspend fun provideGlance(context: Context, id: GlanceId) {
+        val settings = SettingsDataStore(context)
         val weather = WidgetUpdateManager.getCachedWeather()
-        val useFeelsLike = runBlocking {
-            SettingsDataStore(context).useFeelsLike.first()
-        }
-
-        val views = RemoteViews(context.packageName, R.layout.widget_temp_forecast)
-
-        if (weather?.current != null) {
-            val temp = if (useFeelsLike) weather.current.apparentTemperature
-            else weather.current.temperature
-            views.setTextViewText(R.id.widget_temp, "${temp.toInt()}°")
-            views.setTextViewText(R.id.widget_desc, weatherDescription(context, weather.current.weatherCode))
-        }
-
-        weather?.daily?.let { daily ->
-            val maxDays = minOf(daily.time.size, 7)
-            for (i in 0 until maxDays) {
-                val date = daily.time[i]
-                val tMax = daily.temperatureMax.getOrElse(i) { 0.0 }
-                val tMin = daily.temperatureMin.getOrElse(i) { 0.0 }
-
-                val dayId = context.resources.getIdentifier("widget_day_$i", "id", context.packageName)
-                val maxId = context.resources.getIdentifier("widget_max_$i", "id", context.packageName)
-                val minId = context.resources.getIdentifier("widget_min_$i", "id", context.packageName)
-
-                views.setTextViewText(dayId, formatDayOfWeek(date))
-                views.setTextViewText(maxId, "${tMax.toInt()}°")
-                views.setTextViewText(minId, "${tMin.toInt()}°")
+        val useFeelsLike = settings.useFeelsLike.first()
+        val tempUnit = settings.tempUnit.first()
+        val themeMode = settings.themeMode.first()
+        val dark = when (themeMode) {
+            ThemeMode.LIGHT -> false
+            ThemeMode.DARK -> true
+            ThemeMode.SYSTEM -> {
+                (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
             }
         }
+        val textColor = if (dark) Color.White else Color.Black
+        val bgColor = if (dark) Color(0xFF1C1B1F) else Color(0xFFFFFBFE)
 
-        appWidgetIds.forEach { id ->
-            appWidgetManager.updateAppWidget(id, views)
+        provideContent {
+            val isTall = LocalSize.current.height >= TALL_BREAKPOINT
+            Column(
+                modifier = GlanceModifier.fillMaxSize().padding(8.dp).background(bgColor)
+            ) {
+                if (weather?.current != null) {
+                    val t = if (useFeelsLike) weather.current.apparentTemperature
+                    else weather.current.temperature
+                    Text(
+                        text = "${t.toCelsiusOrFahrenheit(tempUnit).toInt()}${tempUnit.displayString()}",
+                        style = TextStyle(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 24.sp,
+                            color = ColorProvider(textColor)
+                        )
+                    )
+                    Text(
+                        text = weatherDescription(context, weather.current.weatherCode),
+                        style = TextStyle(fontSize = 11.sp, color = ColorProvider(textColor))
+                    )
+                }
+
+                weather?.daily?.let { daily ->
+                    val maxDays = min(daily.time.size, if (isTall) 7 else 4)
+                    for (i in 0 until maxDays) {
+                        val tmax = daily.temperatureMax.getOrElse(i) { 0.0 }
+                        val tmin = daily.temperatureMin.getOrElse(i) { 0.0 }
+                        Row(
+                            modifier = GlanceModifier.padding(top = 1.dp, bottom = 1.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = formatDayOfWeek(daily.time[i]),
+                                modifier = GlanceModifier.defaultWeight(),
+                                style = TextStyle(fontSize = 10.sp, color = ColorProvider(textColor))
+                            )
+                            Text(
+                                text = "${tmax.toCelsiusOrFahrenheit(tempUnit).toInt()}${tempUnit.displayString()}",
+                                modifier = GlanceModifier.padding(start = 2.dp, end = 2.dp),
+                                style = TextStyle(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 10.sp,
+                                    color = ColorProvider(textColor)
+                                )
+                            )
+                            Text(
+                                text = "${tmin.toCelsiusOrFahrenheit(tempUnit).toInt()}${tempUnit.displayString()}",
+                                style = TextStyle(fontSize = 9.sp, color = ColorProvider(textColor))
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
+}
+
+class TempForecastWidgetReceiver : GlanceAppWidgetReceiver() {
+    override val glanceAppWidget: GlanceAppWidget = TempForecastWidget()
 }
