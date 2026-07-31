@@ -9,6 +9,7 @@ data class WeatherResponse(
     val longitude: Double,
     val timezone: String,
     val current: CurrentWeather? = null,
+    val hourly: HourlyWeather? = null,
     val daily: DailyWeather? = null
 )
 
@@ -23,7 +24,21 @@ data class CurrentWeather(
     @SerialName("surface_pressure") val pressure: Double,
     @SerialName("wind_speed_10m") val windSpeed: Double,
     @SerialName("wind_direction_10m") val windDirection: Double,
-    @SerialName("wind_gusts_10m") val windGusts: Double
+    @SerialName("wind_gusts_10m") val windGusts: Double,
+    @SerialName("uv_index") val uvIndex: Double = 0.0
+)
+
+@Serializable
+data class HourlyWeather(
+    val time: List<String>,
+    @SerialName("temperature_2m") val temperature: List<Double>,
+    @SerialName("precipitation") val precipitation: List<Double>,
+    @SerialName("weather_code") val weatherCode: List<Int>,
+    @SerialName("wind_speed_10m") val windSpeed: List<Double>,
+    @SerialName("wind_direction_10m") val windDirection: List<Double>,
+    @SerialName("relative_humidity_2m") val humidity: List<Double>,
+    @SerialName("apparent_temperature") val apparentTemperature: List<Double>,
+    @SerialName("uv_index") val uvIndex: List<Double>
 )
 
 @Serializable
@@ -40,5 +55,6 @@ data class DailyWeather(
     @SerialName("precipitation_probability_max") val precipitationProbabilityMax: List<Int>,
     @SerialName("wind_speed_10m_max") val windSpeedMax: List<Double>,
     @SerialName("wind_gusts_10m_max") val windGustsMax: List<Double>,
-    @SerialName("wind_direction_10m_dominant") val windDirectionDominant: List<Double>
+    @SerialName("wind_direction_10m_dominant") val windDirectionDominant: List<Double>,
+    @SerialName("uv_index_max") val uvIndexMax: List<Double> = emptyList()
 )

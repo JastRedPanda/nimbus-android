@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Nimbus Počasí</string>
+
+    <!-- Weather -->
+    <string name="feels_like">Pocitově</string>
+    <string name="humidity">Vlhkost</string>
+    <string name="pressure">Tlak</string>
+    <string name="wind">Vítr</string>
+    <string name="wind_gusts">Náraz</string>
+    <string name="precipitation">Srážky</string>
+    <string name="sunrise">Východ</string>
+    <string name="sunset">Západ</string>
+    <string name="today">Dnes</string>
+    <string name="forecast_7_days">7denní předpověď</string>
+    <string name="loading">Načítání…</string>
+    <string name="error_loading">Nepodařilo se načíst data</string>
+    <string name="retry">Zkusit znovu</string>
+    <string name="onboarding_welcome">Vítejte! Nastavte si předvolby počasí.</string>
+    <string name="start">Spustit</string>
+    <string name="notification_channel_name">Aktualizace počasí</string>
+    <string name="air_quality">Kvalita ovzduší</string>
+    <string name="uv_index">UV index</string>
+    <string name="update_interval">Interval aktualizace</string>
+    <string name="interval_2h">Každé 2 hodiny</string>
+    <string name="interval_12h">Každých 12 hodin</string>
+    <string name="interval_24h">Každých 24 hodin</string>
+    <string name="notifications">Oznámení</string>
+    <string name="notifications_enabled">Oznámení o počasí</string>
+
+    <!-- Settings -->
+    <string name="settings">Nastavení</string>
+    <string name="widget_temp_mode">Režim teploty widgetu</string>
+    <string name="actual_temp">Skutečná</string>
+    <string name="feels_like_temp">Pocitová</string>
+    <string name="select_city">Vybrat město</string>
+    <string name="theme_mode">Vzhled</string>
+    <string name="theme_system">Systémový</string>
+    <string name="theme_light">Světlý</string>
+    <string name="theme_dark">Tmavý</string>
+    <string name="units_temperature">Jednotky teploty</string>
+    <string name="units_wind">Jednotky větru</string>
+    <string name="units_pressure">Jednotky tlaku</string>
+    <string name="celsius">°C</string>
+    <string name="fahrenheit">°F</string>
+    <string name="wind_ms">m/s</string>
+    <string name="wind_kmh">km/h</string>
+    <string name="pressure_hpa">hPa</string>
+    <string name="pressure_mmhg">mmHg</string>
+
+    <!-- City search -->
+    <string name="search_city">Hledat město…</string>
+    <string name="no_results">Nic nenalezeno</string>
+    <string name="use_gps">Použít GPS</string>
+    <string name="gps_permission_denied">Povolení polohy nebylo uděleno</string>
+
+    <!-- Widgets -->
+    <string name="widget_clock_temp_name">Hodiny &amp; Teplota</string>
+    <string name="widget_clock_temp_desc">Aktuální čas a teplota</string>
+    <string name="widget_temp_forecast_name">Počasí &amp; Předpověď</string>
+    <string name="widget_temp_forecast_desc">Teplota a týdenní předpověď</string>
+
+    <!-- WMO weather codes -->
+    <string name="wmo_0">Jasno</string>
+    <string name="wmo_1">Skoro jasno</string>
+    <string name="wmo_2">Polojasno</string>
+    <string name="wmo_3">Zataženo</string>
+    <string name="wmo_45">Mlha</string>
+    <string name="wmo_48">Mrznoucí mlha</string>
+    <string name="wmo_51">Slabé mrholení</string>
+    <string name="wmo_53">Mírné mrholení</string>
+    <string name="wmo_55">Silné mrholení</string>
+    <string name="wmo_56">Slabé mrznoucí mrholení</string>
+    <string name="wmo_57">Silné mrznoucí mrholení</string>
+    <string name="wmo_61">Slabý déšť</string>
+    <string name="wmo_63">Mírný déšť</string>
+    <string name="wmo_65">Silný déšť</string>
+    <string name="wmo_66">Slabý mrznoucí déšť</string>
+    <string name="wmo_67">Silný mrznoucí déšť</string>
+    <string name="wmo_71">Slabé sněžení</string>
+    <string name="wmo_73">Mírné sněžení</string>
+    <string name="wmo_75">Silné sněžení</string>
+    <string name="wmo_77">Sněhová zrna</string>
+    <string name="wmo_80">Slabé dešťové přeháňky</string>
+    <string name="wmo_81">Mírné dešťové přeháňky</string>
+    <string name="wmo_82">Silné dešťové přeháňky</string>
+    <string name="wmo_85">Slabé sněhové přeháňky</string>
+    <string name="wmo_86">Silné sněhové přeháňky</string>
+    <string name="wmo_95">Bouřka</string>
+    <string name="wmo_96">Bouřka se slabými kroupami</string>
+    <string name="wmo_99">Bouřka se silnými kroupami</string>
+</resources>

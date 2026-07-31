@@ -1,6 +1,8 @@
 package com.nimbus.weather.ui.settings
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -9,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -27,13 +30,33 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.nimbus.weather.R
+import com.nimbus.weather.util.ThemeMode
+import com.nimbus.weather.util.TemperatureUnit
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun SettingsScreen(
+    @Composable
+    private fun SectionHeader(title: String) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(8.dp))
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                .padding(horizontal = 12.dp, vertical = 10.dp)
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Composable
+    fun SettingsScreen(
     viewModel: SettingsViewModel,
     onBackClick: () -> Unit,
     onCitySearchClick: () -> Unit
@@ -66,11 +89,7 @@ fun SettingsScreen(
                 .padding(16.dp)
         ) {
             // Widget temperature mode
-            Text(
-                text = stringResource(R.string.widget_temp_mode),
-                style = MaterialTheme.typography.titleMedium
-            )
-            Spacer(modifier = Modifier.height(8.dp))
+            SectionHeader(title = stringResource(R.string.widget_temp_mode))
 
             SettingsToggle(
                 label = stringResource(R.string.actual_temp),
@@ -83,14 +102,106 @@ fun SettingsScreen(
                 onCheck = { viewModel.setUseFeelsLike(true) }
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Temperature units
+            SectionHeader(title = stringResource(R.string.units_temperature))
+
+            SettingsToggle(
+                label = stringResource(R.string.celsius),
+                checked = state.tempUnit == TemperatureUnit.CELSIUS,
+                onCheck = { viewModel.setTempUnit(TemperatureUnit.CELSIUS) }
+            )
+            SettingsToggle(
+                label = stringResource(R.string.fahrenheit),
+                checked = state.tempUnit == TemperatureUnit.FAHRENHEIT,
+                onCheck = { viewModel.setTempUnit(TemperatureUnit.FAHRENHEIT) }
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Theme
+            SectionHeader(title = stringResource(R.string.theme_mode))
+
+            SettingsToggle(
+                label = stringResource(R.string.theme_system),
+                checked = state.themeMode == ThemeMode.SYSTEM,
+                onCheck = { viewModel.setThemeMode(ThemeMode.SYSTEM) }
+            )
+            SettingsToggle(
+                label = stringResource(R.string.theme_light),
+                checked = state.themeMode == ThemeMode.LIGHT,
+                onCheck = { viewModel.setThemeMode(ThemeMode.LIGHT) }
+            )
+            SettingsToggle(
+                label = stringResource(R.string.theme_dark),
+                checked = state.themeMode == ThemeMode.DARK,
+                onCheck = { viewModel.setThemeMode(ThemeMode.DARK) }
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Notifications
+            SectionHeader(title = stringResource(R.string.notifications))
+
+            SettingsToggle(
+                label = stringResource(R.string.notifications_enabled),
+                checked = state.notificationsEnabled,
+                onCheck = { viewModel.setNotificationsEnabled(it) }
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Update interval
+            SectionHeader(title = stringResource(R.string.update_interval))
+
+            SettingsToggle(
+                label = stringResource(R.string.interval_2h),
+                checked = state.updateIntervalHours == 2,
+                onCheck = { viewModel.setUpdateIntervalHours(2) }
+            )
+            SettingsToggle(
+                label = stringResource(R.string.interval_12h),
+                checked = state.updateIntervalHours == 12,
+                onCheck = { viewModel.setUpdateIntervalHours(12) }
+            )
+            SettingsToggle(
+                label = stringResource(R.string.interval_24h),
+                checked = state.updateIntervalHours == 24,
+                onCheck = { viewModel.setUpdateIntervalHours(24) }
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Language
+            SectionHeader(title = stringResource(R.string.language))
+
+            SettingsToggle(
+                label = stringResource(R.string.language_auto),
+                checked = state.appLanguage == "auto",
+                onCheck = { viewModel.setAppLanguage("auto") }
+            )
+            SettingsToggle(
+                label = stringResource(R.string.language_en),
+                checked = state.appLanguage == "en",
+                onCheck = { viewModel.setAppLanguage("en") }
+            )
+            SettingsToggle(
+                label = stringResource(R.string.language_uk),
+                checked = state.appLanguage == "uk",
+                onCheck = { viewModel.setAppLanguage("uk") }
+            )
+            SettingsToggle(
+                label = stringResource(R.string.language_ru),
+                checked = state.appLanguage == "ru",
+                onCheck = { viewModel.setAppLanguage("ru") }
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             // City selection
-            Text(
-                text = stringResource(R.string.select_city),
-                style = MaterialTheme.typography.titleMedium
-            )
-            Spacer(modifier = Modifier.height(8.dp))
+            SectionHeader(title = stringResource(R.string.select_city))
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()

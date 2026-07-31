@@ -16,6 +16,22 @@
     <string name="loading">Завантаження…</string>
     <string name="error_loading">Помилка завантаження даних</string>
     <string name="retry">Повторити</string>
+    <string name="onboarding_welcome">Ласкаво просимо! Налаштуйте параметри віджету погоди.</string>
+    <string name="start">Почати</string>
+    <string name="notification_channel_name">Оновлення погоди</string>
+    <string name="air_quality">Якість повітря</string>
+    <string name="uv_index">УФ-індекс</string>
+    <string name="language">Мова</string>
+    <string name="language_auto">Авто</string>
+    <string name="language_en">English</string>
+    <string name="language_ru">Русский</string>
+    <string name="language_uk">Українська</string>
+    <string name="update_interval">Інтервал оновлення</string>
+    <string name="interval_2h">Кожні 2 години</string>
+    <string name="interval_12h">Кожні 12 годин</string>
+    <string name="interval_24h">Кожні 24 години</string>
+    <string name="notifications">Сповіщення</string>
+    <string name="notifications_enabled">Сповіщення про погоду</string>
 
     <!-- Налаштування -->
     <string name="settings">Налаштування</string>

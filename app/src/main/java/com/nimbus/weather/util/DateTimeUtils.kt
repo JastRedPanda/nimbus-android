@@ -54,6 +54,14 @@ fun formatDayOfWeek(dateStr: String): String {
     }
 }
 
+fun formatHour(isoString: String): String {
+    return try {
+        isoString.substringAfter("T").take(5)
+    } catch (_: Exception) {
+        isoString.takeLast(5)
+    }
+}
+
 fun isToday(dateStr: String): Boolean {
     return try {
         LocalDate.parse(dateStr) == LocalDate.now()

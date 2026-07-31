@@ -4,28 +4,14 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+    <!-- Cloud -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M54,30 C40.75,30 30,40.75 30,54 C30,67.25 40.75,78 54,78 C67.25,78 78,67.25 78,54 C78,40.75 67.25,30 54,30ZM54,72 C44.06,72 36,63.94 36,54 C36,44.06 44.06,36 54,36 C63.94,36 72,44.06 72,54 C72,63.94 63.94,72 54,72Z" />
+        android:pathData="M30,64 C30,52 40,42 52,42 C54,32 64,24 76,24 C88,24 96,34 98,44 C108,46 112,58 108,68 C106,74 98,78 92,78 L34,78 C26,78 22,72 22,66 C22,60 26,56 30,56Z" />
+    <!-- Snowflake stem -->
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M54,42 L54,54 L63,58.5" />
-    <path
-        android:fillColor="#FFD54F"
-        android:pathData="M54,26 L54,30" />
-    <path
-        android:fillColor="#FFD54F"
-        android:pathData="M54,78 L54,82" />
-    <path
-        android:fillColor="#FFD54F"
-        android:pathData="M40,40 L37,37" />
-    <path
-        android:fillColor="#FFD54F"
-        android:pathData="M68,40 L71,37" />
-    <path
-        android:fillColor="#FFD54F"
-        android:pathData="M40,68 L37,71" />
-    <path
-        android:fillColor="#FFD54F"
-        android:pathData="M68,68 L71,71" />
+        android:fillColor="#4FC3F7"
+        android:pathData="M54,50 L54,70 M46,60 L62,60 M48,54 L60,66 M48,66 L60,54"
+        android:strokeWidth="2.5"
+        android:strokeColor="#4FC3F7" />
 </vector>

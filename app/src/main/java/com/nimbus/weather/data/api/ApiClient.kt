@@ -35,4 +35,5 @@ object ApiClient {
 
     val weatherApi: WeatherApi = weatherRetrofit.create(WeatherApi::class.java)
     val geocodingApi: GeocodingApi = geocodingRetrofit.create(GeocodingApi::class.java)
+    val airQualityApi: AirQualityApi = weatherRetrofit.create(AirQualityApi::class.java)
 }

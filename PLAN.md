@@ -33,15 +33,29 @@ GET https://geocoding-api.open-meteo.com/v1/search?name=Москва&count=10&la
 GET /v1/forecast
   ?latitude=50.45
   &longitude=30.52
-  &current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m
-  &daily=weather_code,temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,sunrise,sunset,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant
+  &current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m,uv_index
+  &daily=weather_code,temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,sunrise,sunset,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant,uv_index_max
+  &hourly=temperature_2m,precipitation,weather_code,wind_speed_10m,wind_direction_10m,relative_humidity_2m,apparent_temperature,uv_index
   &timezone=auto
   &forecast_days=7
 ```
 
-Текущие данные (`current`): температура, влажность, ощущение, осадки, код погоды (WMO), давление на поверхности, ветер (скорость, направление, порывы).
+Текущие данные (`current`): температура, влажность, ощущение, осадки, код погоды (WMO), давление на поверхности, ветер (скорость, направление, порывы), УФ-индекс.
 
-Дневные данные (`daily`): код погоды, макс/мин температура, макс/мин ощущение, восход/закат, сумма осадков, макс вероятность осадков, макс скорость ветра, макс порывы, доминирующее направление.
+Почасовые данные (`hourly`): температура, осадки, код погоды, скорость/направление ветра, влажность, ощущение, УФ-индекс.
+
+Дневные данные (`daily`): код погоды, макс/мин температура, макс/мин ощущение, восход/закат, сумма осадков, макс вероятность осадков, макс скорость ветра, макс порывы, доминирующее направление, макс УФ-индекс.
+
+### AQI (Air Quality Index)
+
+```
+GET /v1/air-quality
+  ?latitude=50.45
+  &longitude=30.52
+  &current=european_aqi,us_aqi,pm2_5,pm10,nitrogen_dioxide,sulphur_dioxide,carbon_monoxide,ozone
+```
+
+Текущие данные: европейский AQI (0–100+), US AQI, PM2.5, PM10, NO₂, SO₂, CO, O₃.
 
 ### WMO Weather Codes
 
@@ -81,42 +95,53 @@ com.nimbus.weather/
 ├── data/
 │   ├── api/
 │   │   ├── WeatherApi.kt          # Retrofit: /v1/forecast
-│   │   └── GeocodingApi.kt        # Retrofit: /v1/search
+│   │   ├── GeocodingApi.kt        # Retrofit: /v1/search
+│   │   └── AirQualityApi.kt       # Retrofit: /v1/air-quality
 │   ├── model/
 │   │   ├── WeatherResponse.kt     # DTO
-│   │   └── GeocodingResponse.kt   # DTO
-│   └── repository/
-│       └── WeatherRepository.kt   # Единый источник данных
+│   │   ├── GeocodingResponse.kt   # DTO
+│   │   └── AirQualityResponse.kt  # DTO
+│   ├── repository/
+│   │   ├── WeatherRepository.kt   # Погода + AQI
+│   │   └── WeatherCache.kt        # Кэш ответов API
+│   └── local/
+│       └── SettingsDataStore.kt   # DataStore Preferences
 ├── ui/
 │   ├── theme/
 │   │   ├── Theme.kt
 │   │   ├── Color.kt
 │   │   └── Type.kt
+│   ├── onboarding/
+│   │   └── OnboardingScreen.kt
 │   ├── home/
 │   │   ├── HomeScreen.kt
 │   │   └── HomeViewModel.kt
 │   ├── settings/
 │   │   ├── SettingsScreen.kt
-│   │   └── SettingsViewModel.kt
+│   │   ├── SettingsViewModel.kt
+│   │   └── WidgetPreviewScreen.kt  # Превью + настройка виджета
 │   ├── location/
 │   │   ├── LocationSearchScreen.kt
 │   │   └── LocationSearchViewModel.kt
 │   └── components/
 │       ├── CurrentWeatherCard.kt
 │       ├── DailyForecastCard.kt
+│       ├── HourlyForecastBar.kt    # Почасовой прогноз
+│       ├── AqiCard.kt              # Индекс качества воздуха
 │       └── WeatherIcon.kt
 ├── widget/
-│   ├── ClockTempWidget.kt         # Виджет 1
-│   ├── TempForecastWidget.kt      # Виджет 2
+│   ├── ClockTempWidget.kt
+│   ├── TempForecastWidget.kt
 │   └── WidgetUpdateManager.kt
 ├── service/
-│   └── WeatherUpdateWorker.kt     # WorkManager: 120 мин
-├── data/
-│   └── local/
-│       └── SettingsDataStore.kt   # DataStore Preferences
+│   ├── WeatherUpdateWorker.kt     # WorkManager
+│   └── NotificationHelper.kt      # Push-уведомления
+├── navigation/
+│   └── NavGraph.kt                # Навигация (если выделить)
 └── util/
     ├── Constants.kt
     ├── WeatherCodeUtils.kt
+    ├── TemperatureUtils.kt
     └── DateTimeUtils.kt
 ```
 
@@ -132,7 +157,12 @@ com.nimbus.weather/
 - Ветер (скорость + направление + порывы)
 - Давление (гПа)
 - Влажность (%)
+- УФ-индекс
 - Восход / Закат
+
+Средняя часть — почасовой прогноз на сегодня (HourlyForecast):
+- Горизонтальный список с интервалом (каждые 3 или 6 часов)
+- Каждая карточка: время, иконка погоды, температура, осадки
 
 Нижняя половина — список DailyForecastCard на 7 дней:
 - День недели + дата
@@ -142,6 +172,7 @@ com.nimbus.weather/
 - Осадки (mm)
 - Вероятность осадков (%)
 - Ветер (макс скорость + направление)
+- УФ-индекс
 - Восход / Закат
 - Давление
 - Влажность
@@ -150,8 +181,11 @@ com.nimbus.weather/
 
 - Переключатель для виджетов: фактическая температура / по ощущению
 - Выбор города (ведёт на LocationSearchScreen)
-- Единицы: °C/°F, ветер м/с/км/ч, давление гПа/мм рт.ст.
+- Единицы: °C/°F
 - Тема: Системная / Светлая / Тёмная
+- Интервал фонового обновления: 2 ч / 12 ч / 24 ч
+- Включение/отключение уведомлений о погоде
+- Превью виджета с настройкой цвета фона и прозрачности
 
 ### 3. Поиск города (LocationSearchScreen)
 
@@ -171,23 +205,40 @@ com.nimbus.weather/
 ## Виджеты (Glance)
 
 ### ClockTempWidget (часы + температура)
-- Размер: настраиваемый (min 2×1)
+- Размер: настраиваемый (min 1×1)
 - Системное время (ЧЧ:ММ)
 - Крупно температура + иконка погоды
 - Название города
 - Температура: actual/feels like — из настроек
+- Тёмная тема: автоматически (системная) + принудительно из настроек
 
 ### TempForecastWidget (температура + неделя)
-- Размер: настраиваемый (min 4×1)
+- Размер: настраиваемый (min 2×1, max 2×2)
 - Текущая температура крупно + иконка
-- Строка 7 дней: день недели, иконка, макс/мин
+- Строка 3–7 дней: день недели, иконка, макс/мин
 - Температура: actual/feels like — из настроек
+- Тёмная тема: автоматически (системная) + принудительно из настроек
+
+### Настройка внешнего вида
+- Превью виджета в приложении
+- Цвет фона (выбор из палитры или кастомный hex)
+- Прозрачность фона (слайдер)
+- Цвет текста (авто — контрастный к фону, либо вручную)
 
 ## Фоновое обновление
 
-- WorkManager: PeriodicWorkRequest каждые 120 минут
-- При открытии приложения — принудительное обновление
+- WorkManager: PeriodicWorkRequest с настраиваемым интервалом
+- Доступные интервалы: 2 часа / 12 часов / 24 часа
+- Интервал хранится в DataStore, при изменении — перепланировка WorkManager (KEEP → не сбрасывать, UPDATE → пересоздать)
+- При открытии приложения — принудительное обновление (если данные устарели более чем на интервал)
 - После обновления: DataStore + broadcast для виджетов
+
+## Кэширование
+
+- Ответы API кэшируются в локальном файле (kotlinx.serialization → JSON)
+- При отсутствии сети — загрузка из кэша
+- TTL кэша: 2 × интервал обновления
+- При успешном обновлении из сети — кэш перезаписывается
 
 ## Зависимости (Gradle)
 
@@ -226,6 +277,66 @@ implementation("com.google.android.gms:play-services-location:21.3.0")
 // Splash Screen
 implementation("androidx.core:core-splashscreen:1.0.1")
 ```
+
+## TODO
+
+### Расширенные метрики погоды
+- [ ] УФ-индекс на главном экране (CurrentWeatherCard + DailyForecastCard)
+- [ ] Ветер: добавить направление текстом (С/СВ/В/ЮВ/Ю/ЮЗ/З/СЗ)
+- [ ] Влажность, давление — уже есть в CurrentWeatherCard
+
+### AQI (Air Quality Index)
+- [ ] `AirQualityApi.kt` — Retrofit-интерфейс для `/v1/air-quality`
+- [ ] `AirQualityResponse.kt` — DTO
+- [ ] Запрос AQI вместе с погодой или отдельно
+- [ ] Отображение AQI на главном экране (значение + цвет: зелёный/жёлтый/оранжевый/красный/фиолетовый)
+- [ ] Настройка: показывать AQI (вкл/выкл)
+
+### Почасовой прогноз
+- [ ] `HourlyForecastCard` — компонент для одной записи (время, иконка, температура, осадки)
+- [ ] Горизонтальный список `LazyRow` на главном экране под CurrentWeatherCard
+- [ ] Интервал отображения: каждые 3 или 6 часов (настройка)
+- [ ] Адаптация под экран: скролл, если не влезает
+
+### Избранные города
+- [ ] DataStore: список избранных городов (List<String> с lat/lon)
+- [ ] HomeScreen: свайп влево/право для переключения между избранными городами
+- [ ] LocationSearchScreen: кнопка "Добавить в избранное" рядом с результатом
+- [ ] SettingsScreen: управление списком избранных (удалить, порядок)
+
+### Виджеты — тёмная тема + кастомизация
+- [ ] ClockTempWidget: чтение `themeMode` из DataStore, применение тёмной палитры
+- [ ] TempForecastWidget: то же
+- [ ] Превью виджета: экран с preview + настройка цвета фона, прозрачности, цвета текста
+- [ ] Сохранение настроек кастомизации в DataStore
+
+### Кэширование
+- [ ] `WeatherCache.kt` — кэш в JSON-файле в `cacheDir`
+- [ ] `WeatherRepository`: при загрузке — писать в кэш, при ошибке сети — читать из кэша
+- [ ] TTL кэша: `2 * updateInterval`
+- [ ] Индикатор "показаны кэшированные данные" на главном экране
+
+### Настройка интервала обновления
+- [ ] DataStore: `updateIntervalHours` (2 / 12 / 24)
+- [ ] SettingsScreen: выбор интервала
+- [ ] При изменении — перепланировка `WeatherUpdateScheduler` (cancel + enqueue)
+- [ ] UI: текущий интервал отображается в настройках
+
+### Планшеты (адаптивный лейаут)
+- [ ] `WindowSizeClass` (compact / medium / expanded)
+- [ ] Главный экран: на expanded (планшет) — двухколоночный лейаут: CurrentWeatherCard слева, список прогнозов справа
+- [ ] Почасовой прогноз: больше колонок на планшете
+- [ ] Настройки: `NavigationRail` вместо `BottomNavigation`
+
+### Локализация: чешский
+- [ ] `values-cs/strings.xml` — перевод всех строк
+- [ ] Проверка: `LanguageHelper` корректно определяет чешский
+
+### Анимации (уже частично)
+- [x] AnimatedVisibility на главном экране при появлении данных
+- [ ] Плавная смена температуры (animateIntAsState)
+- [ ] Анимация перехода между экранами (NavHost enterTransition/exitTransition)
+- [ ] Анимированные иконки погоды (дождь, снег, солнце)
 
 <!-- План только для локального использования. Не публиковать на GitHub. -->
 ```

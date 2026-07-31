@@ -19,6 +19,15 @@ object LanguageHelper {
         }
     }
 
+    fun resolveLocale(languageCode: String): Locale {
+        return when (languageCode) {
+            "ru" -> Locale("ru")
+            "uk" -> Locale("uk")
+            "en" -> Locale("en")
+            else -> resolveLocale(Locale.getDefault())
+        }
+    }
+
     fun createContextWithLocale(context: Context, locale: Locale = resolveLocale()): Context {
         val config = Configuration(context.resources.configuration)
         config.setLocale(locale)
