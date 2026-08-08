@@ -63,7 +63,7 @@ dependencies {
     // Navigation
     implementation("androidx.navigation:navigation-compose:2.8.5")
 
-    // Glance виджеты
+    // Glance widgets
     implementation("androidx.glance:glance:1.2.0-rc01")
     implementation("androidx.glance:glance-appwidget:1.2.0-rc01")
     implementation("androidx.glance:glance-material3:1.2.0-rc01")

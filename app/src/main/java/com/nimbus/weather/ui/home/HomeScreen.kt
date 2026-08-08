@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -37,8 +39,11 @@ import androidx.compose.material3.TopAppBarDefaults
 import android.content.res.Configuration
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -48,6 +53,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.nimbus.weather.R
+import com.nimbus.weather.data.local.SettingsDataStore.FavouriteCity
 import com.nimbus.weather.ui.components.AqiCard
 import com.nimbus.weather.ui.components.CurrentWeatherCard
 import com.nimbus.weather.ui.components.DailyForecastCard
@@ -128,10 +134,51 @@ fun HomeScreen(
                     }
                 }
                 else -> {
-                    WeatherContent(
-                        state = state,
-                        onCitySwitch = { viewModel.switchToCity(it) }
-                    )
+                    val pages = remember(state.cityName, state.favouriteCities) {
+                        buildList {
+                            if (state.cityName.isNotBlank()) {
+                                add(FavouriteCity(state.cityName, 0.0, 0.0, ""))
+                            }
+                            state.favouriteCities
+                                .filter { city -> none { it.name == city.name } }
+                                .forEach { add(it) }
+                        }
+                    }
+
+                    if (pages.size > 1) {
+                        val pagerState = rememberPagerState(pageCount = { pages.size })
+                        val currentIndex = pages.indexOfFirst { it.name == state.cityName }
+                            .coerceAtLeast(0)
+
+                        LaunchedEffect(currentIndex) {
+                            if (pagerState.currentPage != currentIndex) {
+                                pagerState.animateScrollToPage(currentIndex)
+                            }
+                        }
+                        LaunchedEffect(pagerState) {
+                            snapshotFlow { pagerState.settledPage }.collect { page ->
+                                val city = pages.getOrNull(page) ?: return@collect
+                                if (city.name != state.cityName) {
+                                    viewModel.switchToCity(city)
+                                }
+                            }
+                        }
+
+                        HorizontalPager(
+                            state = pagerState,
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            WeatherContent(
+                                state = state,
+                                onCitySwitch = { viewModel.switchToCity(it) }
+                            )
+                        }
+                    } else {
+                        WeatherContent(
+                            state = state,
+                            onCitySwitch = { viewModel.switchToCity(it) }
+                        )
+                    }
                 }
             }
         }

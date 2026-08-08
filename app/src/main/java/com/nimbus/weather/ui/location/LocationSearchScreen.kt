@@ -16,6 +16,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -140,9 +142,10 @@ fun LocationSearchScreen(
                                         viewModel.selectCity(result)
                                         onCitySelected()
                                     }
-                                    .padding(vertical = 12.dp, horizontal = 4.dp)
+                                    .padding(vertical = 12.dp, horizontal = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Column {
+                                Column(modifier = Modifier.weight(1f)) {
                                     Text(
                                         text = result.name,
                                         style = MaterialTheme.typography.bodyLarge
@@ -158,6 +161,18 @@ fun LocationSearchScreen(
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
+                                }
+                                val isFavourite = state.favouriteNames.contains(result.name)
+                                IconButton(onClick = { viewModel.toggleFavourite(result) }) {
+                                    Icon(
+                                        imageVector = if (isFavourite) Icons.Default.Star else Icons.Default.StarBorder,
+                                        contentDescription = null,
+                                        tint = if (isFavourite) {
+                                            MaterialTheme.colorScheme.primary
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurfaceVariant
+                                        }
+                                    )
                                 }
                             }
                         }

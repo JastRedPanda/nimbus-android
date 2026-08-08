@@ -58,8 +58,20 @@
     <string name="no_results">Nothing found</string>
     <string name="use_gps">Use GPS</string>
     <string name="gps_permission_denied">Location permission not granted</string>
+    <string name="favourite_cities">Favourite cities</string>
+    <string name="no_favourite_cities">Add cities with the star icon to switch quickly</string>
 
     <!-- Widgets -->
+    <string name="widgets">Widgets</string>
+    <string name="widget_customize">Appearance</string>
+    <string name="widget_preview">Preview</string>
+    <string name="widget_bg_color">Background color</string>
+    <string name="widget_bg_transparency">Transparency</string>
+    <string name="widget_text_color">Text color</string>
+    <string name="widget_text_auto">Auto</string>
+    <string name="widget_text_black">Black</string>
+    <string name="widget_text_white">White</string>
+    <string name="widget_reset">Reset appearance</string>
     <string name="widget_clock_temp_name">Clock &amp; Temperature</string>
     <string name="widget_clock_temp_desc">Current time and temperature</string>
     <string name="widget_temp_forecast_name">Weather &amp; Forecast</string>

@@ -1,8 +1,6 @@
 package com.nimbus.weather.widget
 
 import android.content.Context
-import android.content.res.Configuration
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
@@ -35,16 +33,6 @@ import java.util.Locale
 
 private val SMALL_BREAKPOINT: Dp = 200.dp
 
-private fun isDarkTheme(context: Context, themeMode: ThemeMode): Boolean {
-    return when (themeMode) {
-        ThemeMode.LIGHT -> false
-        ThemeMode.DARK -> true
-        ThemeMode.SYSTEM -> {
-            (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
-        }
-    }
-}
-
 class ClockTempWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
@@ -54,8 +42,7 @@ class ClockTempWidget : GlanceAppWidget() {
         val tempUnit = settings.tempUnit.first()
         val themeMode = settings.themeMode.first()
         val dark = isDarkTheme(context, themeMode)
-        val textColor = if (dark) Color.White else Color.Black
-        val bgColor = if (dark) Color(0xFF1C1B1F) else Color(0xFFFFFBFE)
+        val palette = settings.readWidgetPalette(dark)
 
         val timeText = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
         val tempText = if (weather?.current != null) {
@@ -71,7 +58,7 @@ class ClockTempWidget : GlanceAppWidget() {
                 modifier = GlanceModifier
                     .fillMaxSize()
                     .padding(8.dp)
-                    .background(bgColor),
+                    .background(palette.background),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -81,7 +68,7 @@ class ClockTempWidget : GlanceAppWidget() {
                         style = TextStyle(
                             fontWeight = FontWeight.Bold,
                             fontSize = 28.sp,
-                            color = ColorProvider(textColor)
+                            color = ColorProvider(palette.text)
                         )
                     )
                 } else {
@@ -91,7 +78,7 @@ class ClockTempWidget : GlanceAppWidget() {
                         style = TextStyle(
                             fontWeight = FontWeight.Bold,
                             fontSize = 22.sp,
-                            color = ColorProvider(textColor)
+                            color = ColorProvider(palette.text)
                         )
                     )
                     Text(
@@ -100,13 +87,13 @@ class ClockTempWidget : GlanceAppWidget() {
                         style = TextStyle(
                             fontWeight = FontWeight.Bold,
                             fontSize = 36.sp,
-                            color = ColorProvider(textColor)
+                            color = ColorProvider(palette.text)
                         )
                     )
                     if (weather?.current != null) {
                         Text(
                             text = weatherDescription(context, weather.current.weatherCode),
-                            style = TextStyle(fontSize = 12.sp, color = ColorProvider(textColor))
+                            style = TextStyle(fontSize = 12.sp, color = ColorProvider(palette.text))
                         )
                     }
                 }

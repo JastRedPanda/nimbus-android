@@ -14,6 +14,10 @@ object WidgetUpdateManager {
 
     suspend fun updateAllWidgets(context: Context, response: WeatherResponse) {
         cachedWeather = response
+        refreshAllWidgets(context)
+    }
+
+    suspend fun refreshAllWidgets(context: Context) {
         val manager = GlanceAppWidgetManager(context)
         manager.getGlanceIds(ClockTempWidget::class.java).forEach { id ->
             ClockTempWidget().update(context, id)

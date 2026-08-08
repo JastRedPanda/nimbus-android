@@ -1,8 +1,40 @@
-PLAN.md
-local.properties
-app/build/
-build/
+# Built application files
+*.apk
+*.aar
+*.ap_
+*.aab
+
+# Files for the ART/Dalvik VM
+*.dex
+
+# Java class files
+*.class
+
+# Generated files
+bin/
+gen/
+out/
+release/
+
+# Gradle files
 .gradle/
+build/
+app/build/
+
+# Local configuration file
+local.properties
+
+# IDE files
 .idea/
 *.iml
+
+# Log Files
+*.log
+
+# OS files
 .DS_Store
+Thumbs.db
+
+# Keystore files
+*.jks
+*.keystore

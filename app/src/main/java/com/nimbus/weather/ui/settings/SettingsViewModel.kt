@@ -5,6 +5,7 @@ import android.content.Intent
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.nimbus.weather.data.local.SettingsDataStore
+import com.nimbus.weather.data.local.SettingsDataStore.FavouriteCity
 import com.nimbus.weather.service.WeatherUpdateScheduler
 import com.nimbus.weather.util.ThemeMode
 import com.nimbus.weather.util.TemperatureUnit
@@ -20,7 +21,8 @@ data class SettingsUiState(
     val cityName: String = "",
     val notificationsEnabled: Boolean = true,
     val updateIntervalHours: Int = 2,
-    val appLanguage: String = "auto"
+    val appLanguage: String = "auto",
+    val favouriteCities: List<FavouriteCity> = emptyList()
 )
 
 class SettingsViewModel(application: Application) : AndroidViewModel(application) {
@@ -66,6 +68,11 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                 _state.value = _state.value.copy(appLanguage = lang)
             }
         }
+        viewModelScope.launch {
+            settings.favouriteCities.collect { cities ->
+                _state.value = _state.value.copy(favouriteCities = cities)
+            }
+        }
     }
 
     fun setUseFeelsLike(value: Boolean) {
@@ -107,6 +114,26 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             settings.setUpdateIntervalHours(hours)
             WeatherUpdateScheduler.reschedule(getApplication(), hours)
+        }
+    }
+
+    fun removeFavouriteCity(name: String) {
+        viewModelScope.launch {
+            settings.removeFavouriteCity(name)
+        }
+    }
+
+    fun moveFavouriteCity(name: String, up: Boolean) {
+        viewModelScope.launch {
+            val current = _state.value.favouriteCities
+            val index = current.indexOfFirst { it.name == name }
+            if (index < 0) return@launch
+            val target = if (up) index - 1 else index + 1
+            if (target < 0 || target >= current.size) return@launch
+            val updated = current.toMutableList().apply {
+                add(target, removeAt(index))
+            }
+            settings.setFavouriteCities(updated)
         }
     }
 }

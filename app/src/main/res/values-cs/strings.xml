@@ -53,8 +53,20 @@
     <string name="no_results">Nic nenalezeno</string>
     <string name="use_gps">Použít GPS</string>
     <string name="gps_permission_denied">Povolení polohy nebylo uděleno</string>
+    <string name="favourite_cities">Oblíbená města</string>
+    <string name="no_favourite_cities">Přidejte města hvězdičkou pro rychlé přepínání</string>
 
     <!-- Widgets -->
+    <string name="widgets">Widgety</string>
+    <string name="widget_customize">Vzhled</string>
+    <string name="widget_preview">Náhled</string>
+    <string name="widget_bg_color">Barva pozadí</string>
+    <string name="widget_bg_transparency">Průhlednost</string>
+    <string name="widget_text_color">Barva textu</string>
+    <string name="widget_text_auto">Auto</string>
+    <string name="widget_text_black">Černá</string>
+    <string name="widget_text_white">Bílá</string>
+    <string name="widget_reset">Resetovat vzhled</string>
     <string name="widget_clock_temp_name">Hodiny &amp; Teplota</string>
     <string name="widget_clock_temp_desc">Aktuální čas a teplota</string>
     <string name="widget_temp_forecast_name">Počasí &amp; Předpověď</string>

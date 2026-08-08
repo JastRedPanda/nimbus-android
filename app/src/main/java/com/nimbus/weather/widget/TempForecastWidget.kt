@@ -1,8 +1,6 @@
 package com.nimbus.weather.widget
 
 import android.content.Context
-import android.content.res.Configuration
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
@@ -24,7 +22,6 @@ import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import com.nimbus.weather.data.local.SettingsDataStore
 import com.nimbus.weather.service.WidgetUpdateManager
-import com.nimbus.weather.util.ThemeMode
 import com.nimbus.weather.util.displayString
 import com.nimbus.weather.util.formatDayOfWeek
 import com.nimbus.weather.util.toCelsiusOrFahrenheit
@@ -42,20 +39,13 @@ class TempForecastWidget : GlanceAppWidget() {
         val useFeelsLike = settings.useFeelsLike.first()
         val tempUnit = settings.tempUnit.first()
         val themeMode = settings.themeMode.first()
-        val dark = when (themeMode) {
-            ThemeMode.LIGHT -> false
-            ThemeMode.DARK -> true
-            ThemeMode.SYSTEM -> {
-                (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
-            }
-        }
-        val textColor = if (dark) Color.White else Color.Black
-        val bgColor = if (dark) Color(0xFF1C1B1F) else Color(0xFFFFFBFE)
+        val dark = isDarkTheme(context, themeMode)
+        val palette = settings.readWidgetPalette(dark)
 
         provideContent {
             val isTall = LocalSize.current.height >= TALL_BREAKPOINT
             Column(
-                modifier = GlanceModifier.fillMaxSize().padding(8.dp).background(bgColor)
+                modifier = GlanceModifier.fillMaxSize().padding(8.dp).background(palette.background)
             ) {
                 if (weather?.current != null) {
                     val t = if (useFeelsLike) weather.current.apparentTemperature
@@ -65,12 +55,12 @@ class TempForecastWidget : GlanceAppWidget() {
                         style = TextStyle(
                             fontWeight = FontWeight.Bold,
                             fontSize = 24.sp,
-                            color = ColorProvider(textColor)
+                            color = ColorProvider(palette.text)
                         )
                     )
                     Text(
                         text = weatherDescription(context, weather.current.weatherCode),
-                        style = TextStyle(fontSize = 11.sp, color = ColorProvider(textColor))
+                        style = TextStyle(fontSize = 11.sp, color = ColorProvider(palette.text))
                     )
                 }
 
@@ -86,7 +76,7 @@ class TempForecastWidget : GlanceAppWidget() {
                             Text(
                                 text = formatDayOfWeek(daily.time[i]),
                                 modifier = GlanceModifier.defaultWeight(),
-                                style = TextStyle(fontSize = 10.sp, color = ColorProvider(textColor))
+                                style = TextStyle(fontSize = 10.sp, color = ColorProvider(palette.text))
                             )
                             Text(
                                 text = "${tmax.toCelsiusOrFahrenheit(tempUnit).toInt()}${tempUnit.displayString()}",
@@ -94,12 +84,12 @@ class TempForecastWidget : GlanceAppWidget() {
                                 style = TextStyle(
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 10.sp,
-                                    color = ColorProvider(textColor)
+                                    color = ColorProvider(palette.text)
                                 )
                             )
                             Text(
                                 text = "${tmin.toCelsiusOrFahrenheit(tempUnit).toInt()}${tempUnit.displayString()}",
-                                style = TextStyle(fontSize = 9.sp, color = ColorProvider(textColor))
+                                style = TextStyle(fontSize = 9.sp, color = ColorProvider(palette.text))
                             )
                         }
                     }

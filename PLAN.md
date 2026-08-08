@@ -299,10 +299,10 @@ implementation("androidx.core:core-splashscreen:1.0.1")
 - [ ] Интервал отображения: каждые 3 или 6 часов (настройка)
 
 ### Избранные города
-- [x] DataStore: `favourite_cities` (JSON-список `FavouriteCity`), add/remove — в коде уже есть
-- [ ] HomeScreen: свайп влево/вправо для переключения между избранными городами
-- [ ] LocationSearchScreen: кнопка "Добавить в избранное" рядом с результатом
-- [ ] SettingsScreen: управление списком избранных (удалить, порядок)
+- [x] DataStore: `favourite_cities` (JSON-список `FavouriteCity`), add/remove/set — в коде есть
+- [x] HomeScreen: свайп влево/вправо между городами (HorizontalPager + чипы сверху)
+- [x] LocationSearchScreen: звёздочка «в избранное» у каждого результата (toggle)
+- [x] SettingsScreen: управление списком избранных (удалить, порядок ↑/↓)
 
 ### Виджеты — кастомизация (общий стиль)
 - [x] Тёмная тема из `themeMode` (системная/принудительная) — было

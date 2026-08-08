@@ -58,8 +58,20 @@
     <string name="no_results">Нічого не знайдено</string>
     <string name="use_gps">Використати GPS</string>
     <string name="gps_permission_denied">Дозвіл на визначення місцезнаходження не надано</string>
+    <string name="favourite_cities">Обрані міста</string>
+    <string name="no_favourite_cities">Додавайте міста зірочкою для швидкого перемикання</string>
 
     <!-- Віджети -->
+    <string name="widgets">Віджети</string>
+    <string name="widget_customize">Зовнішній вигляд</string>
+    <string name="widget_preview">Попередній перегляд</string>
+    <string name="widget_bg_color">Колір фону</string>
+    <string name="widget_bg_transparency">Прозорість</string>
+    <string name="widget_text_color">Колір тексту</string>
+    <string name="widget_text_auto">Авто</string>
+    <string name="widget_text_black">Чорний</string>
+    <string name="widget_text_white">Білий</string>
+    <string name="widget_reset">Скинути зовнішній вигляд</string>
     <string name="widget_clock_temp_name">Годинник і температура</string>
     <string name="widget_clock_temp_desc">Поточний час і температура</string>
     <string name="widget_temp_forecast_name">Погода та прогноз</string>

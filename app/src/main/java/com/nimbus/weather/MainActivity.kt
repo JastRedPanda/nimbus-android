@@ -35,6 +35,7 @@ import com.nimbus.weather.ui.onboarding.OnboardingScreen
 import com.nimbus.weather.ui.settings.SettingsScreen
 import com.nimbus.weather.ui.settings.SettingsViewModel
 import com.nimbus.weather.ui.theme.NimbusWeatherTheme
+import com.nimbus.weather.ui.widgetcustomize.WidgetCustomizeScreen
 import com.nimbus.weather.util.LanguageHelper
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -130,7 +131,14 @@ fun NimbusApp() {
             SettingsScreen(
                 viewModel = viewModel,
                 onBackClick = { navController.popBackStack() },
-                onCitySearchClick = { navController.navigate("location_search") }
+                onCitySearchClick = { navController.navigate("location_search") },
+                onWidgetCustomizeClick = { navController.navigate("widget_customize") }
+            )
+        }
+
+        composable("widget_customize") {
+            WidgetCustomizeScreen(
+                onBackClick = { navController.popBackStack() }
             )
         }
 

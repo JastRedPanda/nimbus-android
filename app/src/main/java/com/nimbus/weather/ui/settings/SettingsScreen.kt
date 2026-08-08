@@ -15,7 +15,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -59,7 +62,8 @@ import com.nimbus.weather.util.TemperatureUnit
     fun SettingsScreen(
     viewModel: SettingsViewModel,
     onBackClick: () -> Unit,
-    onCitySearchClick: () -> Unit
+    onCitySearchClick: () -> Unit,
+    onWidgetCustomizeClick: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
 
@@ -199,6 +203,29 @@ import com.nimbus.weather.util.TemperatureUnit
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // Widgets
+            SectionHeader(title = stringResource(R.string.widgets))
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(onClick = onWidgetCustomizeClick)
+                    .padding(vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.widget_customize),
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.bodyLarge
+                )
+                Icon(
+                    imageVector = Icons.Default.ChevronRight,
+                    contentDescription = null
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             // City selection
             SectionHeader(title = stringResource(R.string.select_city))
 
@@ -218,6 +245,56 @@ import com.nimbus.weather.util.TemperatureUnit
                     imageVector = Icons.Default.ChevronRight,
                     contentDescription = null
                 )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Favourite cities
+            SectionHeader(title = stringResource(R.string.favourite_cities))
+
+            if (state.favouriteCities.isEmpty()) {
+                Text(
+                    text = stringResource(R.string.no_favourite_cities),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+            } else {
+                state.favouriteCities.forEach { city ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = city.name,
+                            modifier = Modifier.weight(1f),
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                        IconButton(onClick = { viewModel.moveFavouriteCity(city.name, up = true) }) {
+                            Icon(
+                                imageVector = Icons.Default.ArrowUpward,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        IconButton(onClick = { viewModel.moveFavouriteCity(city.name, up = false) }) {
+                            Icon(
+                                imageVector = Icons.Default.ArrowDownward,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        IconButton(onClick = { viewModel.removeFavouriteCity(city.name) }) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                }
             }
         }
     }
