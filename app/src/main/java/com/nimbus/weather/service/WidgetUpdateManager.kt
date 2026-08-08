@@ -4,7 +4,6 @@ import android.content.Context
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import com.nimbus.weather.data.model.WeatherResponse
 import com.nimbus.weather.widget.ClockTempWidget
-import com.nimbus.weather.widget.TempForecastWidget
 
 object WidgetUpdateManager {
 
@@ -21,9 +20,6 @@ object WidgetUpdateManager {
         val manager = GlanceAppWidgetManager(context)
         manager.getGlanceIds(ClockTempWidget::class.java).forEach { id ->
             ClockTempWidget().update(context, id)
-        }
-        manager.getGlanceIds(TempForecastWidget::class.java).forEach { id ->
-            TempForecastWidget().update(context, id)
         }
     }
 }

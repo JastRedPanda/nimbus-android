@@ -7,6 +7,8 @@ import androidx.lifecycle.viewModelScope
 import com.nimbus.weather.data.local.SettingsDataStore
 import com.nimbus.weather.data.local.SettingsDataStore.FavouriteCity
 import com.nimbus.weather.service.WeatherUpdateScheduler
+import com.nimbus.weather.util.CityNameResolver
+import com.nimbus.weather.util.LanguageHelper
 import com.nimbus.weather.util.ThemeMode
 import com.nimbus.weather.util.TemperatureUnit
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,7 +24,11 @@ data class SettingsUiState(
     val notificationsEnabled: Boolean = true,
     val updateIntervalHours: Int = 2,
     val appLanguage: String = "auto",
-    val favouriteCities: List<FavouriteCity> = emptyList()
+    val cityLocalNames: Map<String, String> = emptyMap(),
+    val hourlyIntervalHours: Int = 1,
+    val showAqi: Boolean = true,
+    val favouriteCities: List<FavouriteCity> = emptyList(),
+    val favouriteDisplayNames: Map<String, String> = emptyMap()
 )
 
 class SettingsViewModel(application: Application) : AndroidViewModel(application) {
@@ -54,6 +60,11 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             }
         }
         viewModelScope.launch {
+            settings.cityLocalNames.collect { localNames ->
+                _state.value = _state.value.copy(cityLocalNames = localNames)
+            }
+        }
+        viewModelScope.launch {
             settings.notificationsEnabled.collect { enabled ->
                 _state.value = _state.value.copy(notificationsEnabled = enabled)
             }
@@ -65,13 +76,36 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         }
         viewModelScope.launch {
             settings.appLanguage.collect { lang ->
-                _state.value = _state.value.copy(appLanguage = lang)
+                _state.value = _state.value.copy(
+                    appLanguage = lang,
+                    favouriteDisplayNames = buildDisplayNames(_state.value.favouriteCities, lang)
+                )
+            }
+        }
+        viewModelScope.launch {
+            settings.hourlyIntervalHours.collect { hours ->
+                _state.value = _state.value.copy(hourlyIntervalHours = hours)
+            }
+        }
+        viewModelScope.launch {
+            settings.showAqi.collect { show ->
+                _state.value = _state.value.copy(showAqi = show)
             }
         }
         viewModelScope.launch {
             settings.favouriteCities.collect { cities ->
-                _state.value = _state.value.copy(favouriteCities = cities)
+                _state.value = _state.value.copy(
+                    favouriteCities = cities,
+                    favouriteDisplayNames = buildDisplayNames(cities, _state.value.appLanguage)
+                )
             }
+        }
+    }
+
+    private fun buildDisplayNames(cities: List<FavouriteCity>, appLanguage: String): Map<String, String> {
+        val lang = if (appLanguage == "auto") LanguageHelper.resolveLocale().language else appLanguage
+        return cities.associate { city ->
+            city.name to CityNameResolver.displayName(city.name, city.localNames, lang)
         }
     }
 
@@ -95,6 +129,17 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun setNotificationsEnabled(enabled: Boolean) {
         viewModelScope.launch {
             settings.setNotificationsEnabled(enabled)
+            if (enabled) {
+                try {
+                    val loc = settings.getLocationSnapshot()
+                    val repository = com.nimbus.weather.data.repository.WeatherRepository()
+                    val response = repository.getWeather(loc.lat, loc.lon, getApplication())
+                    com.nimbus.weather.service.NotificationHelper.showWeatherNotification(
+                        getApplication(), response
+                    )
+                } catch (_: Exception) {
+                }
+            }
         }
     }
 
@@ -134,6 +179,30 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                 add(target, removeAt(index))
             }
             settings.setFavouriteCities(updated)
+        }
+    }
+
+    fun setHourlyIntervalHours(hours: Int) {
+        viewModelScope.launch {
+            settings.setHourlyIntervalHours(hours)
+        }
+    }
+
+    fun setShowAqi(show: Boolean) {
+        viewModelScope.launch {
+            settings.setShowAqi(show)
+        }
+    }
+
+    fun resetSettings() {
+        viewModelScope.launch {
+            settings.resetAll()
+            WeatherUpdateScheduler.reschedule(getApplication(), SettingsDataStore.DEFAULT_UPDATE_INTERVAL_HOURS)
+            val ctx = getApplication<Application>()
+            val intent = ctx.packageManager.getLaunchIntentForPackage(ctx.packageName)
+            intent?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+            ctx.startActivity(intent)
+            Runtime.getRuntime().exit(0)
         }
     }
 }

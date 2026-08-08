@@ -23,8 +23,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -66,7 +64,6 @@ fun HomeScreen(
     onSettingsClick: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
-    val isFavourite = state.favouriteCities.any { it.name == state.cityName }
 
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
@@ -87,16 +84,6 @@ fun HomeScreen(
                     containerColor = MaterialTheme.colorScheme.surface
                 ),
                 actions = {
-                    IconButton(onClick = {
-                        if (isFavourite) viewModel.removeFavouriteCity(state.cityName)
-                        else viewModel.addCurrentCityToFavourites()
-                    }) {
-                        Icon(
-                            imageVector = if (isFavourite) Icons.Default.Star else Icons.Default.StarBorder,
-                            contentDescription = if (isFavourite) "Remove from favourites" else "Add to favourites",
-                            tint = if (isFavourite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
                     IconButton(onClick = onSettingsClick) {
                         Icon(
                             imageVector = Icons.Default.Settings,
@@ -226,6 +213,7 @@ private fun TabletLayout(
             if (state.favouriteCities.size > 1) {
                 FavouriteCitiesRow(
                     cities = state.favouriteCities,
+                    displayNames = state.favouriteDisplayNames,
                     currentCity = state.cityName,
                     onCityClick = onCitySwitch
                 )
@@ -247,6 +235,12 @@ private fun TabletLayout(
             }
             if (aqi != null) {
                 AqiCard(aqi = aqi, modifier = Modifier.fillMaxWidth())
+            }
+            if (state.fromCache) {
+                AssistChip(
+                    onClick = { },
+                    label = { Text(stringResource(R.string.cached_data)) }
+                )
             }
         }
         Column(
@@ -280,8 +274,17 @@ private fun PhoneLayout(
             item {
                 FavouriteCitiesRow(
                     cities = state.favouriteCities,
+                    displayNames = state.favouriteDisplayNames,
                     currentCity = state.cityName,
                     onCityClick = onCitySwitch
+                )
+            }
+        }
+        if (state.fromCache) {
+            item {
+                AssistChip(
+                    onClick = { },
+                    label = { Text(stringResource(R.string.cached_data)) }
                 )
             }
         }
@@ -324,6 +327,7 @@ private fun PhoneLayout(
 @Composable
 private fun FavouriteCitiesRow(
     cities: List<com.nimbus.weather.data.local.SettingsDataStore.FavouriteCity>,
+    displayNames: Map<String, String>,
     currentCity: String,
     onCityClick: (com.nimbus.weather.data.local.SettingsDataStore.FavouriteCity) -> Unit
 ) {
@@ -338,7 +342,7 @@ private fun FavouriteCitiesRow(
                 onClick = { onCityClick(city) },
                 label = {
                     Text(
-                        text = city.name,
+                        text = displayNames[city.name] ?: city.name,
                         style = MaterialTheme.typography.labelMedium
                     )
                 }

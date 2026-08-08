@@ -4,8 +4,13 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import java.util.TimeZone
 
 private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+
+private val validTimeZoneIds: Set<String> = TimeZone.getAvailableIDs().toHashSet()
+
+fun isValidTimeZoneId(id: String): Boolean = id in validTimeZoneIds
 
 fun formatTime(isoString: String): String {
     return try {

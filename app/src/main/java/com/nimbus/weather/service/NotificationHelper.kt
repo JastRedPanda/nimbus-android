@@ -43,14 +43,21 @@ object NotificationHelper {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        val title = context.getString(
+            R.string.weather_update_notification_title,
+            current.temperature.toInt()
+        )
+
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle("${current.temperature.toInt()}° — ${response.timezone}")
+            .setContentTitle(title)
             .setContentText(context.getString(
                 com.nimbus.weather.util.weatherDescriptionRes(current.weatherCode)
             ))
+            .setColor(android.graphics.Color.parseColor("#1976D2"))
             .setContentIntent(pendingIntent)
-            .setAutoCancel(true)
+            .setAutoCancel(false)
+            .setOnlyAlertOnce(true)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .build()
 

@@ -15,16 +15,27 @@ class WeatherRepository {
     @Volatile
     private var cache: WeatherCache? = null
 
+    @Volatile
+    var showingCachedWeather: Boolean = false
+        private set
+
+    @Volatile
+    private var ttlHours: Int = 4
+
+    fun setTtlHours(hours: Int) {
+        ttlHours = hours.coerceAtLeast(1)
+    }
+
     fun initCache(context: Context) {
         if (cache == null) {
-            cache = WeatherCache(context)
+            cache = WeatherCache(context).also { it.setTtlHours(ttlHours) }
         }
     }
 
     private fun getCache(context: Context): WeatherCache {
         val existing = cache
         if (existing != null) return existing
-        val created = WeatherCache(context)
+        val created = WeatherCache(context).also { it.setTtlHours(ttlHours) }
         cache = created
         return created
     }
@@ -33,11 +44,18 @@ class WeatherRepository {
         val c = context?.let { getCache(it) }
         return try {
             val response = weatherApi.getForecast(latitude = lat, longitude = lon)
+            showingCachedWeather = false
             c?.cacheWeather(response)
             response
         } catch (e: Exception) {
             val cached = c?.getCachedWeather()
-            if (cached != null) cached else throw e
+            if (cached != null) {
+                showingCachedWeather = true
+                cached
+            } else {
+                showingCachedWeather = false
+                throw e
+            }
         }
     }
 
@@ -53,7 +71,7 @@ class WeatherRepository {
         }
     }
 
-    suspend fun searchCities(query: String): List<GeocodingResult> {
-        return geocodingApi.searchCities(name = query).results.orEmpty()
+    suspend fun searchCities(query: String, language: String = "ru"): List<GeocodingResult> {
+        return geocodingApi.searchCities(name = query, language = language).results.orEmpty()
     }
 }

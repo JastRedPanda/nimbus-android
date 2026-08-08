@@ -4,6 +4,7 @@
 
     <!-- Погода -->
     <string name="feels_like">Відчувається</string>
+    <string name="temperature">Температура</string>
     <string name="humidity">Вологість</string>
     <string name="pressure">Тиск</string>
     <string name="wind">Вітер</string>
@@ -16,20 +17,37 @@
     <string name="loading">Завантаження…</string>
     <string name="error_loading">Помилка завантаження даних</string>
     <string name="retry">Повторити</string>
-    <string name="onboarding_welcome">Ласкаво просимо! Налаштуйте параметри віджету погоди.</string>
+    <string name="cancel">Скасувати</string>
+    <string name="reset_settings">Скинути налаштування</string>
+    <string name="reset_settings_confirm_title">Скинути всі налаштування?</string>
+    <string name="reset_settings_confirm_text">Місто, обрані, вигляд, одиниці та інтервал повернуться до типових значень. Дію не можна скасувати.</string>
+    <string name="onboarding_welcome">Оберіть місто, щоб почати.</string>
     <string name="start">Почати</string>
     <string name="notification_channel_name">Оновлення погоди</string>
+    <string name="weather_update_notification_title">Зараз %1$d°</string>
     <string name="air_quality">Якість повітря</string>
     <string name="uv_index">УФ-індекс</string>
+    <string name="uv_low">Низький</string>
+    <string name="uv_moderate">Помірний</string>
+    <string name="uv_high">Високий</string>
+    <string name="uv_very_high">Дуже високий</string>
+    <string name="uv_extreme">Екстремальний</string>
     <string name="language">Мова</string>
     <string name="language_auto">Авто</string>
     <string name="language_en">English</string>
     <string name="language_ru">Русский</string>
     <string name="language_uk">Українська</string>
+    <string name="language_cs">Čeština</string>
     <string name="update_interval">Інтервал оновлення</string>
     <string name="interval_2h">Кожні 2 години</string>
     <string name="interval_12h">Кожні 12 годин</string>
     <string name="interval_24h">Кожні 24 години</string>
+    <string name="hourly_interval">Інтервал погодинного прогнозу</string>
+    <string name="hourly_interval_1h">Кожну годину</string>
+    <string name="hourly_interval_3h">Кожні 3 години</string>
+    <string name="hourly_interval_6h">Кожні 6 годин</string>
+    <string name="show_aqi">Показувати індекс якості повітря</string>
+    <string name="cached_data">Кешовані дані (офлайн)</string>
     <string name="notifications">Сповіщення</string>
     <string name="notifications_enabled">Сповіщення про погоду</string>
 
@@ -55,6 +73,9 @@
 
     <!-- Пошук міста -->
     <string name="search_city">Пошук міста…</string>
+    <string name="recent_cities_title">Вибрані міста</string>
+    <string name="add_to_favourites">Додати в обране</string>
+    <string name="remove_from_history">Видалити з історії</string>
     <string name="no_results">Нічого не знайдено</string>
     <string name="use_gps">Використати GPS</string>
     <string name="gps_permission_denied">Дозвіл на визначення місцезнаходження не надано</string>
@@ -72,10 +93,6 @@
     <string name="widget_text_black">Чорний</string>
     <string name="widget_text_white">Білий</string>
     <string name="widget_reset">Скинути зовнішній вигляд</string>
-    <string name="widget_clock_temp_name">Годинник і температура</string>
-    <string name="widget_clock_temp_desc">Поточний час і температура</string>
-    <string name="widget_temp_forecast_name">Погода та прогноз</string>
-    <string name="widget_temp_forecast_desc">Температура та тижневий прогноз</string>
 
     <!-- WMO коди погоди -->
     <string name="wmo_0">Ясно</string>

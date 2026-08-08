@@ -11,6 +11,7 @@ object ApiClient {
 
     private const val WEATHER_BASE_URL = "https://api.open-meteo.com/"
     private const val GEOCODING_BASE_URL = "https://geocoding-api.open-meteo.com/"
+    private const val AIR_QUALITY_BASE_URL = "https://air-quality-api.open-meteo.com/"
 
     private val json = Json {
         ignoreUnknownKeys = true
@@ -33,7 +34,13 @@ object ApiClient {
         .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
         .build()
 
+    private val airQualityRetrofit = Retrofit.Builder()
+        .baseUrl(AIR_QUALITY_BASE_URL)
+        .client(okHttp)
+        .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
+        .build()
+
     val weatherApi: WeatherApi = weatherRetrofit.create(WeatherApi::class.java)
     val geocodingApi: GeocodingApi = geocodingRetrofit.create(GeocodingApi::class.java)
-    val airQualityApi: AirQualityApi = weatherRetrofit.create(AirQualityApi::class.java)
+    val airQualityApi: AirQualityApi = airQualityRetrofit.create(AirQualityApi::class.java)
 }

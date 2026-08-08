@@ -14,6 +14,7 @@ object LanguageHelper {
         return when (val lang = systemLocale.language) {
             "ru" -> Locale("ru")
             "uk" -> Locale("uk")
+            "cs" -> Locale("cs")
             in CYRILLIC_FALLBACK -> Locale("uk")
             else -> Locale("en")
         }
@@ -23,6 +24,7 @@ object LanguageHelper {
         return when (languageCode) {
             "ru" -> Locale("ru")
             "uk" -> Locale("uk")
+            "cs" -> Locale("cs")
             "en" -> Locale("en")
             else -> resolveLocale(Locale.getDefault())
         }
@@ -38,6 +40,7 @@ object LanguageHelper {
         return when (locale.language) {
             "ru" -> "ru"
             "uk" -> "uk"
+            "cs" -> "cs"
             else -> "en"
         }
     }

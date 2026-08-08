@@ -10,7 +10,7 @@ interface GeocodingApi {
     suspend fun searchCities(
         @Query("name") name: String,
         @Query("count") count: Int = 10,
-        @Query("language") language: String = "ru",
+        @Query("language") language: String,
         @Query("format") format: String = "json"
     ): GeocodingResponse
 }
