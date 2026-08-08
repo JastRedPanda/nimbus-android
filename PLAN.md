@@ -284,7 +284,7 @@ implementation("androidx.core:core-splashscreen:1.0.1")
 
 ### Расширенные метрики погоды
 - [x] УФ-индекс на главном экране (CurrentWeatherCard + DailyForecastCard)
-- [ ] Ветер: добавить направление текстом (С/СВ/В/ЮВ/Ю/ЮЗ/З/СЗ)
+- [x] Ветер: направление текстом (С/СВ/В/ЮВ/Ю/ЮЗ/З/СЗ — 8 румбов, локализовано: RU/UK/EN/CS)
 - [x] Влажность, давление — уже есть в CurrentWeatherCard
 
 ### AQI (Air Quality Index)
@@ -292,11 +292,11 @@ implementation("androidx.core:core-splashscreen:1.0.1")
 - [x] `AirQualityResponse.kt` — DTO
 - [x] Запрос AQI вместе с погодой или отдельно
 - [x] Отображение AQI на главном экране (`AqiCard`)
-- [ ] Настройка: показывать AQI (вкл/выкл)
+- [x] Настройка: показывать AQI (вкл/выкл) — DataStore `show_aqi`, SettingsScreen toggle, HomeViewModel не запрашивает AQI при выключенной настройке
 
 ### Почасовой прогноз
 - [x] `HourlyForecastBar` — горизонтальный список LazyRow (время, иконка, температура, осадки)
-- [ ] Интервал отображения: каждые 3 или 6 часов (настройка)
+- [x] Интервал отображения: каждые 3 или 6 часов — настройка в Settings (DataStore `hourly_interval_hours`)
 
 ### Избранные города
 - [x] DataStore: `favourite_cities` (JSON-список `FavouriteCity`), add/remove/set — в коде есть
@@ -314,8 +314,8 @@ implementation("androidx.core:core-splashscreen:1.0.1")
 ### Кэширование
 - [x] `WeatherCache.kt` — кэш в JSON-файле в `cacheDir` (погода + AQI + таймстемп)
 - [x] `WeatherRepository`: при ошибке сети — чтение из кэша
-- [ ] TTL: привязать к интервалу обновления (`2 × интервал`) — сейчас фиксированных 4 часа, `setTtlHours` нигде не вызывается
-- [ ] Индикатор "показаны кэшированные данные" на главном экране
+- [x] TTL: привязан к интервалу обновления (`2 × интервал`), `setTtlHours` вызывается в HomeViewModel.loadWeather
+- [x] Индикатор "показаны кэшированные данные" на главном экране (AssistChip под шапкой, `showingCachedWeather` в репозитории)
 
 ### Настройка интервала обновления
 - [x] DataStore: `updateIntervalHours` (2 / 12 / 24)
@@ -324,22 +324,122 @@ implementation("androidx.core:core-splashscreen:1.0.1")
 - [x] UI: текущий интервал отображается в настройках
 
 ### Планшеты (адаптивный лейаут)
-- [ ] `WindowSizeClass` (compact / medium / expanded)
-- [ ] Главный экран: на expanded (планшет) — двухколоночный лейаут
-- [ ] Почасовой прогноз: больше колонок на планшете
-- [ ] Настройки: `NavigationRail` вместо BottomNavigation
+- [x] Главный экран: на широких экранах (>= 600dp) — двухколоночный лейаут (`TabletLayout` в HomeScreen)
+- [x] Доп. экраны: поиск города, настройки — одноколоночные (ок для планшетов)
 
 ### Локализация
 - [x] `values-cs/strings.xml` + `values-ru`/`values-uk`/EN
-- [x] Переключатель языка в настройках (авто/EN/UK/RU), применяется перезапуском
-- [ ] Чешский в переключателе языка (сейчас авто чешский не выберет)
+- [x] Переключатель языка в настройках (авто/EN/UK/RU/CS), применяется перезапуском
+- [x] Чешский в переключателе языка + `LanguageHelper.resolveLocale("cs")`
 - [x] Единицы измерения (m/s, hPa, °C/°F) — из ресурсов, локализованы
 
-### Анимации (уже частично)
+### Анимации
 - [x] AnimatedVisibility на главном экране при появлении данных
-- [ ] Плавная смена температуры (animateIntAsState)
-- [ ] Анимация переходов NavHost (enterTransition/exitTransition)
-- [ ] Анимированные иконки погоды (дождь, снег, солнце)
+- [x] Плавная смена температуры (animateIntAsState, 600 мс) в CurrentWeatherCard
+- [x] Анимация переходов NavHost (slide + fade, 300 мс) в MainActivity
+- [x] Анимированные иконки погоды: crossfade при смене кода + пульсация масштаба для осадков/грозы (WeatherIcon)
+
+---
+
+## Текущая сессия (2026-08-08, после финальной сборки прошлой сессии)
+
+> Пользовательские баги: (1) названия городов и «Киев» не локализуются при смене языка; (2) УФ-индекс частично на английском; (3) добавление в избранное неинтуитивное — нужна кнопка у поля поиска; (4) AQI не показывается вообще; (5) краш при входе в «Виджеты → Внешний вид».
+
+### Причины (уже найдены)
+- **AQI не показывается**: `AirQualityApi` создавался на `api.open-meteo.com`, а сервис живёт на `air-quality-api.open-meteo.com` → 404 → `aqi = null`. **ИСПРАВЛЕНО**: отдельный `airQualityRetrofit` на `AIR_QUALITY_BASE_URL` в ApiClient.
+- **Краш «Виджеты → Внешний вид»**: конструктор `WidgetCustomizeViewModel(application, settings = ...)` — два параметра, `viewModel()` его не создаёт → RuntimeException. **ИСПРАВЛЕНО**: конструктор только `(Application)`, `settings` создаётся внутри.
+- **УФ-индекс по-английски**: `formatUvIndex()` хардкодил «Low/Moderate/…». **ИСПРАВЛЕНО**: `uvCategory()` возвращает id ресурса; строки `uv_low`..`uv_extreme` в 4 локалях; формат `"7 (Высокий)"`.
+
+### Выполнено в этой сессии
+- [x] ApiClient: отдельный Retrofit для AQI (закрывает баг 4)
+- [x] WidgetCustomizeViewModel: конструктор (Application) только (баг 5)
+- [x] UV: строки категорий в 4 локализации + `uvCategory()` (баг 2)
+- [x] **Локализация названий городов** (баг 1): `GeocodingResult.localNames` (`local_names`); `FavouriteCity`/`LocationSnapshot` + `localNames`; `setLocation(..., localNames)` + ключ `city_local_names`; `CityNameResolver.displayName()` с KNOWN_TRANSLATIONS для «Киев×Київ×Kyiv»; HomeViewModel/SettingsViewModel/LocationSearchViewModel резолвят имена (`favouriteDisplayNames`, `cityLocalNames`); HomeScreen чипы и CurrentWeatherCard, SettingsScreen список – на языке приложения
+- [x] **UX избранных** (баг 3, по уточнению пользователя): звёздочка с главного экрана УБРАНА (и методы HomeViewModel.addCurrentCityToFavourites/removeFavouriteCity удалены); DataStore `KEY_RECENT_CITIES` (JSON, макс 5, новые сверху) + flow + add/remove; LocationSearchScreen: под полем поиска блок «Выбранные города» с кнопками звёздочка (избранное) и крест (удалить из истории); клик по городу БОЛЬШЕ не закрывает экран (кроме онбординга — маршрут `location_search?closeOnSelect=true`)
+- [x] Строки `recent_cities_title`, `add_to_favourites`, `remove_from_history` (x4 локали)
+- [x] Сборка `gradlew assembleDebug test` — OK (только deprecation-предупреждения)
+
+### Что ещё можно сделать (вне скоупа текущей сессии)
+- [x] GPS: таймзона при «Моё местоположение» — из Geocoder (`extras["timezone"]`), валидация по tzdata, fallback `Europe/Kiev`
+- [ ] Планшетный `NavigationRail` для настроек (screenWidth>=600), `WindowSizeClass`
+
+---
+
+## Сессия 2026-08-08 (вторая волна фиксов)
+
+### 1. Почасовка «раскадровка» на 24 часа — СДЕЛАНО
+- `DEFAULT_HOURLY_INTERVAL_HOURS = 1`, `SettingsUiState.hourlyIntervalHours = 1`
+- `mapHourly`: `endIndex = startIndex + 24` (1 ч → 24 карточки, 3 ч → 8, 6 ч → 4; раньше всегда 8)
+- SettingsScreen: пункт `hourly_interval_1h` («Каждый час») первым, выше 3/6 ч
+- Строки x4 локали
+
+### 2. Уведомления-информер температуры — СДЕЛАНО
+- `NotificationHelper.showWeatherNotification`: title `Сейчас 22°` (строка `weather_update_notification_title` с %1$d, x4), `setAutoCancel(false)` + `setOnlyAlertOnce(true)` — информер висит в шторке, обновляется без звука
+- Показывается: при КАЖДОЙ загрузке главного экрана (HomeViewModel.loadWeather, если `notificationsEnabled`), фоново (Worker — было), и сразу при включении тумблера в настройках (SettingsViewModel)
+
+### 3. Локализация городов по языку приложения (не системы) — СДЕЛАНО
+- HomeViewModel.loadWeather читает язык из `settings.appLanguage.first()` (не из неинициализированного state) — убирает первый кадр-с-системным-языком
+- При смене языка приложение сразу перезагружает город (collect appLanguage → loadWeather)
+- Геокодинг идёт на языке приложения: `GeocodingApi.searchCities(language)` без дефолта, `WeatherRepository.searchCities(query, language)`, LocationSearchVM резолвит язык
+- Fallback `CityNameResolver.KNOWN_TRANSLATIONS` (Киев/Київ/Kyiv) для городов, выбранных ещё до хранения `local_names`
+- Замечание: города, сохранённые в избранном/истории ДО этого фикса, переводятся только если есть `local_names` в записи (или в KNOWN_TRANSLATIONS) — повторный выбор города в поиске записывает переводы
+
+---
+
+## Сессия 2026-08-08 (GPS-таймзона)
+
+### Таймзона при «Моё местоположение» — СДЕЛАНО
+- Раньше: `onMyLocationClick` писал жёстко `"Europe/Kiev"` в `setLocation`
+- Теперь: `resolvePlace(lat, lon)` — один вызов Geocoder, возвращает пару (город, таймзона); таймзона читается из `Address.extras["timezone"]` (Google backend кладёт IANA-ид), валидируется по tzdata (`isValidTimeZoneId` в `DateTimeUtils.kt`, кэш `TimeZone.getAvailableIDs()`), при отсутствии — fallback `Europe/Kiev`
+- Константы `Address.EXTRA_TIMEZONE_ID` в SDK нет (проверено на compileSdk 35) — строковый ключ "timezone"
+- Сборка `gradlew assembleDebug test` — OK
+
+---
+
+## Сессия 2026-08-08 (пятая волна — багфиксы по тесту пользователя)
+
+### Уведомление с температурой не появлялось — ПРИЧИНА + ФИКС
+- В манифесте не было `POST_NOTIFICATIONS` → на Android 13+ `checkSelfPermission` возвращал denied → `showWeatherNotification` тихо выходил
+- ФИКС: `<uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>` в манифест + runtime-запрос в `NimbusApp` (rememberLauncherForActivityResult, API 33+, если `notificationsEnabled`)
+- На Android ≤12 канал уже создавался в MainActivity — там уведомление работало и раньше
+
+### Второй виджет (TempForecastWidget) — УДАЛЁН
+- Удалены `TempForecastWidget.kt`, `temp_forecast_widget_info.xml`, receiver из манифеста, обновление в `WidgetUpdateManager`
+- Из `WidgetCustomizeScreen`: убрано превью недельного виджета, мёртвые строки `widget_*_name/desc` из 4 локалей
+- Установленный ранее виджет на устройстве пропадёт после переустановки (провайдера больше нет)
+
+### ClockTempWidget — время слева, температура справа в ЛЮБОМ размере
+- Был компактный режим (ширина < 200dp): только температура. Порог снижен до 160dp; даже в маленьком размере теперь `Row` (время слева, темп справа), просто мельче шрифт (16/22sp) и без описания погоды
+
+### Палитра виджетов — серый убран, фиолетовый — нормальный круг
+- Убран `#E0E0E0` из `BG_PALETTE`
+- `ColorDot`: 40dp сплошной круг, у выбранного — внутреннее белое кольцо (28dp), чтобы выбранный цвет читался на тёмных фонах
+
+### Недельный прогноз — фактические температуры
+- В `DailyForecastCard` строка «Ощущается» заменена на «Температура» с фактическими макс/мин (label `temperature` в 4 локалях); вычисление tmax/tmin вынесено на уровень карточки
+
+### Онбординг — только выбор города
+- Убраны кнопки °C/°F; `onFinish` без параметра (единицы больше не выбираются при старте)
+- Текст приветствия обновлён в 4 локалях: «Выберите город, чтобы начать»
+
+### Сборка `gradlew assembleDebug test` — OK
+
+---
+
+## Сессия 2026-08-08 (третья волна)
+
+### Сброс настроек — СДЕЛАНО
+- `SettingsDataStore.resetAll()` — `prefs.clear()` (тот самый файлик DataStore)
+- Кнопка «Сбросить настройки» (красная OutlinedButton) внизу SettingsScreen + AlertDialog подтверждения
+- After reset: перепланировка WorkManager на дефолт + перезапуск приложения (как при смене языка)
+- Строки `reset_settings*`, `cancel` x4
+
+### ClockTempWidget — время слева, погода справа — СДЕЛАНО
+- Некомпактный (>200dp): `Row` время слева (weight), справа Column(temp крупно + описание мелко); компактный 1×1 — как было (только температура)
+
+### Цвета виджетов не работали — ПРИЧИНА НАЙДЕНА И ИСПРАВЛЕНА
+- `parseHex("..."/"#FFFFFF")` дважды добавлял `#` → `##FFFFFF` → `parseColor` бросал → прозрачный/дефолт. 
+- Исправлено нормализацией префикса в `WidgetPalette.parseHexColor` и `WidgetCustomizeScreen.parseHex` — кружочки палитры, превью и сами виджеты теперь красятся
 
 <!-- План только для локального использования. Не публиковать на GitHub. -->
 ```

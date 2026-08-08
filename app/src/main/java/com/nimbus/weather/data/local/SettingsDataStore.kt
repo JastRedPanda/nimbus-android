@@ -34,19 +34,25 @@ class SettingsDataStore(private val context: Context) {
         private val KEY_LATITUDE = doublePreferencesKey("latitude")
         private val KEY_LONGITUDE = doublePreferencesKey("longitude")
         private val KEY_TIMEZONE = stringPreferencesKey("timezone")
+        private val KEY_CITY_LOCAL_NAMES = stringPreferencesKey("city_local_names")
         private val KEY_UPDATE_INTERVAL_HOURS = intPreferencesKey("update_interval_hours")
         private val KEY_FAVOURITE_CITIES = stringPreferencesKey("favourite_cities")
         private val KEY_APP_LANGUAGE = stringPreferencesKey("app_language")
         private val KEY_WIDGET_BG_COLOR = stringPreferencesKey("widget_bg_color")
         private val KEY_WIDGET_BG_ALPHA = intPreferencesKey("widget_bg_alpha")
         private val KEY_WIDGET_TEXT_COLOR = stringPreferencesKey("widget_text_color")
+        private val KEY_HOURLY_INTERVAL_HOURS = intPreferencesKey("hourly_interval_hours")
+        private val KEY_SHOW_AQI = booleanPreferencesKey("show_aqi")
+        private val KEY_RECENT_CITIES = stringPreferencesKey("recent_cities")
 
         const val DEFAULT_CITY = "Киев"
         const val DEFAULT_LAT = 50.4501
         const val DEFAULT_LON = 30.5234
         const val DEFAULT_TZ = "Europe/Kiev"
         const val DEFAULT_UPDATE_INTERVAL_HOURS = 2
+        const val DEFAULT_HOURLY_INTERVAL_HOURS = 1
         const val DEFAULT_WIDGET_BG_ALPHA = 100
+        const val MAX_RECENT_CITIES = 5
     }
 
     val onboardingDone: Flow<Boolean> = context.dataStore.data.map { prefs ->
@@ -97,6 +103,12 @@ class SettingsDataStore(private val context: Context) {
         prefs[KEY_APP_LANGUAGE] ?: "auto"
     }
 
+    val cityLocalNames: Flow<Map<String, String>> = context.dataStore.data.map { prefs ->
+        prefs[KEY_CITY_LOCAL_NAMES]?.let {
+            try { json.decodeFromString<Map<String, String>>(it) } catch (_: Exception) { emptyMap() }
+        } ?: emptyMap()
+    }
+
     val widgetBgColor: Flow<String?> = context.dataStore.data.map { prefs ->
         prefs[KEY_WIDGET_BG_COLOR]
     }
@@ -109,9 +121,23 @@ class SettingsDataStore(private val context: Context) {
         prefs[KEY_WIDGET_TEXT_COLOR] ?: "auto"
     }
 
+    val hourlyIntervalHours: Flow<Int> = context.dataStore.data.map { prefs ->
+        prefs[KEY_HOURLY_INTERVAL_HOURS] ?: DEFAULT_HOURLY_INTERVAL_HOURS
+    }
+
+    val showAqi: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[KEY_SHOW_AQI] ?: true
+    }
+
     suspend fun setOnboardingDone() {
         context.dataStore.edit { prefs ->
             prefs[KEY_ONBOARDING_DONE] = true
+        }
+    }
+
+    suspend fun resetAll() {
+        context.dataStore.edit { prefs ->
+            prefs.clear()
         }
     }
 
@@ -152,9 +178,21 @@ class SettingsDataStore(private val context: Context) {
         }
     }
 
+    suspend fun setHourlyIntervalHours(hours: Int) {
+        context.dataStore.edit { prefs ->
+            prefs[KEY_HOURLY_INTERVAL_HOURS] = hours
+        }
+    }
+
     suspend fun setNotificationsEnabled(enabled: Boolean) {
         context.dataStore.edit { prefs ->
             prefs[KEY_NOTIFICATIONS_ENABLED] = enabled
+        }
+    }
+
+    suspend fun setShowAqi(show: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[KEY_SHOW_AQI] = show
         }
     }
 
@@ -170,12 +208,15 @@ class SettingsDataStore(private val context: Context) {
         }
     }
 
-    suspend fun setLocation(name: String, lat: Double, lon: Double, tz: String) {
+    suspend fun setLocation(name: String, lat: Double, lon: Double, tz: String, localNames: Map<String, String> = emptyMap()) {
         context.dataStore.edit { prefs ->
             prefs[KEY_CITY_NAME] = name
             prefs[KEY_LATITUDE] = lat
             prefs[KEY_LONGITUDE] = lon
             prefs[KEY_TIMEZONE] = tz
+            if (localNames.isNotEmpty()) {
+                prefs[KEY_CITY_LOCAL_NAMES] = json.encodeToString(localNames)
+            }
         }
     }
 
@@ -185,7 +226,10 @@ class SettingsDataStore(private val context: Context) {
             name = prefs[KEY_CITY_NAME] ?: DEFAULT_CITY,
             lat = prefs[KEY_LATITUDE] ?: DEFAULT_LAT,
             lon = prefs[KEY_LONGITUDE] ?: DEFAULT_LON,
-            tz = prefs[KEY_TIMEZONE] ?: DEFAULT_TZ
+            tz = prefs[KEY_TIMEZONE] ?: DEFAULT_TZ,
+            localNames = prefs[KEY_CITY_LOCAL_NAMES]?.let {
+                try { json.decodeFromString<Map<String, String>>(it) } catch (_: Exception) { emptyMap() }
+            } ?: emptyMap()
         )
     }
 
@@ -193,7 +237,8 @@ class SettingsDataStore(private val context: Context) {
         val name: String = DEFAULT_CITY,
         val lat: Double = DEFAULT_LAT,
         val lon: Double = DEFAULT_LON,
-        val tz: String = DEFAULT_TZ
+        val tz: String = DEFAULT_TZ,
+        val localNames: Map<String, String> = emptyMap()
     )
 
     @Serializable
@@ -201,7 +246,8 @@ class SettingsDataStore(private val context: Context) {
         val name: String,
         val lat: Double,
         val lon: Double,
-        val tz: String
+        val tz: String,
+        val localNames: Map<String, String> = emptyMap()
     )
 
     val favouriteCities: Flow<List<FavouriteCity>> = context.dataStore.data.map { prefs ->
@@ -235,6 +281,34 @@ class SettingsDataStore(private val context: Context) {
     suspend fun setFavouriteCities(cities: List<FavouriteCity>) {
         context.dataStore.edit { prefs ->
             prefs[KEY_FAVOURITE_CITIES] = json.encodeToString(cities)
+        }
+    }
+
+    val recentCities: Flow<List<FavouriteCity>> = context.dataStore.data.map { prefs ->
+        val raw = prefs[KEY_RECENT_CITIES]
+        if (raw.isNullOrBlank()) emptyList()
+        else try { json.decodeFromString<List<FavouriteCity>>(raw) } catch (_: Exception) { emptyList() }
+    }
+
+    suspend fun addRecentCity(city: FavouriteCity) {
+        context.dataStore.edit { prefs ->
+            val current = prefs[KEY_RECENT_CITIES]?.let {
+                try { json.decodeFromString<List<FavouriteCity>>(it) } catch (_: Exception) { null }
+            } ?: emptyList()
+            val updated = current.toMutableList().apply {
+                removeAll { it.name == city.name }
+                add(0, city)
+            }.take(MAX_RECENT_CITIES)
+            prefs[KEY_RECENT_CITIES] = json.encodeToString(updated)
+        }
+    }
+
+    suspend fun removeRecentCity(name: String) {
+        context.dataStore.edit { prefs ->
+            val current = prefs[KEY_RECENT_CITIES]?.let {
+                try { json.decodeFromString<List<FavouriteCity>>(it) } catch (_: Exception) { null }
+            } ?: emptyList()
+            prefs[KEY_RECENT_CITIES] = json.encodeToString(current.filter { it.name != name })
         }
     }
 }

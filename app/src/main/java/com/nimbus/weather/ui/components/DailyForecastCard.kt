@@ -26,6 +26,7 @@ import com.nimbus.weather.util.formatTime
 import com.nimbus.weather.util.isToday
 import com.nimbus.weather.util.toCelsiusOrFahrenheit
 import com.nimbus.weather.util.weatherDescriptionRes
+import com.nimbus.weather.util.windDirection
 
 data class DailyForecastData(
     val date: String,
@@ -57,6 +58,9 @@ fun DailyForecastCard(
         )
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
+            val tmax = day.tempMax.toCelsiusOrFahrenheit(tempUnit).toInt()
+            val tmin = day.tempMin.toCelsiusOrFahrenheit(tempUnit).toInt()
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -84,8 +88,6 @@ fun DailyForecastCard(
                     modifier = Modifier.weight(1f)
                 )
 
-                val tmax = day.tempMax.toCelsiusOrFahrenheit(tempUnit).toInt()
-                val tmin = day.tempMin.toCelsiusOrFahrenheit(tempUnit).toInt()
                 Text(
                     text = "$tmax/$tmin${tempUnit.displayString()}",
                     style = MaterialTheme.typography.titleMedium,
@@ -99,11 +101,9 @@ fun DailyForecastCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                val flMax = day.feelsLikeMax.toCelsiusOrFahrenheit(tempUnit).toInt()
-                val flMin = day.feelsLikeMin.toCelsiusOrFahrenheit(tempUnit).toInt()
                 DailyDetailItem(
-                    label = stringResource(R.string.feels_like),
-                    value = "$flMax/$flMin${tempUnit.displayString()}"
+                    label = stringResource(R.string.temperature),
+                    value = "$tmax/$tmin${tempUnit.displayString()}"
                 )
                 DailyDetailItem(
                     label = stringResource(R.string.precipitation),
@@ -119,11 +119,11 @@ fun DailyForecastCard(
             ) {
                 DailyDetailItem(
                     label = stringResource(R.string.wind),
-                    value = "${day.windMax.toInt()}/${day.windGusts.toInt()} ${stringResource(R.string.wind_ms)}"
+                    value = "${day.windMax.toInt()}/${day.windGusts.toInt()} ${stringResource(R.string.wind_ms)} ${windDirection(day.windDirection)}"
                 )
                 DailyDetailItem(
                     label = stringResource(R.string.uv_index),
-                    value = day.uvIndexMax.formatUvIndex()
+                    value = "${day.uvIndexMax.toInt()} (${stringResource(day.uvIndexMax.uvCategory())})"
                 )
             }
 
@@ -146,14 +146,13 @@ fun DailyForecastCard(
     }
 }
 
-internal fun Double.formatUvIndex(): String {
-    val v = toInt()
+internal fun Double.uvCategory(): Int {
     return when {
-        v <= 2 -> "$v (Low)"
-        v <= 5 -> "$v (Moderate)"
-        v <= 7 -> "$v (High)"
-        v <= 10 -> "$v (Very High)"
-        else -> "$v (Extreme)"
+        this <= 2.0 -> R.string.uv_low
+        this <= 5.0 -> R.string.uv_moderate
+        this <= 7.0 -> R.string.uv_high
+        this <= 10.0 -> R.string.uv_very_high
+        else -> R.string.uv_extreme
     }
 }
 

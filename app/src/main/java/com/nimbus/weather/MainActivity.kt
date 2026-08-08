@@ -1,11 +1,16 @@
 package com.nimbus.weather
 
+import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
 import android.content.res.Configuration
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
@@ -19,11 +24,20 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.nimbus.weather.data.local.SettingsDataStore
 import com.nimbus.weather.service.NotificationHelper
 import com.nimbus.weather.service.WeatherUpdateScheduler
@@ -92,20 +106,39 @@ fun NimbusApp() {
     val navController = rememberNavController()
     var startDest by remember { mutableStateOf<String?>(null) }
 
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { }
+
     LaunchedEffect(Unit) {
         val settings = SettingsDataStore(context.applicationContext)
         startDest = if (settings.onboardingDone.first()) "home" else "onboarding"
+
+        if (Build.VERSION.SDK_INT >= 33) {
+            val granted = ContextCompat.checkSelfPermission(
+                context, Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+            if (!granted && settings.notificationsEnabled.first()) {
+                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
     }
 
     val dest = startDest ?: return
 
-    NavHost(navController = navController, startDestination = dest) {
+    NavHost(
+        navController = navController,
+        startDestination = dest,
+        enterTransition = { slideInHorizontally(tween(300)) { it / 3 } + fadeIn(tween(300)) },
+        exitTransition = { fadeOut(tween(300)) },
+        popEnterTransition = { fadeIn(tween(300)) },
+        popExitTransition = { slideOutHorizontally(tween(300)) { it / 3 } + fadeOut(tween(300)) }
+    ) {
         composable("onboarding") {
             OnboardingScreen(
-                onFinish = { tempUnit ->
+                onFinish = {
                     scope.launch {
                         val settings = SettingsDataStore(context.applicationContext)
-                        settings.setTempUnit(tempUnit)
                         settings.setOnboardingDone()
                     }
                     navController.navigate("home") {
@@ -113,7 +146,7 @@ fun NimbusApp() {
                     }
                 },
                 onSelectCity = {
-                    navController.navigate("location_search")
+                    navController.navigate("location_search?closeOnSelect=true")
                 }
             )
         }
@@ -142,14 +175,19 @@ fun NimbusApp() {
             )
         }
 
-        composable("location_search") {
+        composable(
+            route = "location_search?closeOnSelect={closeOnSelect}",
+            arguments = listOf(navArgument("closeOnSelect") { defaultValue = false })
+        ) {
             val viewModel: LocationSearchViewModel = viewModel()
+            val closeOnSelect = it.arguments?.getBoolean("closeOnSelect") ?: false
             LocationSearchScreen(
                 viewModel = viewModel,
                 onBackClick = { navController.popBackStack() },
                 onCitySelected = {
                     navController.popBackStack()
-                }
+                },
+                closeOnSelect = closeOnSelect
             )
         }
     }

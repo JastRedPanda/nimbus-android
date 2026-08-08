@@ -4,6 +4,7 @@
 
     <!-- Weather -->
     <string name="feels_like">Pocitově</string>
+    <string name="temperature">Teplota</string>
     <string name="humidity">Vlhkost</string>
     <string name="pressure">Tlak</string>
     <string name="wind">Vítr</string>
@@ -16,20 +17,41 @@
     <string name="loading">Načítání…</string>
     <string name="error_loading">Nepodařilo se načíst data</string>
     <string name="retry">Zkusit znovu</string>
-    <string name="onboarding_welcome">Vítejte! Nastavte si předvolby počasí.</string>
+    <string name="cancel">Zrušit</string>
+    <string name="reset_settings">Obnovit nastavení</string>
+    <string name="reset_settings_confirm_title">Obnovit všechna nastavení?</string>
+    <string name="reset_settings_confirm_text">Město, oblíbené, vzhled, jednotky a interval se vrátí na výchozí hodnoty. Není možné vrátit.</string>
+    <string name="onboarding_welcome">Vyberte své město, abyste mohli začít.</string>
     <string name="start">Spustit</string>
     <string name="notification_channel_name">Aktualizace počasí</string>
+    <string name="weather_update_notification_title">Aktuálně %1$d°</string>
     <string name="air_quality">Kvalita ovzduší</string>
     <string name="uv_index">UV index</string>
+    <string name="uv_low">Nízký</string>
+    <string name="uv_moderate">Mírný</string>
+    <string name="uv_high">Vysoký</string>
+    <string name="uv_very_high">Velmi vysoký</string>
+    <string name="uv_extreme">Extrémní</string>
     <string name="update_interval">Interval aktualizace</string>
     <string name="interval_2h">Každé 2 hodiny</string>
     <string name="interval_12h">Každých 12 hodin</string>
     <string name="interval_24h">Každých 24 hodin</string>
+    <string name="hourly_interval">Interval hodinové předpovědi</string>
+    <string name="hourly_interval_1h">Každou hodinu</string>
+    <string name="hourly_interval_3h">Každé 3 hodiny</string>
+    <string name="hourly_interval_6h">Každých 6 hodin</string>
+    <string name="show_aqi">Zobrazit index kvality ovzduší</string>
+    <string name="cached_data">Data z offline mezipaměti</string>
     <string name="notifications">Oznámení</string>
     <string name="notifications_enabled">Oznámení o počasí</string>
 
     <!-- Settings -->
     <string name="settings">Nastavení</string>
+    <string name="language_auto">Automaticky</string>
+    <string name="language_en">English</string>
+    <string name="language_ru">Русский</string>
+    <string name="language_uk">Українська</string>
+    <string name="language_cs">Čeština</string>
     <string name="widget_temp_mode">Režim teploty widgetu</string>
     <string name="actual_temp">Skutečná</string>
     <string name="feels_like_temp">Pocitová</string>
@@ -50,6 +72,9 @@
 
     <!-- City search -->
     <string name="search_city">Hledat město…</string>
+    <string name="recent_cities_title">Vybraná města</string>
+    <string name="add_to_favourites">Přidat k oblíbeným</string>
+    <string name="remove_from_history">Odebrat z historie</string>
     <string name="no_results">Nic nenalezeno</string>
     <string name="use_gps">Použít GPS</string>
     <string name="gps_permission_denied">Povolení polohy nebylo uděleno</string>
@@ -67,10 +92,6 @@
     <string name="widget_text_black">Černá</string>
     <string name="widget_text_white">Bílá</string>
     <string name="widget_reset">Resetovat vzhled</string>
-    <string name="widget_clock_temp_name">Hodiny &amp; Teplota</string>
-    <string name="widget_clock_temp_desc">Aktuální čas a teplota</string>
-    <string name="widget_temp_forecast_name">Počasí &amp; Předpověď</string>
-    <string name="widget_temp_forecast_desc">Teplota a týdenní předpověď</string>
 
     <!-- WMO weather codes -->
     <string name="wmo_0">Jasno</string>

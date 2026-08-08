@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
@@ -38,13 +39,17 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.nimbus.weather.R
+import com.nimbus.weather.data.local.SettingsDataStore
+import com.nimbus.weather.util.CityNameResolver
+import com.nimbus.weather.util.LanguageHelper
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LocationSearchScreen(
     viewModel: LocationSearchViewModel,
     onBackClick: () -> Unit,
-    onCitySelected: () -> Unit
+    onCitySelected: () -> Unit,
+    closeOnSelect: Boolean = false
 ) {
     val state by viewModel.state.collectAsState()
 
@@ -119,28 +124,68 @@ fun LocationSearchScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            when {
-                state.loading -> {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.CenterHorizontally)
-                    )
+            val langCode = if (state.appLanguage == "auto") {
+                LanguageHelper.resolveLocale().language
+            } else {
+                state.appLanguage
+            }
+
+            LazyColumn {
+                if (state.recentCities.isNotEmpty()) {
+                    item {
+                        Text(
+                            text = stringResource(R.string.recent_cities_title),
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        )
+                    }
+                    items(state.recentCities) { city ->
+                        RecentCityRow(
+                            displayName = CityNameResolver.displayName(
+                                city.name, city.localNames, langCode
+                            ),
+                            isFavourite = state.favouriteNames.contains(city.name),
+                            onSelect = {
+                                viewModel.selectRecentCity(city)
+                                if (closeOnSelect) onCitySelected()
+                            },
+                            onToggleFavourite = { viewModel.toggleRecentFavourite(city) },
+                            onRemove = { viewModel.removeRecentCity(city.name) }
+                        )
+                    }
                 }
-                state.noResults -> {
-                    Text(
-                        text = stringResource(R.string.no_results),
-                        modifier = Modifier.align(Alignment.CenterHorizontally),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                else -> {
-                    LazyColumn {
+
+                when {
+                    state.loading -> {
+                        item {
+                            CircularProgressIndicator(
+                                modifier = Modifier
+                                    .padding(16.dp)
+                                    .align(Alignment.CenterHorizontally)
+                            )
+                        }
+                    }
+                    state.noResults -> {
+                        item {
+                            Text(
+                                text = stringResource(R.string.no_results),
+                                modifier = Modifier
+                                    .padding(16.dp)
+                                    .fillMaxWidth(),
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    else -> {
                         items(state.results) { result ->
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable {
                                         viewModel.selectCity(result)
-                                        onCitySelected()
+                                        if (closeOnSelect) onCitySelected()
                                     }
                                     .padding(vertical = 12.dp, horizontal = 4.dp),
                                 verticalAlignment = Alignment.CenterVertically
@@ -166,7 +211,7 @@ fun LocationSearchScreen(
                                 IconButton(onClick = { viewModel.toggleFavourite(result) }) {
                                     Icon(
                                         imageVector = if (isFavourite) Icons.Default.Star else Icons.Default.StarBorder,
-                                        contentDescription = null,
+                                        contentDescription = stringResource(R.string.add_to_favourites),
                                         tint = if (isFavourite) {
                                             MaterialTheme.colorScheme.primary
                                         } else {
@@ -179,6 +224,46 @@ fun LocationSearchScreen(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun RecentCityRow(
+    displayName: String,
+    isFavourite: Boolean,
+    onSelect: () -> Unit,
+    onToggleFavourite: () -> Unit,
+    onRemove: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onSelect)
+            .padding(vertical = 8.dp, horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = displayName,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.weight(1f)
+        )
+        IconButton(onClick = onToggleFavourite) {
+            Icon(
+                imageVector = if (isFavourite) Icons.Default.Star else Icons.Default.StarBorder,
+                contentDescription = stringResource(R.string.add_to_favourites),
+                tint = if (isFavourite) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                }
+            )
+        }
+        IconButton(onClick = onRemove) {
+            Icon(
+                imageVector = Icons.Default.Close,
+                contentDescription = stringResource(R.string.remove_from_history)
+            )
         }
     }
 }

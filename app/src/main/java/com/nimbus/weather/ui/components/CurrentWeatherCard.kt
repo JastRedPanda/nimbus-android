@@ -13,6 +13,9 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.animation.core.animateIntAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -25,6 +28,7 @@ import com.nimbus.weather.util.displayString
 import com.nimbus.weather.util.formatTime
 import com.nimbus.weather.util.toCelsiusOrFahrenheit
 import com.nimbus.weather.util.weatherDescriptionRes
+import com.nimbus.weather.util.windDirection
 
 @Composable
 fun CurrentWeatherCard(
@@ -55,8 +59,13 @@ fun CurrentWeatherCard(
                     size = 64.dp
                 )
                 Spacer(modifier = Modifier.width(12.dp))
+                val animatedTemp by animateIntAsState(
+                    targetValue = current.temperature.toCelsiusOrFahrenheit(tempUnit).toInt(),
+                    animationSpec = tween(durationMillis = 600),
+                    label = "temp"
+                )
                 Text(
-                    text = "${current.temperature.toCelsiusOrFahrenheit(tempUnit).toInt()}${tempUnit.displayString()}",
+                    text = "$animatedTemp${tempUnit.displayString()}",
                     style = MaterialTheme.typography.displayLarge
                 )
                 Spacer(modifier = Modifier.width(8.dp))
@@ -89,7 +98,7 @@ fun CurrentWeatherCard(
                 )
                 WeatherDetailItem(
                     label = stringResource(R.string.uv_index),
-                    value = current.uvIndex.formatUvIndex()
+                    value = "${current.uvIndex.toInt()} (${stringResource(current.uvIndex.uvCategory())})"
                 )
             }
 
@@ -101,7 +110,7 @@ fun CurrentWeatherCard(
             ) {
                 WeatherDetailItem(
                     label = stringResource(R.string.wind),
-                    value = "${current.windSpeed.toInt()} ${stringResource(R.string.wind_ms)}"
+                    value = "${current.windSpeed.toInt()} ${stringResource(R.string.wind_ms)} ${windDirection(current.windDirection)}"
                 )
                 WeatherDetailItem(
                     label = stringResource(R.string.pressure),

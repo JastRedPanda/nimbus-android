@@ -59,7 +59,6 @@ import com.nimbus.weather.widget.resolveWidgetPalette
 
 private val BG_PALETTE = listOf(
     "#FFFFFF",
-    "#E0E0E0",
     "#000000",
     "#1976D2",
     "#00695C",
@@ -210,14 +209,19 @@ private fun ColorDot(
     onClick: () -> Unit
 ) {
     val bg = color?.let { parseHex(it) } ?: Color.Transparent
+    val borderColor = if (selected) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        MaterialTheme.colorScheme.outlineVariant
+    }
     Box(
         modifier = Modifier
-            .size(36.dp)
+            .size(40.dp)
             .clip(CircleShape)
             .background(bg)
             .border(
                 width = if (selected) 3.dp else 1.dp,
-                color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                color = borderColor,
                 shape = CircleShape
             )
             .clickable(onClick = onClick),
@@ -229,6 +233,12 @@ private fun ColorDot(
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(20.dp)
+            )
+        } else if (selected) {
+            Box(
+                modifier = Modifier
+                    .size(28.dp)
+                    .border(2.dp, Color.White.copy(alpha = 0.9f), CircleShape)
             )
         }
     }
@@ -257,85 +267,40 @@ private fun WidgetPreviewBox(
         "${weather.current.temperature.toCelsiusOrFahrenheit(com.nimbus.weather.util.TemperatureUnit.CELSIUS).toInt()}°C"
     } else "--°C"
 
-    Column(
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = Color.Transparent,
+        modifier = Modifier.fillMaxWidth()
     ) {
-        Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = Color.Transparent,
-            modifier = Modifier.fillMaxWidth()
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(palette.background)
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(palette.background)
-                    .padding(12.dp)
-            ) {
-                Text(
-                    text = tempText,
-                    color = palette.text,
-                    style = MaterialTheme.typography.displaySmall,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = "00:00",
-                    color = palette.text,
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-        }
-
-        Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = Color.Transparent,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(palette.background)
-                    .padding(12.dp)
-            ) {
-                Text(
-                    text = tempText,
-                    color = palette.text,
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                val days = weather?.daily?.time?.take(4) ?: listOf("Mon", "Tue", "Wed", "Thu")
-                days.forEach { day ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = day,
-                            color = palette.text,
-                            style = MaterialTheme.typography.bodySmall,
-                            fontSize = 12.sp,
-                            modifier = Modifier.weight(1f)
-                        )
-                        Text(
-                            text = "20°C / 12°C",
-                            color = palette.text,
-                            style = MaterialTheme.typography.bodySmall,
-                            fontSize = 12.sp
-                        )
-                    }
-                }
-            }
+            Text(
+                text = "00:00",
+                color = palette.text,
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.weight(1f)
+            )
+            Text(
+                text = tempText,
+                color = palette.text,
+                style = MaterialTheme.typography.displaySmall,
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }
 
 private fun parseHex(hex: String): Color {
     return try {
-        Color(android.graphics.Color.parseColor("#$hex"))
+        val value = if (hex.startsWith("#")) hex else "#$hex"
+        Color(android.graphics.Color.parseColor(value))
     } catch (_: Exception) {
         Color.Transparent
     }

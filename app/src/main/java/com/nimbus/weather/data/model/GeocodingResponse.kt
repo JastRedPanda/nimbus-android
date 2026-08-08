@@ -1,5 +1,6 @@
 package com.nimbus.weather.data.model
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -15,5 +16,6 @@ data class GeocodingResult(
     val longitude: Double,
     val country: String? = null,
     val admin1: String? = null,
-    val timezone: String? = null
+    val timezone: String? = null,
+    @SerialName("local_names") val localNames: Map<String, String>? = null
 )

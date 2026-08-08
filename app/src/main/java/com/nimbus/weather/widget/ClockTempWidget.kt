@@ -13,6 +13,7 @@ import androidx.glance.appwidget.provideContent
 import androidx.glance.background
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Column
+import androidx.glance.layout.Row
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.padding
@@ -31,7 +32,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-private val SMALL_BREAKPOINT: Dp = 200.dp
+private val SMALL_BREAKPOINT: Dp = 160.dp
 
 class ClockTempWidget : GlanceAppWidget() {
 
@@ -62,39 +63,34 @@ class ClockTempWidget : GlanceAppWidget() {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                if (isCompact) {
-                    Text(
-                        text = tempText,
-                        style = TextStyle(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 28.sp,
-                            color = ColorProvider(palette.text)
-                        )
-                    )
-                } else {
+                Row(
+                    modifier = GlanceModifier.fillMaxSize(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Text(
                         text = timeText,
-                        modifier = GlanceModifier.fillMaxWidth(),
+                        modifier = GlanceModifier.defaultWeight(),
                         style = TextStyle(
                             fontWeight = FontWeight.Bold,
-                            fontSize = 22.sp,
+                            fontSize = if (isCompact) 16.sp else 26.sp,
                             color = ColorProvider(palette.text)
                         )
                     )
-                    Text(
-                        text = tempText,
-                        modifier = GlanceModifier.fillMaxWidth(),
-                        style = TextStyle(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 36.sp,
-                            color = ColorProvider(palette.text)
-                        )
-                    )
-                    if (weather?.current != null) {
+                    Column(horizontalAlignment = Alignment.End) {
                         Text(
-                            text = weatherDescription(context, weather.current.weatherCode),
-                            style = TextStyle(fontSize = 12.sp, color = ColorProvider(palette.text))
+                            text = tempText,
+                            style = TextStyle(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = if (isCompact) 22.sp else 34.sp,
+                                color = ColorProvider(palette.text)
+                            )
                         )
+                        if (!isCompact && weather?.current != null) {
+                            Text(
+                                text = weatherDescription(context, weather.current.weatherCode),
+                                style = TextStyle(fontSize = 12.sp, color = ColorProvider(palette.text))
+                            )
+                        }
                     }
                 }
             }

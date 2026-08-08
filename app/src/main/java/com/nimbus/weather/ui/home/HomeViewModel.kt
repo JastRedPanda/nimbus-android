@@ -10,8 +10,11 @@ import com.nimbus.weather.data.model.CurrentWeather
 import com.nimbus.weather.data.model.HourlyWeather
 import com.nimbus.weather.data.model.WeatherResponse
 import com.nimbus.weather.data.repository.WeatherRepository
+import com.nimbus.weather.service.NotificationHelper
 import com.nimbus.weather.ui.components.DailyForecastData
 import com.nimbus.weather.ui.components.HourlyForecastData
+import com.nimbus.weather.util.CityNameResolver
+import com.nimbus.weather.util.LanguageHelper
 import com.nimbus.weather.util.TemperatureUnit
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -29,6 +32,10 @@ data class HomeUiState(
     val sunset: String = "",
     val tempUnit: TemperatureUnit = TemperatureUnit.CELSIUS,
     val useFeelsLike: Boolean = false,
+    val showAqi: Boolean = true,
+    val fromCache: Boolean = false,
+    val appLanguage: String = "auto",
+    val favouriteDisplayNames: Map<String, String> = emptyMap(),
     val loading: Boolean = true,
     val error: String? = null,
     val favouriteCities: List<FavouriteCity> = emptyList()
@@ -45,10 +52,37 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     init {
         viewModelScope.launch {
             settings.favouriteCities.collect { cities ->
-                _state.value = _state.value.copy(favouriteCities = cities)
+                _state.value = _state.value.copy(
+                    favouriteCities = cities,
+                    favouriteDisplayNames = buildDisplayNames(cities, _state.value.appLanguage)
+                )
+            }
+        }
+        viewModelScope.launch {
+            settings.appLanguage.collect { lang ->
+                val previous = _state.value.appLanguage
+                _state.value = _state.value.copy(
+                    appLanguage = lang,
+                    favouriteDisplayNames = buildDisplayNames(_state.value.favouriteCities, lang)
+                )
+                if (previous != lang && _state.value.current != null) {
+                    loadWeather()
+                }
+            }
+        }
+        viewModelScope.launch {
+            settings.showAqi.collect { show ->
+                _state.value = _state.value.copy(showAqi = show)
             }
         }
         loadWeather()
+    }
+
+    private fun buildDisplayNames(cities: List<FavouriteCity>, appLanguage: String): Map<String, String> {
+        val lang = if (appLanguage == "auto") LanguageHelper.resolveLocale().language else appLanguage
+        return cities.associate { city ->
+            city.name to CityNameResolver.displayName(city.name, city.localNames, lang)
+        }
     }
 
     fun loadWeather() {
@@ -58,24 +92,43 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 val loc = settings.getLocationSnapshot()
                 val ctx = getApplication<Application>()
+                val updateInterval = settings.updateIntervalHours.first()
+                val showAqi = settings.showAqi.first()
+                val appLanguage = settings.appLanguage.first()
+                repository.setTtlHours(updateInterval * 2)
                 val response = repository.getWeather(loc.lat, loc.lon, ctx)
                 val tempUnit = settings.tempUnit.first()
                 val feelsLike = settings.useFeelsLike.first()
+                val hourlyInterval = settings.hourlyIntervalHours.first()
 
-                val aqi = try {
-                    repository.getAirQuality(loc.lat, loc.lon, ctx).current
-                } catch (_: Exception) { null }
+                if (settings.notificationsEnabled.first()) {
+                    NotificationHelper.showWeatherNotification(ctx, response)
+                }
+
+                val aqi = if (showAqi) {
+                    try {
+                        repository.getAirQuality(loc.lat, loc.lon, ctx).current
+                    } catch (_: Exception) { null }
+                } else null
+
+                val lang = if (appLanguage == "auto") {
+                    LanguageHelper.resolveLocale().language
+                } else {
+                    appLanguage
+                }
 
                 _state.value = _state.value.copy(
-                    cityName = loc.name,
+                    cityName = CityNameResolver.displayName(loc.name, loc.localNames, lang),
                     current = response.current,
-                    hourly = mapHourly(response),
+                    hourly = mapHourly(response, hourlyInterval),
                     sunrise = response.daily?.sunrise?.firstOrNull() ?: "",
                     sunset = response.daily?.sunset?.firstOrNull() ?: "",
                     daily = mapDaily(response),
                     aqi = aqi,
                     tempUnit = tempUnit,
                     useFeelsLike = feelsLike,
+                    showAqi = showAqi,
+                    fromCache = repository.showingCachedWeather,
                     loading = false
                 )
             } catch (e: Exception) {
@@ -89,31 +142,19 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     fun switchToCity(city: FavouriteCity) {
         viewModelScope.launch {
-            settings.setLocation(city.name, city.lat, city.lon, city.tz)
+            settings.setLocation(city.name, city.lat, city.lon, city.tz, city.localNames)
             loadWeather()
         }
     }
 
-    fun addCurrentCityToFavourites() {
-        viewModelScope.launch {
-            val loc = settings.getLocationSnapshot()
-            settings.addFavouriteCity(FavouriteCity(loc.name, loc.lat, loc.lon, loc.tz))
-        }
-    }
-
-    fun removeFavouriteCity(name: String) {
-        viewModelScope.launch {
-            settings.removeFavouriteCity(name)
-        }
-    }
-
-    private fun mapHourly(response: WeatherResponse): List<HourlyForecastData> {
+    private fun mapHourly(response: WeatherResponse, intervalHours: Int): List<HourlyForecastData> {
         val hourly = response.hourly ?: return emptyList()
         val now = response.current?.time ?: return emptyList()
         val startIndex = hourly.time.indexOfFirst { it >= now }
         if (startIndex < 0) return emptyList()
-        val endIndex = (startIndex + 8).coerceAtMost(hourly.time.size)
-        return (startIndex until endIndex).map { i ->
+        val step = intervalHours.coerceIn(1, 6)
+        val endIndex = (startIndex + 24).coerceAtMost(hourly.time.size)
+        return (startIndex until endIndex step step).map { i ->
             HourlyForecastData(
                 time = hourly.time[i],
                 temperature = hourly.temperature.getOrElse(i) { 0.0 },

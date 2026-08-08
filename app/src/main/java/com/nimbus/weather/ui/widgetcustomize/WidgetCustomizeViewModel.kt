@@ -27,9 +27,10 @@ interface WidgetCustomizeActions {
 }
 
 class WidgetCustomizeViewModel(
-    application: Application,
-    private val settings: SettingsDataStore = SettingsDataStore(application)
+    application: Application
 ) : AndroidViewModel(application), WidgetCustomizeActions {
+
+    private val settings = SettingsDataStore(application)
 
     private val _state = MutableStateFlow(WidgetCustomizeUiState())
     val state: StateFlow<WidgetCustomizeUiState> = _state.asStateFlow()

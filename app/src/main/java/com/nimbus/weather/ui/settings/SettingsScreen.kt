@@ -19,18 +19,25 @@ import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -66,6 +73,28 @@ import com.nimbus.weather.util.TemperatureUnit
     onWidgetCustomizeClick: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
+    var showResetDialog by remember { mutableStateOf(false) }
+
+    if (showResetDialog) {
+        AlertDialog(
+            onDismissRequest = { showResetDialog = false },
+            title = { Text(stringResource(R.string.reset_settings_confirm_title)) },
+            text = { Text(stringResource(R.string.reset_settings_confirm_text)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showResetDialog = false
+                    viewModel.resetSettings()
+                }) {
+                    Text(stringResource(R.string.reset_settings))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showResetDialog = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -177,6 +206,38 @@ import com.nimbus.weather.util.TemperatureUnit
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // Hourly forecast interval
+            SectionHeader(title = stringResource(R.string.hourly_interval))
+
+            SettingsToggle(
+                label = stringResource(R.string.hourly_interval_1h),
+                checked = state.hourlyIntervalHours == 1,
+                onCheck = { viewModel.setHourlyIntervalHours(1) }
+            )
+            SettingsToggle(
+                label = stringResource(R.string.hourly_interval_3h),
+                checked = state.hourlyIntervalHours == 3,
+                onCheck = { viewModel.setHourlyIntervalHours(3) }
+            )
+            SettingsToggle(
+                label = stringResource(R.string.hourly_interval_6h),
+                checked = state.hourlyIntervalHours == 6,
+                onCheck = { viewModel.setHourlyIntervalHours(6) }
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Air quality
+            SectionHeader(title = stringResource(R.string.air_quality))
+
+            SettingsToggle(
+                label = stringResource(R.string.show_aqi),
+                checked = state.showAqi,
+                onCheck = { viewModel.setShowAqi(it) }
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             // Language
             SectionHeader(title = stringResource(R.string.language))
 
@@ -199,6 +260,11 @@ import com.nimbus.weather.util.TemperatureUnit
                 label = stringResource(R.string.language_ru),
                 checked = state.appLanguage == "ru",
                 onCheck = { viewModel.setAppLanguage("ru") }
+            )
+            SettingsToggle(
+                label = stringResource(R.string.language_cs),
+                checked = state.appLanguage == "cs",
+                onCheck = { viewModel.setAppLanguage("cs") }
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -236,8 +302,17 @@ import com.nimbus.weather.util.TemperatureUnit
                     .padding(vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                val langCode = if (state.appLanguage == "auto") {
+                    com.nimbus.weather.util.LanguageHelper.resolveLocale().language
+                } else {
+                    state.appLanguage
+                }
                 Text(
-                    text = state.cityName,
+                    text = com.nimbus.weather.util.CityNameResolver.displayName(
+                        state.cityName,
+                        state.cityLocalNames,
+                        langCode
+                    ),
                     modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.bodyLarge
                 )
@@ -268,7 +343,7 @@ import com.nimbus.weather.util.TemperatureUnit
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = city.name,
+                            text = state.favouriteDisplayNames[city.name] ?: city.name,
                             modifier = Modifier.weight(1f),
                             style = MaterialTheme.typography.bodyLarge
                         )
@@ -295,6 +370,18 @@ import com.nimbus.weather.util.TemperatureUnit
                         }
                     }
                 }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            OutlinedButton(
+                onClick = { showResetDialog = true },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = MaterialTheme.colorScheme.error
+                )
+            ) {
+                Text(stringResource(R.string.reset_settings))
             }
         }
     }

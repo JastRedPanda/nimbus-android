@@ -10,6 +10,7 @@ import com.google.android.gms.tasks.Tasks
 import com.nimbus.weather.data.local.SettingsDataStore
 import com.nimbus.weather.data.model.GeocodingResult
 import com.nimbus.weather.data.repository.WeatherRepository
+import com.nimbus.weather.util.isValidTimeZoneId
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -27,7 +28,9 @@ data class LocationSearchUiState(
     val loading: Boolean = false,
     val noResults: Boolean = false,
     val locating: Boolean = false,
-    val favouriteNames: Set<String> = emptySet()
+    val favouriteNames: Set<String> = emptySet(),
+    val recentCities: List<SettingsDataStore.FavouriteCity> = emptyList(),
+    val appLanguage: String = "auto"
 )
 
 class LocationSearchViewModel(application: Application) : AndroidViewModel(application) {
@@ -35,6 +38,11 @@ class LocationSearchViewModel(application: Application) : AndroidViewModel(appli
     private val repository = WeatherRepository()
     private val settings = SettingsDataStore(application)
     private val geocoder = Geocoder(application, Locale.getDefault())
+
+    companion object {
+        // Google geocoder backend кладёт IANA-таймзону в extras под ключом "timezone"
+        private const val TZ_EXTRA_KEY = "timezone"
+    }
 
     private val _state = MutableStateFlow(LocationSearchUiState())
     val state: StateFlow<LocationSearchUiState> = _state.asStateFlow()
@@ -47,6 +55,16 @@ class LocationSearchViewModel(application: Application) : AndroidViewModel(appli
                 _state.value = _state.value.copy(
                     favouriteNames = cities.map { it.name }.toSet()
                 )
+            }
+        }
+        viewModelScope.launch {
+            settings.recentCities.collect { cities ->
+                _state.value = _state.value.copy(recentCities = cities)
+            }
+        }
+        viewModelScope.launch {
+            settings.appLanguage.collect { lang ->
+                _state.value = _state.value.copy(appLanguage = lang)
             }
         }
     }
@@ -70,7 +88,8 @@ class LocationSearchViewModel(application: Application) : AndroidViewModel(appli
     private suspend fun search(query: String) {
         _state.value = _state.value.copy(loading = true, noResults = false)
         try {
-            val results = repository.searchCities(query)
+            val lang = resolveLanguage(_state.value.appLanguage)
+            val results = repository.searchCities(query, lang)
             _state.value = _state.value.copy(
                 results = results,
                 loading = false,
@@ -78,6 +97,14 @@ class LocationSearchViewModel(application: Application) : AndroidViewModel(appli
             )
         } catch (_: Exception) {
             _state.value = _state.value.copy(loading = false, noResults = true)
+        }
+    }
+
+    private fun resolveLanguage(appLanguage: String): String {
+        return if (appLanguage == "auto") {
+            com.nimbus.weather.util.LanguageHelper.resolveLocale().language
+        } else {
+            appLanguage
         }
     }
 
@@ -93,12 +120,12 @@ class LocationSearchViewModel(application: Application) : AndroidViewModel(appli
                 if (location != null) {
                     val lat = location.latitude
                     val lon = location.longitude
-                    val cityName = resolveCityName(lat, lon)
+                    val (cityName, tz) = resolvePlace(lat, lon)
                     settings.setLocation(
                         name = cityName,
                         lat = lat,
                         lon = lon,
-                        tz = "Europe/Kiev"
+                        tz = tz
                     )
                 }
             } catch (_: Exception) {
@@ -108,14 +135,17 @@ class LocationSearchViewModel(application: Application) : AndroidViewModel(appli
         }
     }
 
-    private fun resolveCityName(lat: Double, lon: Double): String {
+    private fun resolvePlace(lat: Double, lon: Double): Pair<String, String> {
         return try {
             val addresses: List<Address> = geocoder.getFromLocation(lat, lon, 1) ?: emptyList()
             val addr = addresses.firstOrNull()
             val city = addr?.locality ?: addr?.subAdminArea ?: addr?.adminArea
-            city ?: "%.4f, %.4f".format(lat, lon)
+            val tz = addr?.extras
+                ?.getString(TZ_EXTRA_KEY)
+                ?.takeIf { isValidTimeZoneId(it) }
+            (city ?: "%.4f, %.4f".format(lat, lon)) to (tz ?: SettingsDataStore.DEFAULT_TZ)
         } catch (_: Exception) {
-            "%.4f, %.4f".format(lat, lon)
+            "%.4f, %.4f".format(lat, lon) to SettingsDataStore.DEFAULT_TZ
         }
     }
 
@@ -125,8 +155,31 @@ class LocationSearchViewModel(application: Application) : AndroidViewModel(appli
                 name = result.name,
                 lat = result.latitude,
                 lon = result.longitude,
-                tz = result.timezone ?: "Europe/Kiev"
+                tz = result.timezone ?: "Europe/Kiev",
+                localNames = result.localNames.orEmpty()
             )
+            settings.addRecentCity(
+                SettingsDataStore.FavouriteCity(
+                    name = result.name,
+                    lat = result.latitude,
+                    lon = result.longitude,
+                    tz = result.timezone ?: "Europe/Kiev",
+                    localNames = result.localNames.orEmpty()
+                )
+            )
+        }
+    }
+
+    fun selectRecentCity(city: SettingsDataStore.FavouriteCity) {
+        viewModelScope.launch {
+            settings.setLocation(
+                name = city.name,
+                lat = city.lat,
+                lon = city.lon,
+                tz = city.tz,
+                localNames = city.localNames
+            )
+            settings.addRecentCity(city)
         }
     }
 
@@ -136,13 +189,30 @@ class LocationSearchViewModel(application: Application) : AndroidViewModel(appli
                 name = result.name,
                 lat = result.latitude,
                 lon = result.longitude,
-                tz = result.timezone ?: "Europe/Kiev"
+                tz = result.timezone ?: "Europe/Kiev",
+                localNames = result.localNames.orEmpty()
             )
             if (_state.value.favouriteNames.contains(result.name)) {
                 settings.removeFavouriteCity(result.name)
             } else {
                 settings.addFavouriteCity(city)
             }
+        }
+    }
+
+    fun toggleRecentFavourite(city: SettingsDataStore.FavouriteCity) {
+        viewModelScope.launch {
+            if (_state.value.favouriteNames.contains(city.name)) {
+                settings.removeFavouriteCity(city.name)
+            } else {
+                settings.addFavouriteCity(city)
+            }
+        }
+    }
+
+    fun removeRecentCity(name: String) {
+        viewModelScope.launch {
+            settings.removeRecentCity(name)
         }
     }
 }
