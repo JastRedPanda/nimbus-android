@@ -37,12 +37,16 @@ class SettingsDataStore(private val context: Context) {
         private val KEY_UPDATE_INTERVAL_HOURS = intPreferencesKey("update_interval_hours")
         private val KEY_FAVOURITE_CITIES = stringPreferencesKey("favourite_cities")
         private val KEY_APP_LANGUAGE = stringPreferencesKey("app_language")
+        private val KEY_WIDGET_BG_COLOR = stringPreferencesKey("widget_bg_color")
+        private val KEY_WIDGET_BG_ALPHA = intPreferencesKey("widget_bg_alpha")
+        private val KEY_WIDGET_TEXT_COLOR = stringPreferencesKey("widget_text_color")
 
         const val DEFAULT_CITY = "Киев"
         const val DEFAULT_LAT = 50.4501
         const val DEFAULT_LON = 30.5234
         const val DEFAULT_TZ = "Europe/Kiev"
         const val DEFAULT_UPDATE_INTERVAL_HOURS = 2
+        const val DEFAULT_WIDGET_BG_ALPHA = 100
     }
 
     val onboardingDone: Flow<Boolean> = context.dataStore.data.map { prefs ->
@@ -93,6 +97,18 @@ class SettingsDataStore(private val context: Context) {
         prefs[KEY_APP_LANGUAGE] ?: "auto"
     }
 
+    val widgetBgColor: Flow<String?> = context.dataStore.data.map { prefs ->
+        prefs[KEY_WIDGET_BG_COLOR]
+    }
+
+    val widgetBgAlpha: Flow<Int> = context.dataStore.data.map { prefs ->
+        prefs[KEY_WIDGET_BG_ALPHA] ?: DEFAULT_WIDGET_BG_ALPHA
+    }
+
+    val widgetTextColor: Flow<String> = context.dataStore.data.map { prefs ->
+        prefs[KEY_WIDGET_TEXT_COLOR] ?: "auto"
+    }
+
     suspend fun setOnboardingDone() {
         context.dataStore.edit { prefs ->
             prefs[KEY_ONBOARDING_DONE] = true
@@ -114,6 +130,25 @@ class SettingsDataStore(private val context: Context) {
     suspend fun setAppLanguage(language: String) {
         context.dataStore.edit { prefs ->
             prefs[KEY_APP_LANGUAGE] = language
+        }
+    }
+
+    suspend fun setWidgetBgColor(colorHex: String?) {
+        context.dataStore.edit { prefs ->
+            if (colorHex == null) prefs.remove(KEY_WIDGET_BG_COLOR)
+            else prefs[KEY_WIDGET_BG_COLOR] = colorHex
+        }
+    }
+
+    suspend fun setWidgetBgAlpha(alpha: Int) {
+        context.dataStore.edit { prefs ->
+            prefs[KEY_WIDGET_BG_ALPHA] = alpha.coerceIn(0, 100)
+        }
+    }
+
+    suspend fun setWidgetTextColor(option: String) {
+        context.dataStore.edit { prefs ->
+            prefs[KEY_WIDGET_TEXT_COLOR] = option
         }
     }
 
@@ -194,6 +229,12 @@ class SettingsDataStore(private val context: Context) {
                 try { json.decodeFromString<List<FavouriteCity>>(it) } catch (_: Exception) { null }
             } ?: emptyList()
             prefs[KEY_FAVOURITE_CITIES] = json.encodeToString(current.filter { it.name != name })
+        }
+    }
+
+    suspend fun setFavouriteCities(cities: List<FavouriteCity>) {
+        context.dataStore.edit { prefs ->
+            prefs[KEY_FAVOURITE_CITIES] = json.encodeToString(cities)
         }
     }
 }

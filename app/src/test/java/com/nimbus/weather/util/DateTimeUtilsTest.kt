@@ -1,5 +1,6 @@
 package com.nimbus.weather.util
 
+import java.time.LocalDate
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -22,7 +23,7 @@ class DateTimeUtilsTest {
 
     @Test
     fun `isToday returns true for today`() {
-        assertEquals(true, isToday("2026-07-31"))
+        assertEquals(true, isToday(LocalDate.now().toString()))
     }
 
     @Test

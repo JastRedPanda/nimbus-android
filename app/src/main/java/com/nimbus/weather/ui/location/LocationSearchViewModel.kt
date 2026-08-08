@@ -26,7 +26,8 @@ data class LocationSearchUiState(
     val results: List<GeocodingResult> = emptyList(),
     val loading: Boolean = false,
     val noResults: Boolean = false,
-    val locating: Boolean = false
+    val locating: Boolean = false,
+    val favouriteNames: Set<String> = emptySet()
 )
 
 class LocationSearchViewModel(application: Application) : AndroidViewModel(application) {
@@ -39,6 +40,16 @@ class LocationSearchViewModel(application: Application) : AndroidViewModel(appli
     val state: StateFlow<LocationSearchUiState> = _state.asStateFlow()
 
     private var searchJob: Job? = null
+
+    init {
+        viewModelScope.launch {
+            settings.favouriteCities.collect { cities ->
+                _state.value = _state.value.copy(
+                    favouriteNames = cities.map { it.name }.toSet()
+                )
+            }
+        }
+    }
 
     fun onQueryChanged(query: String) {
         _state.value = _state.value.copy(query = query)
@@ -116,6 +127,22 @@ class LocationSearchViewModel(application: Application) : AndroidViewModel(appli
                 lon = result.longitude,
                 tz = result.timezone ?: "Europe/Kiev"
             )
+        }
+    }
+
+    fun toggleFavourite(result: GeocodingResult) {
+        viewModelScope.launch {
+            val city = SettingsDataStore.FavouriteCity(
+                name = result.name,
+                lat = result.latitude,
+                lon = result.longitude,
+                tz = result.timezone ?: "Europe/Kiev"
+            )
+            if (_state.value.favouriteNames.contains(result.name)) {
+                settings.removeFavouriteCity(result.name)
+            } else {
+                settings.addFavouriteCity(city)
+            }
         }
     }
 }
