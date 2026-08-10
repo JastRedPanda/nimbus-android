@@ -27,6 +27,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -41,6 +42,7 @@ import androidx.navigation.navArgument
 import com.nimbus.weather.data.local.SettingsDataStore
 import com.nimbus.weather.service.NotificationHelper
 import com.nimbus.weather.service.WeatherUpdateScheduler
+import com.nimbus.weather.service.WidgetUpdateManager
 import com.nimbus.weather.ui.home.HomeScreen
 import com.nimbus.weather.ui.home.HomeViewModel
 import com.nimbus.weather.ui.location.LocationSearchScreen
@@ -51,6 +53,7 @@ import com.nimbus.weather.ui.settings.SettingsViewModel
 import com.nimbus.weather.ui.theme.NimbusWeatherTheme
 import com.nimbus.weather.ui.widgetcustomize.WidgetCustomizeScreen
 import com.nimbus.weather.util.LanguageHelper
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -80,6 +83,10 @@ class MainActivity : ComponentActivity() {
 
         NotificationHelper.createChannel(this)
         WeatherUpdateScheduler.schedule(this)
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            WidgetUpdateManager.refreshAllWidgets(this@MainActivity)
+        }
 
         setContent {
             val settings = remember { SettingsDataStore(applicationContext) }

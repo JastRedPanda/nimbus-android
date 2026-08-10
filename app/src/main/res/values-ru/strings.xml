@@ -79,6 +79,7 @@
     <string name="no_results">Ничего не найдено</string>
     <string name="use_gps">Использовать GPS</string>
     <string name="gps_permission_denied">Разрешение на определение местоположения не предоставлено</string>
+    <string name="gps_failed">Не удалось получить местоположение</string>
     <string name="favourite_cities">Избранные города</string>
     <string name="no_favourite_cities">Добавляйте города звёздочкой для быстрого переключения</string>
 
@@ -93,6 +94,10 @@
     <string name="widget_text_black">Чёрный</string>
     <string name="widget_text_white">Белый</string>
     <string name="widget_reset">Сбросить внешний вид</string>
+    <string name="widget_date_format">Формат даты</string>
+    <string name="widget_date_numeric">17.08.2026</string>
+    <string name="widget_date_text">17 августа 2026</string>
+    <string name="widget_font_size">Размер шрифта</string>
 
     <!-- WMO коды погоды -->
     <string name="wmo_0">Ясно</string>

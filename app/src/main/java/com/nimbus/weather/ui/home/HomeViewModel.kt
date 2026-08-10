@@ -37,6 +37,7 @@ data class HomeUiState(
     val appLanguage: String = "auto",
     val favouriteDisplayNames: Map<String, String> = emptyMap(),
     val loading: Boolean = true,
+    val refreshing: Boolean = false,
     val error: String? = null,
     val favouriteCities: List<FavouriteCity> = emptyList()
 )
@@ -88,8 +89,21 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     fun loadWeather() {
         viewModelScope.launch {
             _state.value = _state.value.copy(loading = true, error = null)
+            performLoad()
+        }
+    }
 
-            try {
+    fun refresh() {
+        if (_state.value.refreshing) return
+        viewModelScope.launch {
+            _state.value = _state.value.copy(refreshing = true)
+            performLoad()
+            _state.value = _state.value.copy(refreshing = false)
+        }
+    }
+
+    private suspend fun performLoad() {
+        try {
                 val loc = settings.getLocationSnapshot()
                 val ctx = getApplication<Application>()
                 val updateInterval = settings.updateIntervalHours.first()
@@ -129,15 +143,16 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                     useFeelsLike = feelsLike,
                     showAqi = showAqi,
                     fromCache = repository.showingCachedWeather,
-                    loading = false
+                    loading = false,
+                    refreshing = false
                 )
             } catch (e: Exception) {
                 _state.value = _state.value.copy(
                     loading = false,
+                    refreshing = false,
                     error = e.message ?: "Unknown error"
                 )
             }
-        }
     }
 
     fun switchToCity(city: FavouriteCity) {

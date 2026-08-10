@@ -1,6 +1,7 @@
 package com.nimbus.weather.ui.location
 
 import android.Manifest
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -30,6 +31,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -52,6 +54,18 @@ fun LocationSearchScreen(
     closeOnSelect: Boolean = false
 ) {
     val state by viewModel.state.collectAsState()
+    val context = LocalContext.current
+
+    LaunchedEffect(state.locationError) {
+        if (state.locationError) {
+            Toast.makeText(
+                context,
+                context.getString(R.string.gps_failed),
+                Toast.LENGTH_SHORT
+            ).show()
+            viewModel.consumeLocationError()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -94,6 +108,12 @@ fun LocationSearchScreen(
                 ) { granted ->
                     if (granted.values.any { it }) {
                         viewModel.onMyLocationClick()
+                    } else {
+                        Toast.makeText(
+                            context,
+                            context.getString(R.string.gps_permission_denied),
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                 }
 

@@ -110,7 +110,7 @@ fun WidgetCustomizeScreen(
             SectionLabel(stringResource(R.string.widget_preview))
             Spacer(modifier = Modifier.height(8.dp))
 
-            WidgetPreviewBox(palette, dark)
+            WidgetPreviewBox(palette, dark, state.dateFormat, state.fontScale)
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -144,7 +144,8 @@ fun WidgetCustomizeScreen(
             ) {
                 Slider(
                     value = state.bgAlpha.toFloat(),
-                    onValueChange = { viewModel.onBgAlphaChanged(it.toInt()) },
+                    onValueChange = { viewModel.onBgAlphaPreview(it.toInt()) },
+                    onValueChangeFinished = { viewModel.onBgAlphaCommit() },
                     valueRange = 0f..100f,
                     modifier = Modifier.weight(1f)
                 )
@@ -175,6 +176,46 @@ fun WidgetCustomizeScreen(
                     label = stringResource(R.string.widget_text_white),
                     selected = state.textOption == "white",
                     onClick = { viewModel.onTextOptionSelected("white") }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            SectionLabel(stringResource(R.string.widget_date_format))
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextOptionChip(
+                    label = stringResource(R.string.widget_date_numeric),
+                    selected = state.dateFormat == "numeric",
+                    onClick = { viewModel.onDateFormatSelected("numeric") }
+                )
+                TextOptionChip(
+                    label = stringResource(R.string.widget_date_text),
+                    selected = state.dateFormat == "text",
+                    onClick = { viewModel.onDateFormatSelected("text") }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            SectionLabel(stringResource(R.string.widget_font_size))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Slider(
+                    value = state.fontScale.toFloat(),
+                    onValueChange = { viewModel.onFontScalePreview(it.toInt()) },
+                    onValueChangeFinished = { viewModel.onFontScaleCommit() },
+                    valueRange = SettingsDataStore.MIN_WIDGET_FONT_SCALE.toFloat()..
+                        SettingsDataStore.MAX_WIDGET_FONT_SCALE.toFloat(),
+                    modifier = Modifier.weight(1f)
+                )
+                Text(
+                    text = "${state.fontScale}%",
+                    style = MaterialTheme.typography.labelLarge,
+                    modifier = Modifier.width(48.dp)
                 )
             }
 
@@ -260,12 +301,22 @@ private fun TextOptionChip(
 @Composable
 private fun WidgetPreviewBox(
     palette: com.nimbus.weather.widget.WidgetPalette,
-    dark: Boolean
+    dark: Boolean,
+    dateFormat: String,
+    fontScale: Int
 ) {
     val weather = remember { WidgetUpdateManager.getCachedWeather() }
     val tempText = if (weather?.current != null) {
         "${weather.current.temperature.toCelsiusOrFahrenheit(com.nimbus.weather.util.TemperatureUnit.CELSIUS).toInt()}°C"
     } else "--°C"
+    val dateText = if (dateFormat == "text") {
+        java.text.SimpleDateFormat("d MMMM yyyy", java.util.Locale.getDefault())
+            .format(java.util.Date())
+    } else {
+        java.text.SimpleDateFormat("dd.MM.yyyy", java.util.Locale.getDefault())
+            .format(java.util.Date())
+    }
+    val scale = fontScale / 100f
 
     Surface(
         shape = RoundedCornerShape(16.dp),
@@ -283,15 +334,30 @@ private fun WidgetPreviewBox(
             Text(
                 text = "00:00",
                 color = palette.text,
-                style = MaterialTheme.typography.headlineMedium,
+                style = MaterialTheme.typography.headlineMedium.copy(
+                    fontSize = (28 * scale).sp
+                ),
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.weight(1f)
             )
             Text(
+                text = dateText,
+                color = palette.text,
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontSize = (14 * scale).sp
+                ),
+                fontWeight = FontWeight.Medium,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+            Text(
                 text = tempText,
                 color = palette.text,
-                style = MaterialTheme.typography.displaySmall,
-                fontWeight = FontWeight.Bold
+                style = MaterialTheme.typography.displaySmall.copy(
+                    fontSize = (30 * scale).sp
+                ),
+                fontWeight = FontWeight.Bold,
+                textAlign = androidx.compose.ui.text.style.TextAlign.End,
+                modifier = Modifier.weight(1f)
             )
         }
     }
