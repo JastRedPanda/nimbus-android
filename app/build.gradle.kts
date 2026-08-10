@@ -5,6 +5,18 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization")
 }
 
+import java.io.FileInputStream
+import java.io.FileOutputStream
+import java.util.Properties
+
+val versionPropsFile = file("version.properties")
+val versionProps = Properties().apply {
+    if (versionPropsFile.exists()) {
+        FileInputStream(versionPropsFile).use { load(it) }
+    }
+}
+val nextVersionCode: Int = (versionProps.getProperty("versionCode")?.toIntOrNull() ?: 0) + 1
+
 android {
     namespace = "com.nimbus.weather"
     compileSdk = 35
@@ -13,13 +25,14 @@ android {
         applicationId = "com.nimbus.weather"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = nextVersionCode
+        versionName = "1.1"
     }
 
     buildTypes {
         release {
             isMinifyEnabled = true
+            signingConfig = signingConfigs.getByName("debug")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -42,6 +55,15 @@ android {
 
     testOptions {
         unitTests.isReturnDefaultValues = true
+    }
+}
+
+tasks.named("preBuild") {
+    doLast {
+        versionProps.setProperty("versionCode", nextVersionCode.toString())
+        FileOutputStream(versionPropsFile).use {
+            versionProps.store(it, "Auto-incremented build number (not committed)")
+        }
     }
 }
 

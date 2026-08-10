@@ -57,4 +57,11 @@
 
 - **Принудительное обновление по свайпу вниз**: `PullToRefreshBox` (material3 1.3.1) вокруг контента главного экрана; `HomeViewModel.refresh()` — отдельный флаг `refreshing` в `HomeUiState`, не трогает полноэкранный `loading`; общий `performLoad()` для `loadWeather()` и `refresh()`; повторный `refresh()` при активном обновлении игнорируется
 - Экран ошибки получил `verticalScroll` — свайп-вниз работает и там (как retry)
-- Из тудушника удалены отложенные: планшетный NavigationRail, автоинкремент versionCode, дата в виджете (product.md «Открытые задачи» + history.md «Вне скоупа»)
+- Из тудушника удалены отложенные: планшетный NavigationRail, дата в виджете (product.md «Открытые задачи» + history.md «Вне скоупа»)
+
+## Сессия 2026-08-10 — релиз 1.1
+
+- **versionCode — автоинкремент «только в большую сторону»**: `preBuild` в app/build.gradle.kts читает `app/version.properties` (gitignored, `Properties`), +1 при каждой сборке и пишет обратно; `versionCode = nextVersionCode` в defaultConfig. Первый APK собрался с versionCode 1 (не встал бы поверх старого) — пересборка дала 2
+- **Release подписывается debug-ключом**: `signingConfig = signingConfigs.getByName("debug")` в release buildType (раньше собрался бы APK без подписи)
+- **versionName "1.1"**, впредь меняется вручную (1.2, 1.3, …)
+- GitHub Release `v1.1` с APK (проверено: `aapt dump badging` — versionCode 2 / versionName 1.1; `apksigner verify` — Android Debug V2)

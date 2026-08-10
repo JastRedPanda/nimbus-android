@@ -15,7 +15,7 @@
 | Локация | play-services-location 21.3.0 |
 | Навигация | navigation-compose 2.8.5 (NavHost в MainActivity) |
 | Splash | core-splashscreen 1.0.1 |
-| Версии | minSdk 26, compileSdk/targetSdk 35, versionCode 1, versionName "1.0" |
+| Версии | minSdk 26, compileSdk/targetSdk 35, versionCode — автоинкремент (app/version.properties), versionName "1.1" (меняется вручную) |
 
 ## Сеть (Open-Meteo)
 
@@ -150,5 +150,5 @@ junit 4.13.2, kotlinx-coroutines-test 1.9.0, mockk 1.13.13, turbine 1.2.0
 
 - **Glance 1.2.0-rc01**: нет `clip`, нет `Surface` в glance-material3, `background` без формы. Скругление углов — только `androidx.glance.appwidget.cornerRadius(dp)` (найдено в AAR; классы `CornerRadiusKt`/`CornerRadiusModifier`)
 - **`Address.EXTRA_TIMEZONE_ID` не существует** в android.location.Address (проверено на compileSdk 35) — таймзона от Google backend лежит в `extras["timezone"]`
-- **versionCode = 1 зашит**: установка APK «поверх» игнорируется системой (см. history). Тестирование — полной переустановкой. Автоинкремент отклонён пользователем.
+- **versionCode — автоинкремент**: `preBuild` в app/build.gradle.kts читает `app/version.properties` (gitignored), +1 при каждой сборке; установка APK «поверх» работает. versionName меняется вручную. Сбить счётчик можно очисткой файла — тогда versionCode упадёт, и обновление «поверх» не встанет (вылечится следующим релизом)
 - **POST_NOTIFICATIONS**: без пермишна в манифесте и runtime-запроса `showWeatherNotification` молча выходит на Android 13+
