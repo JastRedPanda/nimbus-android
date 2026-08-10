@@ -16,7 +16,7 @@ Android-приложение погоды: Open-Meteo, Compose, Glance-видж�
 | Настройки | DataStore Preferences |
 | Фон | WorkManager |
 | Локация | Google Play Services Location |
-| minSdk 26, targetSdk 35 | Keystore: debug-подпись, versionCode = 1 |
+| minSdk 26, targetSdk 35 | Релизы: debug-подпись (release подписывается debug-ключом), versionCode автоинкремент, versionName вручную |
 
 ## Структура пакета `com.nimbus.weather`
 
@@ -50,7 +50,7 @@ gradlew.bat assembleDebug test
 - **AQI**: отдельный Retrofit на `air-quality-api.open-meteo.com`, не на `api.open-meteo.com`
 - **Уведомления**: на Android 13+ требуется `POST_NOTIFICATIONS` в манифесте + runtime-запрос (MainActivity), иначе `showWeatherNotification` тихо выходит
 - **Таймзона GPS**: из `Address.extras["timezone"]` (Google backend), валидация через `isValidTimeZoneId`, fallback `Europe/Kiev`; константы `Address.EXTRA_TIMEZONE_ID` в SDK нет
-- **versionCode = 1** зашит намеренно: пользователь тестирует полной переустановкой, установка «поверх» не работает
+- **versionCode — автоинкремент**: `preBuild` в app/build.gradle.kts +1 к `app/version.properties` (gitignored) при каждой сборке; установка «поверх» работает. versionName меняется вручную при релизе (1.1, 1.2, …)
 - **Виджет**: сетка 1×4 (targetCellWidth=4), шрифты специально крупные (время 165sp / температура 150sp) под сетку лаунчеров
 
 ## Внешняя документация (читать по задаче, лениво)

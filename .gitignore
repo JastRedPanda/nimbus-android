@@ -23,6 +23,7 @@ app/build/
 
 # Local configuration file
 local.properties
+app/version.properties
 
 # IDE files
 .idea/
