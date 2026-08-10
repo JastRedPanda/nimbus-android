@@ -65,7 +65,7 @@ android {
         outputs.all {
             val output = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
             output.outputFileName =
-                if (variantName == "release") "Nimbus.apk" else "app-$variantName.apk"
+                if (variantName == "release") "Nimbus $releaseVersionName.apk" else "app-$variantName.apk"
         }
     }
 }
