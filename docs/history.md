@@ -65,3 +65,8 @@
 - **Release подписывается debug-ключом**: `signingConfig = signingConfigs.getByName("debug")` в release buildType (раньше собрался бы APK без подписи)
 - **versionName "1.1"**, впредь меняется вручную (1.2, 1.3, …)
 - GitHub Release `v1.1` с APK (проверено: `aapt dump badging` — versionCode 2 / versionName 1.1; `apksigner verify` — Android Debug V2)
+
+## Сессия 2026-08-10 — авторелиз (CI)
+
+- **`.github/workflows/release.yml`**: пуш тега `v*` → `-PversionName` из тега (v1.2 → 1.2), `-PversionCode` из `git rev-list --count HEAD` (монотонно, без локального version.properties); APK подписывается debug-ключом из секрета `DEBUG_KEYSTORE_B64` (base64 локального `~/.android/debug.keystore` — подпись совпадает с той, что уже на телефоне) и публикуется в GitHub Release (`--generate-notes`)
+- **Gradle**: `-PversionCode`/`-PversionName` переопределяют defaultConfig; при `-PversionCode` preBuild не инкрементит локальный файл. Проверено: `assembleRelease -PversionName=9.99 -PversionCode=777` → badging показывает 777/9.99

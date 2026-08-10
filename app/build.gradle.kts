@@ -15,7 +15,10 @@ val versionProps = Properties().apply {
         FileInputStream(versionPropsFile).use { load(it) }
     }
 }
-val nextVersionCode: Int = (versionProps.getProperty("versionCode")?.toIntOrNull() ?: 0) + 1
+val localNextVersionCode: Int = (versionProps.getProperty("versionCode")?.toIntOrNull() ?: 0) + 1
+val ciVersionCode: Int? = (project.findProperty("versionCode") as String?)?.toIntOrNull()
+val releaseVersionName: String =
+    (project.findProperty("versionName") as String?)?.takeIf { it.isNotBlank() } ?: "1.1"
 
 android {
     namespace = "com.nimbus.weather"
@@ -25,8 +28,8 @@ android {
         applicationId = "com.nimbus.weather"
         minSdk = 26
         targetSdk = 35
-        versionCode = nextVersionCode
-        versionName = "1.1"
+        versionCode = ciVersionCode ?: localNextVersionCode
+        versionName = releaseVersionName
     }
 
     buildTypes {
@@ -60,9 +63,11 @@ android {
 
 tasks.named("preBuild") {
     doLast {
-        versionProps.setProperty("versionCode", nextVersionCode.toString())
-        FileOutputStream(versionPropsFile).use {
-            versionProps.store(it, "Auto-incremented build number (not committed)")
+        if (ciVersionCode == null) {
+            versionProps.setProperty("versionCode", localNextVersionCode.toString())
+            FileOutputStream(versionPropsFile).use {
+                versionProps.store(it, "Auto-incremented build number (not committed)")
+            }
         }
     }
 }
