@@ -59,6 +59,7 @@ gradlew.bat assembleDebug test
 - @docs/architecture.md — архитектура, API Open-Meteo, WMO-коды, кэш, зависимости Gradle
 - @docs/product.md — экраны, виджет, уведомления, локация, обновление, локализация
 - @docs/history.md — хроника сессий разработки (багфиксы и их причины)
+- @docs/todo.md — открытые задачи и идеи (единственный тудушник)
 
 ## Язык
 
