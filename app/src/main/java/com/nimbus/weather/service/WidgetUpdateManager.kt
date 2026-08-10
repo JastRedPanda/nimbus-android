@@ -1,6 +1,7 @@
 package com.nimbus.weather.service
 
 import android.content.Context
+import android.util.Log
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import com.nimbus.weather.data.model.WeatherResponse
 import com.nimbus.weather.widget.ClockTempWidget
@@ -18,8 +19,10 @@ object WidgetUpdateManager {
 
     suspend fun refreshAllWidgets(context: Context) {
         val manager = GlanceAppWidgetManager(context)
-        manager.getGlanceIds(ClockTempWidget::class.java).forEach { id ->
-            ClockTempWidget().update(context, id)
+        val ids = manager.getGlanceIds(ClockTempWidget::class.java)
+        ids.forEach { id ->
+            runCatching { ClockTempWidget().update(context, id) }
+                .onFailure { Log.w("WidgetUpdateManager", "update failed for $id", it) }
         }
     }
 }

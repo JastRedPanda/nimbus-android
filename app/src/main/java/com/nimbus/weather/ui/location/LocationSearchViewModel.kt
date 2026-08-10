@@ -6,6 +6,7 @@ import android.location.Geocoder
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.Tasks
 import com.nimbus.weather.data.local.SettingsDataStore
 import com.nimbus.weather.data.model.GeocodingResult
@@ -28,6 +29,7 @@ data class LocationSearchUiState(
     val loading: Boolean = false,
     val noResults: Boolean = false,
     val locating: Boolean = false,
+    val locationError: Boolean = false,
     val favouriteNames: Set<String> = emptySet(),
     val recentCities: List<SettingsDataStore.FavouriteCity> = emptyList(),
     val appLanguage: String = "auto"
@@ -110,12 +112,18 @@ class LocationSearchViewModel(application: Application) : AndroidViewModel(appli
 
     fun onMyLocationClick() {
         viewModelScope.launch {
-            _state.value = _state.value.copy(locating = true)
+            _state.value = _state.value.copy(locating = true, locationError = false)
             try {
                 val client = LocationServices.getFusedLocationProviderClient(getApplication())
-                val task = client.lastLocation
                 val location = withContext(Dispatchers.IO) {
-                    Tasks.await(task, 30, TimeUnit.SECONDS)
+                    try {
+                        Tasks.await(
+                            client.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null),
+                            30, TimeUnit.SECONDS
+                        )
+                    } catch (_: Exception) {
+                        Tasks.await(client.lastLocation, 10, TimeUnit.SECONDS)
+                    }
                 }
                 if (location != null) {
                     val lat = location.latitude
@@ -127,12 +135,19 @@ class LocationSearchViewModel(application: Application) : AndroidViewModel(appli
                         lon = lon,
                         tz = tz
                     )
+                } else {
+                    _state.value = _state.value.copy(locationError = true)
                 }
             } catch (_: Exception) {
+                _state.value = _state.value.copy(locationError = true)
             } finally {
                 _state.value = _state.value.copy(locating = false)
             }
         }
+    }
+
+    fun consumeLocationError() {
+        _state.value = _state.value.copy(locationError = false)
     }
 
     private fun resolvePlace(lat: Double, lon: Double): Pair<String, String> {

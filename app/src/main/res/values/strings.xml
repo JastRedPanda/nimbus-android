@@ -79,6 +79,7 @@
     <string name="no_results">Nothing found</string>
     <string name="use_gps">Use GPS</string>
     <string name="gps_permission_denied">Location permission not granted</string>
+    <string name="gps_failed">Failed to get location</string>
     <string name="favourite_cities">Favourite cities</string>
     <string name="no_favourite_cities">Add cities with the star icon to switch quickly</string>
 
@@ -93,6 +94,10 @@
     <string name="widget_text_black">Black</string>
     <string name="widget_text_white">White</string>
     <string name="widget_reset">Reset appearance</string>
+    <string name="widget_date_format">Date format</string>
+    <string name="widget_date_numeric">17.08.2026</string>
+    <string name="widget_date_text">August 17, 2026</string>
+    <string name="widget_font_size">Font size</string>
 
     <!-- WMO weather codes -->
     <string name="wmo_0">Clear sky</string>

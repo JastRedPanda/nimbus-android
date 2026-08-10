@@ -15,14 +15,20 @@ import kotlinx.coroutines.launch
 data class WidgetCustomizeUiState(
     val bgColorHex: String? = null,
     val bgAlpha: Int = 100,
-    val textOption: String = "auto"
+    val textOption: String = "auto",
+    val dateFormat: String = SettingsDataStore.DEFAULT_WIDGET_DATE_FORMAT,
+    val fontScale: Int = SettingsDataStore.DEFAULT_WIDGET_FONT_SCALE
 )
 
 @Stable
 interface WidgetCustomizeActions {
     fun onBgColorSelected(colorHex: String?)
-    fun onBgAlphaChanged(alpha: Int)
+    fun onBgAlphaPreview(alpha: Int)
+    fun onBgAlphaCommit()
     fun onTextOptionSelected(option: String)
+    fun onDateFormatSelected(format: String)
+    fun onFontScalePreview(scale: Int)
+    fun onFontScaleCommit()
     fun onReset()
 }
 
@@ -51,6 +57,16 @@ class WidgetCustomizeViewModel(
                 _state.update { it.copy(textOption = option) }
             }
         }
+        viewModelScope.launch {
+            settings.widgetDateFormat.collect { format ->
+                _state.update { it.copy(dateFormat = format) }
+            }
+        }
+        viewModelScope.launch {
+            settings.widgetFontScale.collect { scale ->
+                _state.update { it.copy(fontScale = scale) }
+            }
+        }
     }
 
     private fun persist(block: suspend () -> Unit) {
@@ -64,12 +80,28 @@ class WidgetCustomizeViewModel(
         persist { settings.setWidgetBgColor(colorHex) }
     }
 
-    override fun onBgAlphaChanged(alpha: Int) {
-        persist { settings.setWidgetBgAlpha(alpha) }
+    override fun onBgAlphaPreview(alpha: Int) {
+        _state.update { it.copy(bgAlpha = alpha) }
+    }
+
+    override fun onBgAlphaCommit() {
+        persist { settings.setWidgetBgAlpha(_state.value.bgAlpha) }
     }
 
     override fun onTextOptionSelected(option: String) {
         persist { settings.setWidgetTextColor(option) }
+    }
+
+    override fun onDateFormatSelected(format: String) {
+        persist { settings.setWidgetDateFormat(format) }
+    }
+
+    override fun onFontScalePreview(scale: Int) {
+        _state.update { it.copy(fontScale = scale) }
+    }
+
+    override fun onFontScaleCommit() {
+        persist { settings.setWidgetFontScale(_state.value.fontScale) }
     }
 
     override fun onReset() {
@@ -77,6 +109,8 @@ class WidgetCustomizeViewModel(
             settings.setWidgetBgColor(null)
             settings.setWidgetBgAlpha(SettingsDataStore.DEFAULT_WIDGET_BG_ALPHA)
             settings.setWidgetTextColor("auto")
+            settings.setWidgetDateFormat(SettingsDataStore.DEFAULT_WIDGET_DATE_FORMAT)
+            settings.setWidgetFontScale(SettingsDataStore.DEFAULT_WIDGET_FONT_SCALE)
         }
     }
 }

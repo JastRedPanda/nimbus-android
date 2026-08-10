@@ -34,6 +34,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import android.content.res.Configuration
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -99,72 +100,80 @@ fun HomeScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            when {
-                state.loading -> {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.Center)
-                    )
-                }
-                state.error != null -> {
-                    Column(
-                        modifier = Modifier.align(Alignment.Center),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = stringResource(R.string.error_loading),
-                            color = MaterialTheme.colorScheme.error
+            PullToRefreshBox(
+                isRefreshing = state.refreshing,
+                onRefresh = viewModel::refresh,
+                modifier = Modifier.fillMaxSize()
+            ) {
+                when {
+                    state.loading -> {
+                        CircularProgressIndicator(
+                            modifier = Modifier.align(Alignment.Center)
                         )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Button(onClick = { viewModel.loadWeather() }) {
-                            Text(stringResource(R.string.retry))
-                        }
                     }
-                }
-                else -> {
-                    val pages = remember(state.cityName, state.favouriteCities) {
-                        buildList {
-                            if (state.cityName.isNotBlank()) {
-                                add(FavouriteCity(state.cityName, 0.0, 0.0, ""))
-                            }
-                            state.favouriteCities
-                                .filter { city -> none { it.name == city.name } }
-                                .forEach { add(it) }
-                        }
-                    }
-
-                    if (pages.size > 1) {
-                        val pagerState = rememberPagerState(pageCount = { pages.size })
-                        val currentIndex = pages.indexOfFirst { it.name == state.cityName }
-                            .coerceAtLeast(0)
-
-                        LaunchedEffect(currentIndex) {
-                            if (pagerState.currentPage != currentIndex) {
-                                pagerState.animateScrollToPage(currentIndex)
+                    state.error != null -> {
+                        Column(
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .verticalScroll(rememberScrollState()),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = stringResource(R.string.error_loading),
+                                color = MaterialTheme.colorScheme.error
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Button(onClick = { viewModel.loadWeather() }) {
+                                Text(stringResource(R.string.retry))
                             }
                         }
-                        LaunchedEffect(pagerState) {
-                            snapshotFlow { pagerState.settledPage }.collect { page ->
-                                val city = pages.getOrNull(page) ?: return@collect
-                                if (city.name != state.cityName) {
-                                    viewModel.switchToCity(city)
+                    }
+                    else -> {
+                        val pages = remember(state.cityName, state.favouriteCities) {
+                            buildList {
+                                if (state.cityName.isNotBlank()) {
+                                    add(FavouriteCity(state.cityName, 0.0, 0.0, ""))
+                                }
+                                state.favouriteCities
+                                    .filter { city -> none { it.name == city.name } }
+                                    .forEach { add(it) }
+                            }
+                        }
+
+                        if (pages.size > 1) {
+                            val pagerState = rememberPagerState(pageCount = { pages.size })
+                            val currentIndex = pages.indexOfFirst { it.name == state.cityName }
+                                .coerceAtLeast(0)
+
+                            LaunchedEffect(currentIndex) {
+                                if (pagerState.currentPage != currentIndex) {
+                                    pagerState.animateScrollToPage(currentIndex)
                                 }
                             }
-                        }
+                            LaunchedEffect(pagerState) {
+                                snapshotFlow { pagerState.settledPage }.collect { page ->
+                                    val city = pages.getOrNull(page) ?: return@collect
+                                    if (city.name != state.cityName) {
+                                        viewModel.switchToCity(city)
+                                    }
+                                }
+                            }
 
-                        HorizontalPager(
-                            state = pagerState,
-                            modifier = Modifier.fillMaxSize()
-                        ) {
+                            HorizontalPager(
+                                state = pagerState,
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                WeatherContent(
+                                    state = state,
+                                    onCitySwitch = { viewModel.switchToCity(it) }
+                                )
+                            }
+                        } else {
                             WeatherContent(
                                 state = state,
                                 onCitySwitch = { viewModel.switchToCity(it) }
                             )
                         }
-                    } else {
-                        WeatherContent(
-                            state = state,
-                            onCitySwitch = { viewModel.switchToCity(it) }
-                        )
                     }
                 }
             }

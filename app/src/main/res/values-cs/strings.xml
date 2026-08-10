@@ -78,6 +78,7 @@
     <string name="no_results">Nic nenalezeno</string>
     <string name="use_gps">Použít GPS</string>
     <string name="gps_permission_denied">Povolení polohy nebylo uděleno</string>
+    <string name="gps_failed">Nepodařilo se získat polohu</string>
     <string name="favourite_cities">Oblíbená města</string>
     <string name="no_favourite_cities">Přidejte města hvězdičkou pro rychlé přepínání</string>
 
@@ -92,6 +93,10 @@
     <string name="widget_text_black">Černá</string>
     <string name="widget_text_white">Bílá</string>
     <string name="widget_reset">Resetovat vzhled</string>
+    <string name="widget_date_format">Formát data</string>
+    <string name="widget_date_numeric">17.08.2026</string>
+    <string name="widget_date_text">17. srpna 2026</string>
+    <string name="widget_font_size">Velikost písma</string>
 
     <!-- WMO weather codes -->
     <string name="wmo_0">Jasno</string>

@@ -41,6 +41,8 @@ class SettingsDataStore(private val context: Context) {
         private val KEY_WIDGET_BG_COLOR = stringPreferencesKey("widget_bg_color")
         private val KEY_WIDGET_BG_ALPHA = intPreferencesKey("widget_bg_alpha")
         private val KEY_WIDGET_TEXT_COLOR = stringPreferencesKey("widget_text_color")
+        private val KEY_WIDGET_DATE_FORMAT = stringPreferencesKey("widget_date_format")
+        private val KEY_WIDGET_FONT_SCALE = intPreferencesKey("widget_font_scale")
         private val KEY_HOURLY_INTERVAL_HOURS = intPreferencesKey("hourly_interval_hours")
         private val KEY_SHOW_AQI = booleanPreferencesKey("show_aqi")
         private val KEY_RECENT_CITIES = stringPreferencesKey("recent_cities")
@@ -52,6 +54,10 @@ class SettingsDataStore(private val context: Context) {
         const val DEFAULT_UPDATE_INTERVAL_HOURS = 2
         const val DEFAULT_HOURLY_INTERVAL_HOURS = 1
         const val DEFAULT_WIDGET_BG_ALPHA = 100
+        const val DEFAULT_WIDGET_DATE_FORMAT = "numeric"
+        const val DEFAULT_WIDGET_FONT_SCALE = 100
+        const val MIN_WIDGET_FONT_SCALE = 50
+        const val MAX_WIDGET_FONT_SCALE = 200
         const val MAX_RECENT_CITIES = 5
     }
 
@@ -121,6 +127,14 @@ class SettingsDataStore(private val context: Context) {
         prefs[KEY_WIDGET_TEXT_COLOR] ?: "auto"
     }
 
+    val widgetDateFormat: Flow<String> = context.dataStore.data.map { prefs ->
+        prefs[KEY_WIDGET_DATE_FORMAT] ?: DEFAULT_WIDGET_DATE_FORMAT
+    }
+
+    val widgetFontScale: Flow<Int> = context.dataStore.data.map { prefs ->
+        prefs[KEY_WIDGET_FONT_SCALE] ?: DEFAULT_WIDGET_FONT_SCALE
+    }
+
     val hourlyIntervalHours: Flow<Int> = context.dataStore.data.map { prefs ->
         prefs[KEY_HOURLY_INTERVAL_HOURS] ?: DEFAULT_HOURLY_INTERVAL_HOURS
     }
@@ -175,6 +189,20 @@ class SettingsDataStore(private val context: Context) {
     suspend fun setWidgetTextColor(option: String) {
         context.dataStore.edit { prefs ->
             prefs[KEY_WIDGET_TEXT_COLOR] = option
+        }
+    }
+
+    suspend fun setWidgetDateFormat(format: String) {
+        context.dataStore.edit { prefs ->
+            prefs[KEY_WIDGET_DATE_FORMAT] = format
+        }
+    }
+
+    suspend fun setWidgetFontScale(scale: Int) {
+        context.dataStore.edit { prefs ->
+            prefs[KEY_WIDGET_FONT_SCALE] = scale.coerceIn(
+                MIN_WIDGET_FONT_SCALE, MAX_WIDGET_FONT_SCALE
+            )
         }
     }
 

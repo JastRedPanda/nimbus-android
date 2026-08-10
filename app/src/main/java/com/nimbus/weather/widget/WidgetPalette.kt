@@ -24,7 +24,14 @@ fun isDarkTheme(context: Context, themeMode: ThemeMode): Boolean {
 data class WidgetPalette(
     val background: Color,
     val text: Color
-)
+) {
+    companion object {
+        val defaultLight = WidgetPalette(
+            background = Color(0xFFFFFBFE),
+            text = Color.Black
+        )
+    }
+}
 
 fun resolveWidgetPalette(
     dark: Boolean,
