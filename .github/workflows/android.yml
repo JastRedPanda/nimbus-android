@@ -11,16 +11,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: microsoft
           java-version: 17
 
       - name: Install Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
 
       - name: Accept licenses
         run: yes | sdkmanager --licenses > /dev/null 2>&1 || true
@@ -30,7 +30,7 @@ jobs:
           sdkmanager "platforms;android-35" "build-tools;37.0.0" > /dev/null 2>&1
 
       - name: Cache Gradle
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: |
@@ -46,7 +46,7 @@ jobs:
         run: ./gradlew assembleDebug test
 
       - name: Upload APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: app-debug
           path: app/build/outputs/apk/debug/app-debug.apk
