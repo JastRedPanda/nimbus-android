@@ -1,6 +1,5 @@
 package com.nimbus.weather.ui.components
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -98,48 +97,57 @@ fun DailyForecastCard(
             Spacer(modifier = Modifier.height(8.dp))
 
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                modifier = Modifier.fillMaxWidth()
             ) {
                 DailyDetailItem(
                     label = stringResource(R.string.temperature),
-                    value = "$tmax/$tmin${tempUnit.displayString()}"
+                    value = "$tmax/$tmin${tempUnit.displayString()}",
+                    modifier = Modifier.weight(1f),
+                    align = Alignment.Start
                 )
                 DailyDetailItem(
                     label = stringResource(R.string.precipitation),
-                    value = "${day.precipitation} mm (${day.precipProbability}%)"
+                    value = "${day.precipitation} mm (${day.precipProbability}%)",
+                    modifier = Modifier.weight(1f),
+                    align = Alignment.End
                 )
             }
 
             Spacer(modifier = Modifier.height(4.dp))
 
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                modifier = Modifier.fillMaxWidth()
             ) {
                 DailyDetailItem(
                     label = stringResource(R.string.wind),
-                    value = "${day.windMax.toInt()}/${day.windGusts.toInt()} ${stringResource(R.string.wind_ms)} ${windDirection(day.windDirection)}"
+                    value = "${day.windMax.toInt()}/${day.windGusts.toInt()} ${stringResource(R.string.wind_ms)} ${windDirection(day.windDirection)}",
+                    modifier = Modifier.weight(1f),
+                    align = Alignment.Start
                 )
                 DailyDetailItem(
                     label = stringResource(R.string.uv_index),
-                    value = "${day.uvIndexMax.toInt()} (${stringResource(day.uvIndexMax.uvCategory())})"
+                    value = "${day.uvIndexMax.toInt()} (${stringResource(day.uvIndexMax.uvCategory())})",
+                    modifier = Modifier.weight(1f),
+                    align = Alignment.End
                 )
             }
 
             Spacer(modifier = Modifier.height(4.dp))
 
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                modifier = Modifier.fillMaxWidth()
             ) {
                 DailyDetailItem(
                     label = stringResource(R.string.sunrise),
-                    value = formatTime(day.sunrise)
+                    value = formatTime(day.sunrise),
+                    modifier = Modifier.weight(1f),
+                    align = Alignment.Start
                 )
                 DailyDetailItem(
                     label = stringResource(R.string.sunset),
-                    value = formatTime(day.sunset)
+                    value = formatTime(day.sunset),
+                    modifier = Modifier.weight(1f),
+                    align = Alignment.End
                 )
             }
         }
@@ -157,8 +165,16 @@ internal fun Double.uvCategory(): Int {
 }
 
 @Composable
-private fun DailyDetailItem(label: String, value: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+private fun DailyDetailItem(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier,
+    align: Alignment.Horizontal = Alignment.Start
+) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        horizontalAlignment = align
+    ) {
         Text(
             text = value,
             style = MaterialTheme.typography.bodyMedium,
