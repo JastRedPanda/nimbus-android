@@ -9,6 +9,7 @@ import androidx.compose.ui.unit.dp
 import androidx.glance.LocalSize
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
+import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
 import androidx.glance.layout.Alignment
@@ -26,7 +27,6 @@ import com.nimbus.weather.service.WidgetUpdateManager
 import com.nimbus.weather.util.ThemeMode
 import com.nimbus.weather.util.displayString
 import com.nimbus.weather.util.toCelsiusOrFahrenheit
-import com.nimbus.weather.util.weatherDescription
 import kotlinx.coroutines.flow.first
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -59,6 +59,7 @@ class ClockTempWidget : GlanceAppWidget() {
                 modifier = GlanceModifier
                     .fillMaxSize()
                     .padding(8.dp)
+                    .cornerRadius(16.dp)
                     .background(palette.background),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalAlignment = Alignment.CenterHorizontally
@@ -72,26 +73,18 @@ class ClockTempWidget : GlanceAppWidget() {
                         modifier = GlanceModifier.defaultWeight(),
                         style = TextStyle(
                             fontWeight = FontWeight.Bold,
-                            fontSize = if (isCompact) 16.sp else 26.sp,
+                            fontSize = if (isCompact) 18.sp else 65.sp,
                             color = ColorProvider(palette.text)
                         )
                     )
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text(
-                            text = tempText,
-                            style = TextStyle(
-                                fontWeight = FontWeight.Bold,
-                                fontSize = if (isCompact) 22.sp else 34.sp,
-                                color = ColorProvider(palette.text)
-                            )
+                    Text(
+                        text = tempText,
+                        style = TextStyle(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = if (isCompact) 22.sp else 68.sp,
+                            color = ColorProvider(palette.text)
                         )
-                        if (!isCompact && weather?.current != null) {
-                            Text(
-                                text = weatherDescription(context, weather.current.weatherCode),
-                                style = TextStyle(fontSize = 12.sp, color = ColorProvider(palette.text))
-                            )
-                        }
-                    }
+                    )
                 }
             }
         }
