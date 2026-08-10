@@ -59,6 +59,15 @@ android {
     testOptions {
         unitTests.isReturnDefaultValues = true
     }
+
+    applicationVariants.all {
+        val variantName = name
+        outputs.all {
+            val output = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
+            output.outputFileName =
+                if (variantName == "release") "Nimbus.apk" else "app-$variantName.apk"
+        }
+    }
 }
 
 tasks.named("preBuild") {
