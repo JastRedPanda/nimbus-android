@@ -70,3 +70,4 @@
 
 - **`.github/workflows/release.yml`**: пуш тега `v*` → `-PversionName` из тега (v1.2 → 1.2), `-PversionCode` из `git rev-list --count HEAD` (монотонно, без локального version.properties); APK подписывается debug-ключом из секрета `DEBUG_KEYSTORE_B64` (base64 локального `~/.android/debug.keystore` — подпись совпадает с той, что уже на телефоне) и публикуется в GitHub Release (`--generate-notes`)
 - **Gradle**: `-PversionCode`/`-PversionName` переопределяют defaultConfig; при `-PversionCode` preBuild не инкрементит локальный файл. Проверено: `assembleRelease -PversionName=9.99 -PversionCode=777` → badging показывает 777/9.99
+- **Имя APK**: `applicationVariants` + `BaseVariantOutputImpl.outputFileName` — release собирается как `Nimbus.apk` (debug остаётся `app-debug.apk`), workflow указывает новый путь

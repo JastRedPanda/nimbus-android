@@ -51,7 +51,7 @@ gradlew.bat assembleDebug test
 - **Уведомления**: на Android 13+ требуется `POST_NOTIFICATIONS` в манифесте + runtime-запрос (MainActivity), иначе `showWeatherNotification` тихо выходит
 - **Таймзона GPS**: из `Address.extras["timezone"]` (Google backend), валидация через `isValidTimeZoneId`, fallback `Europe/Kiev`; константы `Address.EXTRA_TIMEZONE_ID` в SDK нет
 - **versionCode — автоинкремент**: `preBuild` в app/build.gradle.kts +1 к `app/version.properties` (gitignored) при каждой сборке; установка «поверх» работает. versionName меняется вручную при релизе (1.1, 1.2, …)
-- **Релиз — только тег**: `git tag v1.2 && git push origin v1.2`; workflow собирает release-APK (`-PversionName` из тега, `-PversionCode` из счёта коммитов), подписывает debug-ключом из `DEBUG_KEYSTORE_B64` (секрет = ~/.android/debug.keystore этого компьютера) и публикует GitHub Release. Без тега ничего не публикуется
+- **Релиз — только тег**: `git tag v1.2 && git push origin v1.2`; workflow собирает release-APK (`-PversionName` из тега, `-PversionCode` из счёта коммитов, имя файла — `Nimbus.apk`), подписывает debug-ключом из `DEBUG_KEYSTORE_B64` (секрет = ~/.android/debug.keystore этого компьютера) и публикует GitHub Release. Без тега ничего не публикуется
 - **Виджет**: сетка 1×4 (targetCellWidth=4), шрифты специально крупные (время 165sp / температура 150sp) под сетку лаунчеров
 
 ## Внешняя документация (читать по задаче, лениво)
