@@ -80,6 +80,7 @@
     <string name="gps_permission_denied">Povolení polohy nebylo uděleno</string>
     <string name="gps_failed">Nepodařilo se získat polohu</string>
     <string name="gps_disabled">Služby určování polohy jsou vypnuté. Zapněte je v systémových nastaveních</string>
+    <string name="gps_no_signal">GPS je zapnutý, ale není signál satelitů. Vyjděte ven nebo zapněte síťovou geolokaci</string>
     <string name="favourite_cities">Oblíbená města</string>
     <string name="no_favourite_cities">Přidejte města hvězdičkou pro rychlé přepínání</string>
 
