@@ -13,7 +13,7 @@ Free and open-source Android weather app. No ads, no trackers, no API keys.
 - Theme: system / light / dark
 - Background updates via WorkManager (2 / 12 / 24 h)
 - Pull-to-refresh and offline cache
-- Languages: English, Ukrainian, Russian, Czech — switchable in-app, no restart
+- Languages: English, Ukrainian, Russian, Czech — switchable in-app, no restart; saved city names translate automatically to the chosen language
 - Temperature units: °C / °F
 - Material 3 design
 
@@ -73,7 +73,7 @@ Single 1×4 home screen widget: large city time on the left (with date, text or 
 - Тема: системна / світла / темна
 - Фонове оновлення через WorkManager (2 / 12 / 24 год)
 - Оновлення свайпом униз і офлайн-кеш
-- Мови: українська, англійська, російська, чеська — перемикаються в застосунку без перезапуску
+- Мови: українська, англійська, російська, чеська — перемикаються в застосунку без перезапуску; назви збережених міст автоматично перекладаються обраною мовою
 - Одиниці температури: °C / °F
 - Дизайн Material 3
 
