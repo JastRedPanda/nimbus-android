@@ -12,7 +12,6 @@
 | Асинхронность | Coroutines + Flow |
 | Настройки | DataStore Preferences 1.1.1 |
 | Фон | WorkManager 2.10 |
-| Локация | play-services-location 21.3.0 |
 | Навигация | navigation-compose 2.8.5 (NavHost в MainActivity) |
 | Splash | core-splashscreen 1.0.1 |
 | Версии | minSdk 26, compileSdk/targetSdk 35, versionCode — автоинкремент (app/version.properties), versionName "1.1" (меняется вручную) |
@@ -135,10 +134,9 @@ com.squareup.okhttp3:okhttp:4.12.0
 com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter:1.0.0
 org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3
 
-// DataStore, WorkManager, Location, Core, Splash
+// DataStore, WorkManager, Core, Splash
 androidx.datastore:datastore-preferences:1.1.1
 androidx.work:work-runtime-ktx:2.10.0
-com.google.android.gms:play-services-location:21.3.0
 androidx.core:core-ktx:1.15.0
 androidx.core:core-splashscreen:1.0.1
 
@@ -149,7 +147,7 @@ junit 4.13.2, kotlinx-coroutines-test 1.9.0, mockk 1.13.13, turbine 1.2.0
 ## Подводные камни
 
 - **Glance 1.2.0-rc01**: нет `clip`, нет `Surface` в glance-material3, `background` без формы. Скругление углов — только `androidx.glance.appwidget.cornerRadius(dp)` (найдено в AAR; классы `CornerRadiusKt`/`CornerRadiusModifier`)
-- **`Address.EXTRA_TIMEZONE_ID` не существует** в android.location.Address (проверено на compileSdk 35) — таймзона от Google backend лежит в `extras["timezone"]`
+- **Таймзона города — из геокодинга**: Open-Meteo отдаёт IANA-идентификатор в поле `timezone` ответа Geocoding API; валидация `DateTimeUtils.isValidTimeZoneId` (кэш `TimeZone.getAvailableIDs()`), fallback `Europe/Kiev`. GPS-определения города нет (play-services-location удалён в v1.5)
 - **versionCode — автоинкремент**: `preBuild` в app/build.gradle.kts читает `app/version.properties` (gitignored), +1 при каждой сборке; установка APK «поверх» работает. versionName меняется вручную. Сбить счётчик можно очисткой файла — тогда versionCode упадёт, и обновление «поверх» не встанет (вылечится следующим релизом)
-- **Релиз в CI (`.github/workflows/release.yml`)**: пуш тега `v*` → `-PversionName` из тега, `-PversionCode` из `git rev-list --count HEAD` (монотонно), ключ `DEBUG_KEYSTORE_B64` из secrets (копия `~/.android/debug.keystore` этого компьютера — подпись совпадает с локальной, обновление «поверх» работает)
+- **Релиз в CI (`.github/workflows/release.yml`)**: пуш тега `v*` → `-PversionName` из тега, `-PversionCode` из `git rev-list --count HEAD` (монотонно), ключ `DEBUG_KEYSTORE_B64` из secrets восстанавливается в `~/.android/debug.keystore`; подпись — явная `signingConfigs.create("release")` в app/build.gradle.kts (SHA-1 `b9cdf73d…`, постоянный с v1.6; `signingConfigs.getByName("debug")` в CI не работает — AGP генерирует свой ключ)
 - **POST_NOTIFICATIONS**: без пермишна в манифесте и runtime-запроса `showWeatherNotification` молча выходит на Android 13+

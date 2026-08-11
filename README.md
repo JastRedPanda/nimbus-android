@@ -9,7 +9,8 @@ Free and open-source Android weather app. No ads, no trackers, no API keys.
 - City search with debounce, favourites and recent cities
 - Tablet-friendly layout on screens ≥ 600 dp
 - Home screen widget 1×4 (Glance): city time + date + temperature, 4 background palettes, transparency and text color settings
-- Weather notifications with configurable interval
+- Weather notifications (toggle)
+- Theme: system / light / dark
 - Background updates via WorkManager (2 / 12 / 24 h)
 - Pull-to-refresh and offline cache
 - Languages: English, Ukrainian, Russian, Czech — switchable in-app, no restart
@@ -50,7 +51,7 @@ All data comes from [Open-Meteo](https://open-meteo.com): weather forecasts, geo
 
 ## Widget
 
-Single 1×4 home screen widget: large city time on the left (with date, text or numeric format), temperature on the right. Customizable background (4 palettes + transparency slider) and text color (auto / black / white). Tap opens the app with the configured city.
+Single 1×4 home screen widget: large city time on the left (with date, text or numeric format), temperature on the right. Customizable background (4 palettes + transparency slider) and text color (auto / black / white). Tap opens the app.
 
 ---
 
@@ -68,7 +69,8 @@ Single 1×4 home screen widget: large city time on the left (with date, text or 
 - Пошук міст, обране та нещодавні міста
 - Планшетне компонування на екранах ≥ 600 dp
 - Віджет на головному екрані 1×4 (Glance): час міста + дата + температура, 4 палітри фону, налаштування прозорості та кольору тексту
-- Сповіщення про погоду з настроюваним інтервалом
+- Сповіщення про погоду (увімкнення / вимкнення)
+- Тема: системна / світла / темна
 - Фонове оновлення через WorkManager (2 / 12 / 24 год)
 - Оновлення свайпом униз і офлайн-кеш
 - Мови: українська, англійська, російська, чеська — перемикаються в застосунку без перезапуску
@@ -109,6 +111,6 @@ gradlew.bat test
 
 ## Віджет
 
-Один віджет 1×4 на головному екрані: великий час міста зліва (з датою, текстовим або числовим форматом), температура справа. Налаштовуються фон (4 палітри + слайдер прозорості) та колір тексту (авто / чорний / білий). Натискання відкриває застосунок з налаштованим містом.
+Один віджет 1×4 на головному екрані: великий час міста зліва (з датою, текстовим або числовим форматом), температура справа. Налаштовуються фон (4 палітри + слайдер прозорості) та колір тексту (авто / чорний / білий). Натискання відкриває застосунок.
 
 </details>
