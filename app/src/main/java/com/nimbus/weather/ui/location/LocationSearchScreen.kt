@@ -78,6 +78,17 @@ fun LocationSearchScreen(
         }
     }
 
+    LaunchedEffect(state.gpsNoSignal) {
+        if (state.gpsNoSignal) {
+            Toast.makeText(
+                context,
+                context.getString(R.string.gps_no_signal),
+                Toast.LENGTH_LONG
+            ).show()
+            viewModel.consumeGpsNoSignal()
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(

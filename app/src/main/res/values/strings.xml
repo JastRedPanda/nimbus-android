@@ -81,6 +81,7 @@
     <string name="gps_permission_denied">Location permission not granted</string>
     <string name="gps_failed">Failed to get location</string>
     <string name="gps_disabled">Location services are turned off. Enable them in system settings</string>
+    <string name="gps_no_signal">GPS is on, but there is no satellite signal. Step outside or enable network location</string>
     <string name="favourite_cities">Favourite cities</string>
     <string name="no_favourite_cities">Add cities with the star icon to switch quickly</string>
 

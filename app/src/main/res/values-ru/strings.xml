@@ -81,6 +81,7 @@
     <string name="gps_permission_denied">Разрешение на определение местоположения не предоставлено</string>
     <string name="gps_failed">Не удалось получить местоположение</string>
     <string name="gps_disabled">Геолокация выключена. Включите её в настройках системы</string>
+    <string name="gps_no_signal">GPS включён, но нет сигнала спутников. Выйдите на открытое пространство или включите сетевую геолокацию</string>
     <string name="favourite_cities">Избранные города</string>
     <string name="no_favourite_cities">Добавляйте города звёздочкой для быстрого переключения</string>
 
