@@ -1,44 +1,23 @@
 package com.nimbus.weather.ui.location
 
-import android.Manifest
 import android.app.Application
-import android.content.Context
-import android.content.pm.PackageManager
-import android.location.Address
-import android.location.Geocoder
-import android.location.Location
-import android.location.LocationManager
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationServices
-import com.google.android.gms.location.Priority
-import com.google.android.gms.tasks.Tasks
 import com.nimbus.weather.data.local.SettingsDataStore
 import com.nimbus.weather.data.model.GeocodingResult
 import com.nimbus.weather.data.repository.WeatherRepository
-import com.nimbus.weather.util.LocationLog
-import com.nimbus.weather.util.isValidTimeZoneId
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.util.Locale
-import java.util.concurrent.TimeUnit
 
 data class LocationSearchUiState(
     val query: String = "",
     val results: List<GeocodingResult> = emptyList(),
     val loading: Boolean = false,
     val noResults: Boolean = false,
-    val locating: Boolean = false,
-    val locationError: Boolean = false,
-    val gpsDisabled: Boolean = false,
-    val gpsNoSignal: Boolean = false,
     val favouriteNames: Set<String> = emptySet(),
     val recentCities: List<SettingsDataStore.FavouriteCity> = emptyList(),
     val appLanguage: String = "auto"
@@ -48,12 +27,6 @@ class LocationSearchViewModel(application: Application) : AndroidViewModel(appli
 
     private val repository = WeatherRepository()
     private val settings = SettingsDataStore(application)
-    private val geocoder = Geocoder(application, Locale.getDefault())
-
-    companion object {
-        // Google geocoder backend кладёт IANA-таймзону в extras под ключом "timezone"
-        private const val TZ_EXTRA_KEY = "timezone"
-    }
 
     private val _state = MutableStateFlow(LocationSearchUiState())
     val state: StateFlow<LocationSearchUiState> = _state.asStateFlow()
@@ -116,154 +89,6 @@ class LocationSearchViewModel(application: Application) : AndroidViewModel(appli
             com.nimbus.weather.util.LanguageHelper.resolveLocale().language
         } else {
             appLanguage
-        }
-    }
-
-    fun onMyLocationClick() {
-        viewModelScope.launch {
-            _state.value = _state.value.copy(locating = true, locationError = false, gpsDisabled = false)
-            try {
-                val app = getApplication<Application>()
-                val locationManager =
-                    app.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-val gpsEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
-                val networkEnabled =
-                    locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
-                val fineGranted = app.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) ==
-                    PackageManager.PERMISSION_GRANTED
-                val coarseGranted = app.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) ==
-                    PackageManager.PERMISSION_GRANTED
-                LocationLog.log(
-                    app,
-                    "onMyLocationClick: gps=$gpsEnabled network=$networkEnabled fine=$fineGranted coarse=$coarseGranted"
-                )
-                if (!gpsEnabled && !networkEnabled) {
-                    _state.value = _state.value.copy(gpsDisabled = true)
-                    return@launch
-                }
-                val client = LocationServices.getFusedLocationProviderClient(app)
-                var location = withContext(Dispatchers.IO) {
-                    obtainLocation(client, networkEnabled)
-                }
-                if (location == null) {
-                    location = legacyLastKnown(app, locationManager)
-                }
-                if (location != null) {
-                    val lat = location.latitude
-                    val lon = location.longitude
-                    val (cityName, tz) = resolvePlace(lat, lon)
-                    LocationLog.log(app, "onMyLocationClick: ok $cityName ($lat, $lon) tz=$tz")
-                    settings.setLocation(
-                        name = cityName,
-                        lat = lat,
-                        lon = lon,
-                        tz = tz
-                    )
-                } else {
-                    LocationLog.log(app, "onMyLocationClick: no location after all attempts")
-                    _state.value = _state.value.copy(
-                        locationError = true,
-                        gpsNoSignal = gpsEnabled && !networkEnabled
-                    )
-                }
-            } catch (e: Exception) {
-                LocationLog.log(
-                    getApplication<Application>(),
-                    "onMyLocationClick: failed - ${e.javaClass.simpleName}: ${e.message}"
-                )
-                _state.value = _state.value.copy(locationError = true)
-            } finally {
-                _state.value = _state.value.copy(locating = false)
-            }
-        }
-    }
-
-    private suspend fun obtainLocation(
-        client: FusedLocationProviderClient,
-        networkEnabled: Boolean
-    ): Location? {
-        val app = getApplication<Application>()
-        try {
-            Tasks.await(client.lastLocation, 8, TimeUnit.SECONDS)?.let { return it }
-            LocationLog.log(app, "obtainLocation: lastLocation returned null")
-        } catch (e: Exception) {
-            LocationLog.log(app, "obtainLocation: lastLocation - ${e.javaClass.simpleName}: ${e.message}")
-        }
-        if (!networkEnabled) {
-            LocationLog.log(app, "obtainLocation: balanced skipped - network provider disabled")
-        } else {
-            try {
-                Tasks.await(
-                    client.getCurrentLocation(Priority.PRIORITY_BALANCED_POWER_ACCURACY, null),
-                    12, TimeUnit.SECONDS
-                )?.let { return it }
-                LocationLog.log(app, "obtainLocation: balanced returned null")
-            } catch (e: Exception) {
-                LocationLog.log(app, "obtainLocation: balanced - ${e.javaClass.simpleName}: ${e.message}")
-            }
-        }
-        try {
-            Tasks.await(
-                client.getCurrentLocation(Priority.PRIORITY_LOW_POWER, null),
-                8, TimeUnit.SECONDS
-            )?.let { return it }
-            LocationLog.log(app, "obtainLocation: lowPower returned null")
-        } catch (e: Exception) {
-            LocationLog.log(app, "obtainLocation: lowPower - ${e.javaClass.simpleName}: ${e.message}")
-        }
-        return try {
-            Tasks.await(
-                client.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null),
-                15, TimeUnit.SECONDS
-            )
-        } catch (e: Exception) {
-            LocationLog.log(app, "obtainLocation: high - ${e.javaClass.simpleName}: ${e.message}")
-            null
-        }
-    }
-
-    private fun legacyLastKnown(app: Application, locationManager: LocationManager): Location? {
-        val ageLimit = 6 * 60 * 60 * 1000L
-        for (provider in listOf(LocationManager.NETWORK_PROVIDER, LocationManager.GPS_PROVIDER)) {
-            try {
-                val loc = locationManager.getLastKnownLocation(provider) ?: continue
-                val ageMin = (System.currentTimeMillis() - loc.time) / 60000
-                if (ageMin in 0..(ageLimit / 60000)) {
-                    LocationLog.log(app, "obtainLocation: legacy $provider last, age ${ageMin} min")
-                    return loc
-                }
-                LocationLog.log(app, "obtainLocation: legacy $provider too old (${ageMin} min)")
-            } catch (e: SecurityException) {
-                LocationLog.log(app, "obtainLocation: legacy $provider - ${e.javaClass.simpleName}")
-            }
-        }
-        LocationLog.log(app, "obtainLocation: legacy providers returned nothing")
-        return null
-    }
-
-    fun consumeLocationError() {
-        _state.value = _state.value.copy(locationError = false)
-    }
-
-    fun consumeGpsDisabled() {
-        _state.value = _state.value.copy(gpsDisabled = false)
-    }
-
-    fun consumeGpsNoSignal() {
-        _state.value = _state.value.copy(gpsNoSignal = false)
-    }
-
-    private fun resolvePlace(lat: Double, lon: Double): Pair<String, String> {
-        return try {
-            val addresses: List<Address> = geocoder.getFromLocation(lat, lon, 1) ?: emptyList()
-            val addr = addresses.firstOrNull()
-            val city = addr?.locality ?: addr?.subAdminArea ?: addr?.adminArea
-            val tz = addr?.extras
-                ?.getString(TZ_EXTRA_KEY)
-                ?.takeIf { isValidTimeZoneId(it) }
-            (city ?: "%.4f, %.4f".format(lat, lon)) to (tz ?: SettingsDataStore.DEFAULT_TZ)
-        } catch (_: Exception) {
-            "%.4f, %.4f".format(lat, lon) to SettingsDataStore.DEFAULT_TZ
         }
     }
 
@@ -334,5 +159,3 @@ val gpsEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
         }
     }
 }
-
-

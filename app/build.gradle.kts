@@ -116,9 +116,6 @@ dependencies {
     // WorkManager
     implementation("androidx.work:work-runtime-ktx:2.10.0")
 
-    // Location
-    implementation("com.google.android.gms:play-services-location:21.3.0")
-
     // Core
     implementation("androidx.core:core-ktx:1.15.0")
     implementation("androidx.core:core-splashscreen:1.0.1")
