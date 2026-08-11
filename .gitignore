@@ -39,3 +39,4 @@ Thumbs.db
 # Keystore files
 *.jks
 *.keystore
+nimbus-release.keystore.b64

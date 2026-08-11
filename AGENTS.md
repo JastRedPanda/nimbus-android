@@ -15,8 +15,7 @@ Android-приложение погоды: Open-Meteo, Compose, Glance-видж�
 | DI | Ручной (без фреймворка) |
 | Настройки | DataStore Preferences |
 | Фон | WorkManager |
-| Локация | Google Play Services Location |
-| minSdk 26, targetSdk 35 | Релизы: debug-подпись (release подписывается debug-ключом), versionCode автоинкремент, versionName вручную. Публикация — GitHub Actions на тег `v*` (`.github/workflows/release.yml`) |
+| minSdk 26, targetSdk 35 | Релизы: постоянная debug-подпись (см. «Подводные камни»), versionCode автоинкремент, versionName вручную. Публикация — GitHub Actions на тег `v*` (`.github/workflows/release.yml`) |
 
 ## Структура пакета `com.nimbus.weather`
 
@@ -49,9 +48,9 @@ gradlew.bat assembleDebug test
 - **Glance 1.2.0-rc01**: нет `clip`, нет `Surface` в glance-material3, `background` не принимает форму. Скругление углов — только `androidx.glance.appwidget.cornerRadius(dp)`. Детали: @docs/architecture.md
 - **AQI**: отдельный Retrofit на `air-quality-api.open-meteo.com`, не на `api.open-meteo.com`
 - **Уведомления**: на Android 13+ требуется `POST_NOTIFICATIONS` в манифесте + runtime-запрос (MainActivity), иначе `showWeatherNotification` тихо выходит
-- **Таймзона GPS**: из `Address.extras["timezone"]` (Google backend), валидация через `isValidTimeZoneId`, fallback `Europe/Kiev`; константы `Address.EXTRA_TIMEZONE_ID` в SDK нет
 - **versionCode — автоинкремент**: `preBuild` в app/build.gradle.kts +1 к `app/version.properties` (gitignored) при каждой сборке; установка «поверх» работает. versionName меняется вручную при релизе (1.1, 1.2, …)
-- **Релиз — только тег**: `git tag v1.2 && git push origin v1.2`; workflow собирает release-APK (`-PversionName` из тега, `-PversionCode` из счёта коммитов, имя файла — `Nimbus <версия>.apk`), подписывает debug-ключом из `DEBUG_KEYSTORE_B64` (секрет = ~/.android/debug.keystore этого компьютера) и публикует GitHub Release. Без тега ничего не публикуется
+- **Релиз — только тег**: `git tag v1.6 && git push origin v1.6`; workflow собирает release-APK (`-PversionName` из тега, `-PversionCode` из счёта коммитов, имя файла — `Nimbus <версия>.apk`), подписывает постоянным ключом из `DEBUG_KEYSTORE_B64` и публикует GitHub Release. Без тега ничего не публикуется
+- **Подпись НЕ менять никогда**: релизы v1.2–v1.5 подписывались разными ключами (секрет перевыставлялся) — установка «поверх» не работала. С v1.6 ключ постоянный: `nimbus-release.keystore` (пароль `android`, alias `androiddebugkey`), локальная копия рядом с проектом, резервная копия (base64) — в приватном gist https://gist.github.com/JastRedPanda/637b0f57f344a33290950c2ad2db88f6 и в секрете `DEBUG_KEYSTORE_B64`. Секрет менять запрещено; если локальная копия потеряна — восстановить из gist (пользователь знает URL) и заново залить в секрет тот же base64. После смены ключа пользователь ставит приложение начисто
 - **Виджет**: сетка 1×4 (targetCellWidth=4), шрифты специально крупные (время 165sp / температура 150sp) под сетку лаунчеров
 
 ## Внешняя документация (читать по задаче, лениво)
