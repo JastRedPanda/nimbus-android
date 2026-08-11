@@ -30,7 +30,7 @@ jobs:
         run: |
           mkdir -p "$HOME/.android"
           echo "${{ secrets.DEBUG_KEYSTORE_B64 }}" | base64 --decode > "$HOME/.android/debug.keystore"
-          keytool -list -keystore "$HOME/.android/debug.keystore" -storepass android 2>/dev/null | grep -i "SHA1:"
+          keytool -list -keystore "$HOME/.android/debug.keystore" -storepass android
 
       - name: Build release APK
         run: ./gradlew assembleRelease --console=plain "-PversionName=${GITHUB_REF_NAME#v}" "-PversionCode=$(git rev-list --count HEAD)"
