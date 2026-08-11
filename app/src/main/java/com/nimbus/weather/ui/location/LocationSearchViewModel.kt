@@ -1,16 +1,21 @@
 package com.nimbus.weather.ui.location
 
 import android.app.Application
+import android.content.Context
 import android.location.Address
 import android.location.Geocoder
+import android.location.Location
+import android.location.LocationManager
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.Tasks
 import com.nimbus.weather.data.local.SettingsDataStore
 import com.nimbus.weather.data.model.GeocodingResult
 import com.nimbus.weather.data.repository.WeatherRepository
+import com.nimbus.weather.util.LocationLog
 import com.nimbus.weather.util.isValidTimeZoneId
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -30,6 +35,7 @@ data class LocationSearchUiState(
     val noResults: Boolean = false,
     val locating: Boolean = false,
     val locationError: Boolean = false,
+    val gpsDisabled: Boolean = false,
     val favouriteNames: Set<String> = emptySet(),
     val recentCities: List<SettingsDataStore.FavouriteCity> = emptyList(),
     val appLanguage: String = "auto"
@@ -112,23 +118,28 @@ class LocationSearchViewModel(application: Application) : AndroidViewModel(appli
 
     fun onMyLocationClick() {
         viewModelScope.launch {
-            _state.value = _state.value.copy(locating = true, locationError = false)
+            _state.value = _state.value.copy(locating = true, locationError = false, gpsDisabled = false)
             try {
-                val client = LocationServices.getFusedLocationProviderClient(getApplication())
+                val app = getApplication<Application>()
+                val locationManager =
+                    app.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+                val gpsEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+                val networkEnabled =
+                    locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+                LocationLog.log(app, "onMyLocationClick: gps=$gpsEnabled network=$networkEnabled")
+                if (!gpsEnabled && !networkEnabled) {
+                    _state.value = _state.value.copy(gpsDisabled = true)
+                    return@launch
+                }
+                val client = LocationServices.getFusedLocationProviderClient(app)
                 val location = withContext(Dispatchers.IO) {
-                    try {
-                        Tasks.await(
-                            client.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null),
-                            30, TimeUnit.SECONDS
-                        )
-                    } catch (_: Exception) {
-                        Tasks.await(client.lastLocation, 10, TimeUnit.SECONDS)
-                    }
+                    obtainLocation(client)
                 }
                 if (location != null) {
                     val lat = location.latitude
                     val lon = location.longitude
                     val (cityName, tz) = resolvePlace(lat, lon)
+                    LocationLog.log(app, "onMyLocationClick: ok $cityName ($lat, $lon) tz=$tz")
                     settings.setLocation(
                         name = cityName,
                         lat = lat,
@@ -136,9 +147,14 @@ class LocationSearchViewModel(application: Application) : AndroidViewModel(appli
                         tz = tz
                     )
                 } else {
+                    LocationLog.log(app, "onMyLocationClick: no location after all attempts")
                     _state.value = _state.value.copy(locationError = true)
                 }
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                LocationLog.log(
+                    getApplication<Application>(),
+                    "onMyLocationClick: failed - ${e.javaClass.simpleName}: ${e.message}"
+                )
                 _state.value = _state.value.copy(locationError = true)
             } finally {
                 _state.value = _state.value.copy(locating = false)
@@ -146,8 +162,40 @@ class LocationSearchViewModel(application: Application) : AndroidViewModel(appli
         }
     }
 
+    private suspend fun obtainLocation(client: FusedLocationProviderClient): Location? {
+        val app = getApplication<Application>()
+        try {
+            Tasks.await(client.lastLocation, 8, TimeUnit.SECONDS)?.let { return it }
+            LocationLog.log(app, "obtainLocation: lastLocation returned null")
+        } catch (e: Exception) {
+            LocationLog.log(app, "obtainLocation: lastLocation - ${e.javaClass.simpleName}: ${e.message}")
+        }
+        try {
+            Tasks.await(
+                client.getCurrentLocation(Priority.PRIORITY_BALANCED_POWER_ACCURACY, null),
+                12, TimeUnit.SECONDS
+            )?.let { return it }
+            LocationLog.log(app, "obtainLocation: balanced returned null")
+        } catch (e: Exception) {
+            LocationLog.log(app, "obtainLocation: balanced - ${e.javaClass.simpleName}: ${e.message}")
+        }
+        return try {
+            Tasks.await(
+                client.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null),
+                15, TimeUnit.SECONDS
+            )
+        } catch (e: Exception) {
+            LocationLog.log(app, "obtainLocation: high - ${e.javaClass.simpleName}: ${e.message}")
+            null
+        }
+    }
+
     fun consumeLocationError() {
         _state.value = _state.value.copy(locationError = false)
+    }
+
+    fun consumeGpsDisabled() {
+        _state.value = _state.value.copy(gpsDisabled = false)
     }
 
     private fun resolvePlace(lat: Double, lon: Double): Pair<String, String> {

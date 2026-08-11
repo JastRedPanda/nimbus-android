@@ -72,3 +72,9 @@
 - **Gradle**: `-PversionCode`/`-PversionName` переопределяют defaultConfig; при `-PversionCode` preBuild не инкрементит локальный файл. Проверено: `assembleRelease -PversionName=9.99 -PversionCode=777` → badging показывает 777/9.99
 - **Имя APK**: `applicationVariants` + `BaseVariantOutputImpl.outputFileName` — release собирается как `Nimbus.apk` (debug остаётся `app-debug.apk`), workflow указывает новый путь
 - **Имя APK с версией**: release → `Nimbus <versionName>.apk` (например `Nimbus 1.3.apk`), версия подставляется из `-PversionName` (в CI — из тега); локальная release-сборка без `-P` получит дефолтный дефолт `Nimbus 1.1.apk`
+
+## Сессия 2026-08-11 — GPS-фикс
+
+- **«Моя локация» крутился и падал в ошибку**: ждали только `PRIORITY_HIGH_ACCURACY` 30 сек (нужны спутники, в помещении/без GPS не даёт фикса), а fallback `lastLocation` почти всегда пуст → до ~40 сек ожидания и глухой тост «Не удалось получить местоположение»
+- **Фикс**: проверка `LocationManager.isProviderEnabled(GPS/NETWORK)` до запроса — при выключенной геолокации мгновенный тост `gps_disabled` («Геолокация выключена…», x4 локали) вместо крутилки; координаты: `lastLocation` (8с) → `BALANCED_POWER_ACCURACY` (12с) → `HIGH_ACCURACY` (15с); причины логируются `Log.w(TAG)`
+- **Лог в доступное место**: `util/LocationLog` пишет построчно в `Download/nimbus_location.log` (MediaStore, API 29+; на API 26–28 — внешний каталог приложения, обрезка 200 строк) — состояние провайдеров, каждый шаг каскада, итог; в logcat тоже дублируется

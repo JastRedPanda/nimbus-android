@@ -80,6 +80,7 @@
     <string name="use_gps">Использовать GPS</string>
     <string name="gps_permission_denied">Разрешение на определение местоположения не предоставлено</string>
     <string name="gps_failed">Не удалось получить местоположение</string>
+    <string name="gps_disabled">Геолокация выключена. Включите её в настройках системы</string>
     <string name="favourite_cities">Избранные города</string>
     <string name="no_favourite_cities">Добавляйте города звёздочкой для быстрого переключения</string>
 

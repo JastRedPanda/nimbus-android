@@ -67,6 +67,17 @@ fun LocationSearchScreen(
         }
     }
 
+    LaunchedEffect(state.gpsDisabled) {
+        if (state.gpsDisabled) {
+            Toast.makeText(
+                context,
+                context.getString(R.string.gps_disabled),
+                Toast.LENGTH_LONG
+            ).show()
+            viewModel.consumeGpsDisabled()
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
