@@ -78,3 +78,22 @@
 - **«Моя локация» крутился и падал в ошибку**: ждали только `PRIORITY_HIGH_ACCURACY` 30 сек (нужны спутники, в помещении/без GPS не даёт фикса), а fallback `lastLocation` почти всегда пуст → до ~40 сек ожидания и глухой тост «Не удалось получить местоположение»
 - **Фикс**: проверка `LocationManager.isProviderEnabled(GPS/NETWORK)` до запроса — при выключенной геолокации мгновенный тост `gps_disabled` («Геолокация выключена…», x4 локали) вместо крутилки; координаты: `lastLocation` (8с) → `BALANCED_POWER_ACCURACY` (12с) → `HIGH_ACCURACY` (15с); причины логируются `Log.w(TAG)`
 - **Лог в доступное место**: `util/LocationLog` пишет построчно в `Download/nimbus_location.log` (MediaStore, API 29+; на API 26–28 — внешний каталог приложения, обрезка 200 строк) — состояние провайдеров, каждый шаг каскада, итог; в logcat тоже дублируется
+
+## Сессия 2026-08-11 — удаление GPS (релиз 1.5)
+
+- **GPS удалён полностью** по решению пользователя: `LocationLog.kt`, `onMyLocationClick`, каскад координат, `resolvePlace`/Geocoder, тосты (`gps_no_signal` и др.), кнопка «Моя локация» (LocationSearch и онбординг), `ACCESS_FINE/COARSE_LOCATION` из манифеста, строки `use_gps`/`gps_*` из 4 локалей, зависимость `play-services-location` (21.3.0)
+- Дефолтный город — Киев (50.4501, 30.5234, `Europe/Kiev`); таймзона города — из ответа геокодинга Open-Meteo (поле `timezone`), валидация `DateTimeUtils.isValidTimeZoneId`
+- Релиз **v1.5** (`18b3890`)
+
+## Сессия 2026-08-11 — постоянная подпись (релиз 1.6)
+
+- **Установка «поверх» не работала между релизами**: v1.2 `cb08fb2e`, v1.3 `22f0c113`, v1.4 `8320f624`, v1.5 `f7ec9e86` — каждый подписан своим ключом (секрет `DEBUG_KEYSTORE_B64` перевыставлялся, но подписи не совпадали)
+- Создан постоянный ключ `nimbus-release.keystore` (пароль `android`, alias `androiddebugkey`, SHA-1 `b9cdf73d…`, SHA-256 `5E:92:A5:4C:…`); base64-копия — в секрете `DEBUG_KEYSTORE_B64` и в приватном gist https://gist.github.com/JastRedPanda/637b0f57f344a33290950c2ad2db88f6 (сверено побайтово); локальные копии — в .gitignore
+- **Первый v1.6 оказался подписан чужим ключом** (`89b55b51` в CI): `signingConfigs.getByName("debug")` игнорировал подложенный keystore — AGP на каждом ране генерировал свой debug-ключ (поэтому подписи различались и раньше). Диагностика через keytool в workflow подтвердила, что keystore в CI правильный, а подпись — нет
+- **Фикс**: явная `signingConfigs.create("release")` в app/build.gradle.kts (`storeFile = $HOME/.android/debug.keystore`, пароль/alias `android`/`androiddebugkey`); тег v1.6 пересоздан на `8a1cb2c`, workflow зелёный, подпись `b9cdf73d…` подтверждена apksigner на скачанном APK
+- Правило «подпись не менять никогда» + восстановление из gist — зафиксированы в AGENTS.md
+
+## Сессия 2026-08-11 — README
+
+- Двуязычный `README.md`: английский + украинский под `<details>`-спойлером; фичи, установка (с v1.6 обновление поверх), сборка, Open-Meteo, стек, виджет (время+дата+температура, палитры, прозрачность), планшетный лейаут
+- Актуализация docs/: product.md (убраны GPS/FAB/placeholder-виджета/интервал уведомлений/переименование городов; добавлены дата виджета, адаптивные шрифты, тема, режим температуры виджета), architecture.md (убрана play-services-location, обновлены подводные камни), history.md
