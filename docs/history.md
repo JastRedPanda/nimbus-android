@@ -111,3 +111,8 @@
 - **Фикс**: `WeatherRepository.translateCityName` — поиск по имени на целевом языке с фильтром по координатам (haversine, ±25 км); при неудаче — каскад через английское имя; `CityNameTranslator.ensureTranslations` — дозаполнение переводов для списка городов; `SettingsDataStore.updateCityTranslations` — обновление `localNames` текущего города, избранных и недавних; вызовы при добавлении города (LocationSearchViewModel), при смене языка до рестарта (SettingsViewModel), при старте приложения (HomeViewModel)
 - **Ручной словарь расширен** до ~110 городов (столицы Европы, областные центры Украины, крупнейшие города РФ, города Чехии): `TRANSLATION_SETS` — 4 языка (ru/uk/en/cs) на город, `KNOWN_TRANSLATIONS` индексируется по каждому написанию
 - Тест: `CityNameResolverTest` (словарь, приоритет localNames, фолбэк)
+- Релиз **v1.7** (`f812b1e`) — переводы городов, подпись `b9cdf73d…` (встаёт поверх v1.6)
+
+## Сессия 2026-08-11 — клик по виджету
+
+- **Виджет не открывал приложение по нажатию**: в `ClockTempWidget` не было обработчика клика. Фикс — `GlanceModifier.clickable(actionStartActivity<MainActivity>())` на корневой Row (импорты `androidx.glance.action.clickable` и `androidx.glance.action.actionStartActivity`; пакет `androidx.glance.clickable` в Glance 1.2.0-rc01 не существует)
