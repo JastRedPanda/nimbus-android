@@ -21,8 +21,6 @@ Free and open-source Android weather app. No ads, no trackers, no API keys.
 
 Download the APK from [Releases](https://github.com/JastRedPanda/nimbus-android/releases). Requires Android 8.0+ (minSdk 26).
 
-Since v1.6 the app is signed with a permanent key — updates install over previous versions.
-
 ## Build from source
 
 Requirements: JDK 17, Android SDK (compileSdk 35).
@@ -80,8 +78,6 @@ Single 1×4 home screen widget: large city time on the left (with date, text or 
 ## Встановлення
 
 Завантажте APK зі [сторінки Releases](https://github.com/JastRedPanda/nimbus-android/releases). Потрібен Android 8.0+ (minSdk 26).
-
-Починаючи з v1.6 застосунок підписується постійним ключем — оновлення встановлюються поверх попередніх версій.
 
 ## Збірка з вихідного коду
 
