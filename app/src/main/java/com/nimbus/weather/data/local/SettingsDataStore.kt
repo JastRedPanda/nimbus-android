@@ -248,6 +248,33 @@ class SettingsDataStore(private val context: Context) {
         }
     }
 
+    suspend fun updateCityTranslations(name: String, translations: Map<String, String>) {
+        context.dataStore.edit { prefs ->
+            if (prefs[KEY_CITY_NAME] == name) {
+                val current = prefs[KEY_CITY_LOCAL_NAMES]?.let {
+                    try { json.decodeFromString<Map<String, String>>(it) } catch (_: Exception) { emptyMap() }
+                } ?: emptyMap()
+                prefs[KEY_CITY_LOCAL_NAMES] = json.encodeToString(current + translations)
+            }
+            val favourites = prefs[KEY_FAVOURITE_CITIES]?.let {
+                try { json.decodeFromString<List<FavouriteCity>>(it) } catch (_: Exception) { null }
+            } ?: emptyList()
+            if (favourites.any { it.name == name }) {
+                prefs[KEY_FAVOURITE_CITIES] = json.encodeToString(
+                    favourites.map { if (it.name == name) it.copy(localNames = it.localNames + translations) else it }
+                )
+            }
+            val recents = prefs[KEY_RECENT_CITIES]?.let {
+                try { json.decodeFromString<List<FavouriteCity>>(it) } catch (_: Exception) { null }
+            } ?: emptyList()
+            if (recents.any { it.name == name }) {
+                prefs[KEY_RECENT_CITIES] = json.encodeToString(
+                    recents.map { if (it.name == name) it.copy(localNames = it.localNames + translations) else it }
+                )
+            }
+        }
+    }
+
     suspend fun getLocationSnapshot(): LocationSnapshot {
         val prefs = context.dataStore.data.first()
         return LocationSnapshot(

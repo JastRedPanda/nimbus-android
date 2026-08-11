@@ -6,14 +6,17 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.nimbus.weather.data.local.SettingsDataStore
 import com.nimbus.weather.data.local.SettingsDataStore.FavouriteCity
+import com.nimbus.weather.data.repository.WeatherRepository
 import com.nimbus.weather.service.WeatherUpdateScheduler
 import com.nimbus.weather.util.CityNameResolver
+import com.nimbus.weather.util.CityNameTranslator
 import com.nimbus.weather.util.LanguageHelper
 import com.nimbus.weather.util.ThemeMode
 import com.nimbus.weather.util.TemperatureUnit
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 data class SettingsUiState(
@@ -117,12 +120,27 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     fun setAppLanguage(language: String) {
         viewModelScope.launch {
+            translateCitiesForLanguage(language)
             settings.setAppLanguage(language)
             val ctx = getApplication<Application>()
             val intent = ctx.packageManager.getLaunchIntentForPackage(ctx.packageName)
             intent?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
             ctx.startActivity(intent)
             Runtime.getRuntime().exit(0)
+        }
+    }
+
+    private suspend fun translateCitiesForLanguage(language: String) {
+        try {
+            val translator = CityNameTranslator(WeatherRepository(), settings)
+            val loc = settings.getLocationSnapshot()
+            val cities = buildList {
+                add(FavouriteCity(loc.name, loc.lat, loc.lon, loc.tz, loc.localNames))
+                addAll(settings.favouriteCities.first())
+                addAll(settings.recentCities.first())
+            }.distinctBy { it.name }
+            translator.ensureTranslations(cities, listOf(language))
+        } catch (_: Exception) {
         }
     }
 

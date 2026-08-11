@@ -14,6 +14,7 @@ import com.nimbus.weather.service.NotificationHelper
 import com.nimbus.weather.ui.components.DailyForecastData
 import com.nimbus.weather.ui.components.HourlyForecastData
 import com.nimbus.weather.util.CityNameResolver
+import com.nimbus.weather.util.CityNameTranslator
 import com.nimbus.weather.util.LanguageHelper
 import com.nimbus.weather.util.TemperatureUnit
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -77,6 +78,37 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
         loadWeather()
+        ensureCityTranslations()
+    }
+
+    private fun ensureCityTranslations() {
+        viewModelScope.launch {
+            try {
+                val translator = CityNameTranslator(repository, settings)
+                val appLanguage = settings.appLanguage.first()
+                val lang = if (appLanguage == "auto") {
+                    LanguageHelper.resolveLocale().language
+                } else {
+                    appLanguage
+                }
+                val loc = settings.getLocationSnapshot()
+                val cities = buildList {
+                    add(FavouriteCity(loc.name, loc.lat, loc.lon, loc.tz, loc.localNames))
+                    addAll(settings.favouriteCities.first())
+                }.distinctBy { it.name }
+                translator.ensureTranslations(cities, listOf(lang))
+                val updatedLoc = settings.getLocationSnapshot()
+                _state.value = _state.value.copy(
+                    cityName = CityNameResolver.displayName(
+                        updatedLoc.name, updatedLoc.localNames, lang
+                    ),
+                    favouriteDisplayNames = buildDisplayNames(
+                        settings.favouriteCities.first(), appLanguage
+                    )
+                )
+            } catch (_: Exception) {
+            }
+        }
     }
 
     private fun buildDisplayNames(cities: List<FavouriteCity>, appLanguage: String): Map<String, String> {
