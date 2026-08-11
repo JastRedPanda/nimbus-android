@@ -19,6 +19,7 @@ val localNextVersionCode: Int = (versionProps.getProperty("versionCode")?.toIntO
 val ciVersionCode: Int? = (project.findProperty("versionCode") as String?)?.toIntOrNull()
 val releaseVersionName: String =
     (project.findProperty("versionName") as String?)?.takeIf { it.isNotBlank() } ?: "1.1"
+val userHome: String = System.getenv("HOME") ?: System.getenv("USERPROFILE") ?: "."
 
 android {
     namespace = "com.nimbus.weather"
@@ -32,10 +33,19 @@ android {
         versionName = releaseVersionName
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("$userHome/.android/debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
