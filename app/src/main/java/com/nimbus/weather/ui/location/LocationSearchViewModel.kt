@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.nimbus.weather.data.local.SettingsDataStore
 import com.nimbus.weather.data.model.GeocodingResult
 import com.nimbus.weather.data.repository.WeatherRepository
+import com.nimbus.weather.util.CityNameTranslator
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -94,22 +95,16 @@ class LocationSearchViewModel(application: Application) : AndroidViewModel(appli
 
     fun selectCity(result: GeocodingResult) {
         viewModelScope.launch {
-            settings.setLocation(
+            val city = SettingsDataStore.FavouriteCity(
                 name = result.name,
                 lat = result.latitude,
                 lon = result.longitude,
                 tz = result.timezone ?: "Europe/Kiev",
                 localNames = result.localNames.orEmpty()
             )
-            settings.addRecentCity(
-                SettingsDataStore.FavouriteCity(
-                    name = result.name,
-                    lat = result.latitude,
-                    lon = result.longitude,
-                    tz = result.timezone ?: "Europe/Kiev",
-                    localNames = result.localNames.orEmpty()
-                )
-            )
+            settings.setLocation(city.name, city.lat, city.lon, city.tz, city.localNames)
+            settings.addRecentCity(city)
+            translateAll(city)
         }
     }
 
@@ -123,6 +118,7 @@ class LocationSearchViewModel(application: Application) : AndroidViewModel(appli
                 localNames = city.localNames
             )
             settings.addRecentCity(city)
+            translateAll(city)
         }
     }
 
@@ -139,6 +135,7 @@ class LocationSearchViewModel(application: Application) : AndroidViewModel(appli
                 settings.removeFavouriteCity(result.name)
             } else {
                 settings.addFavouriteCity(city)
+                translateAll(city)
             }
         }
     }
@@ -149,8 +146,21 @@ class LocationSearchViewModel(application: Application) : AndroidViewModel(appli
                 settings.removeFavouriteCity(city.name)
             } else {
                 settings.addFavouriteCity(city)
+                translateAll(city)
             }
         }
+    }
+
+    private suspend fun translateAll(city: SettingsDataStore.FavouriteCity) {
+        try {
+            CityNameTranslator(repository, settings)
+                .ensureTranslations(listOf(city), ALL_CITY_LANGUAGES)
+        } catch (_: Exception) {
+        }
+    }
+
+    companion object {
+        private val ALL_CITY_LANGUAGES = listOf("ru", "uk", "en", "cs")
     }
 
     fun removeRecentCity(name: String) {

@@ -74,4 +74,25 @@ class WeatherRepository {
     suspend fun searchCities(query: String, language: String = "ru"): List<GeocodingResult> {
         return geocodingApi.searchCities(name = query, language = language).results.orEmpty()
     }
+
+    suspend fun translateCityName(name: String, lat: Double, lon: Double, toLang: String): String? {
+        val radiusKm = 25.0
+        fun bestMatch(results: List<GeocodingResult>): GeocodingResult? {
+            val distances = results.map { it to distanceKm(it.latitude, it.longitude, lat, lon) }
+            return distances.filter { it.second <= radiusKm }.minByOrNull { it.second }?.first
+        }
+        bestMatch(geocodingApi.searchCities(name = name, language = toLang).results.orEmpty())?.let { return it.name }
+        val canonical = bestMatch(geocodingApi.searchCities(name = name, language = "en").results.orEmpty())
+            ?: return null
+        return bestMatch(geocodingApi.searchCities(name = canonical.name, language = toLang).results.orEmpty())?.name
+    }
+
+    private fun distanceKm(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
+        val earthRadiusKm = 6371.0
+        val dLat = Math.toRadians(lat2 - lat1)
+        val dLon = Math.toRadians(lon2 - lon1)
+        val a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2)
+        return 2 * earthRadiusKm * Math.asin(Math.sqrt(a))
+    }
 }
