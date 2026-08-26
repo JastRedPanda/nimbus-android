@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.nimbus.weather.util.LanguageHelper
 import com.nimbus.weather.util.ThemeMode
 import com.nimbus.weather.util.TemperatureUnit
 import kotlinx.coroutines.flow.Flow
@@ -61,14 +62,35 @@ class SettingsDataStore(private val context: Context) {
         const val MAX_RECENT_CITIES = 5
     }
 
+    private inline fun <reified T> decode(raw: String?, fallback: T): T {
+        if (raw.isNullOrBlank()) return fallback
+        return try { json.decodeFromString<T>(raw) } catch (_: Exception) { fallback }
+    }
+
+    private fun Preferences.cities(key: Preferences.Key<String>): List<FavouriteCity> =
+        decode(this[key], emptyList())
+
+    private fun List<FavouriteCity>.upsert(city: FavouriteCity, atTop: Boolean = false): List<FavouriteCity> =
+        buildList {
+            addAll(this@upsert.filterNot { it.name == city.name })
+            if (atTop) add(0, city) else add(city)
+        }.take(if (atTop) MAX_RECENT_CITIES else size)
+
+    private suspend fun updateCityList(
+        key: Preferences.Key<String>,
+        transform: (List<FavouriteCity>) -> List<FavouriteCity>
+    ) {
+        context.dataStore.edit { prefs ->
+            prefs[key] = json.encodeToString(transform(prefs.cities(key)))
+        }
+    }
+
     val onboardingDone: Flow<Boolean> = context.dataStore.data.map { prefs ->
         prefs[KEY_ONBOARDING_DONE] ?: false
     }
 
     val themeMode: Flow<ThemeMode> = context.dataStore.data.map { prefs ->
-        val raw = prefs[KEY_THEME_MODE]
-        if (raw == null) ThemeMode.SYSTEM
-        else try { ThemeMode.valueOf(raw) } catch (_: Exception) { ThemeMode.SYSTEM }
+        decode(prefs[KEY_THEME_MODE], ThemeMode.SYSTEM)
     }
 
     val notificationsEnabled: Flow<Boolean> = context.dataStore.data.map { prefs ->
@@ -80,9 +102,7 @@ class SettingsDataStore(private val context: Context) {
     }
 
     val tempUnit: Flow<TemperatureUnit> = context.dataStore.data.map { prefs ->
-        val raw = prefs[KEY_TEMP_UNIT]
-        if (raw == null) TemperatureUnit.CELSIUS
-        else try { TemperatureUnit.valueOf(raw) } catch (_: Exception) { TemperatureUnit.CELSIUS }
+        decode(prefs[KEY_TEMP_UNIT], TemperatureUnit.CELSIUS)
     }
 
     val cityName: Flow<String> = context.dataStore.data.map { prefs ->
@@ -106,13 +126,11 @@ class SettingsDataStore(private val context: Context) {
     }
 
     val appLanguage: Flow<String> = context.dataStore.data.map { prefs ->
-        prefs[KEY_APP_LANGUAGE] ?: "auto"
+        prefs[KEY_APP_LANGUAGE] ?: LanguageHelper.AUTO
     }
 
     val cityLocalNames: Flow<Map<String, String>> = context.dataStore.data.map { prefs ->
-        prefs[KEY_CITY_LOCAL_NAMES]?.let {
-            try { json.decodeFromString<Map<String, String>>(it) } catch (_: Exception) { emptyMap() }
-        } ?: emptyMap()
+        decode(prefs[KEY_CITY_LOCAL_NAMES], emptyMap())
     }
 
     val widgetBgColor: Flow<String?> = context.dataStore.data.map { prefs ->
@@ -251,26 +269,16 @@ class SettingsDataStore(private val context: Context) {
     suspend fun updateCityTranslations(name: String, translations: Map<String, String>) {
         context.dataStore.edit { prefs ->
             if (prefs[KEY_CITY_NAME] == name) {
-                val current = prefs[KEY_CITY_LOCAL_NAMES]?.let {
-                    try { json.decodeFromString<Map<String, String>>(it) } catch (_: Exception) { emptyMap() }
-                } ?: emptyMap()
+                val current = decode<Map<String, String>>(prefs[KEY_CITY_LOCAL_NAMES], emptyMap())
                 prefs[KEY_CITY_LOCAL_NAMES] = json.encodeToString(current + translations)
             }
-            val favourites = prefs[KEY_FAVOURITE_CITIES]?.let {
-                try { json.decodeFromString<List<FavouriteCity>>(it) } catch (_: Exception) { null }
-            } ?: emptyList()
-            if (favourites.any { it.name == name }) {
-                prefs[KEY_FAVOURITE_CITIES] = json.encodeToString(
-                    favourites.map { if (it.name == name) it.copy(localNames = it.localNames + translations) else it }
-                )
-            }
-            val recents = prefs[KEY_RECENT_CITIES]?.let {
-                try { json.decodeFromString<List<FavouriteCity>>(it) } catch (_: Exception) { null }
-            } ?: emptyList()
-            if (recents.any { it.name == name }) {
-                prefs[KEY_RECENT_CITIES] = json.encodeToString(
-                    recents.map { if (it.name == name) it.copy(localNames = it.localNames + translations) else it }
-                )
+            for (key in listOf(KEY_FAVOURITE_CITIES, KEY_RECENT_CITIES)) {
+                val cities = prefs.cities(key)
+                if (cities.any { it.name == name }) {
+                    prefs[key] = json.encodeToString(
+                        cities.map { if (it.name == name) it.copy(localNames = it.localNames + translations) else it }
+                    )
+                }
             }
         }
     }
@@ -282,9 +290,7 @@ class SettingsDataStore(private val context: Context) {
             lat = prefs[KEY_LATITUDE] ?: DEFAULT_LAT,
             lon = prefs[KEY_LONGITUDE] ?: DEFAULT_LON,
             tz = prefs[KEY_TIMEZONE] ?: DEFAULT_TZ,
-            localNames = prefs[KEY_CITY_LOCAL_NAMES]?.let {
-                try { json.decodeFromString<Map<String, String>>(it) } catch (_: Exception) { emptyMap() }
-            } ?: emptyMap()
+            localNames = decode(prefs[KEY_CITY_LOCAL_NAMES], emptyMap())
         )
     }
 
@@ -306,64 +312,25 @@ class SettingsDataStore(private val context: Context) {
     )
 
     val favouriteCities: Flow<List<FavouriteCity>> = context.dataStore.data.map { prefs ->
-        val raw = prefs[KEY_FAVOURITE_CITIES]
-        if (raw.isNullOrBlank()) emptyList()
-        else try { json.decodeFromString<List<FavouriteCity>>(raw) } catch (_: Exception) { emptyList() }
+        prefs.cities(KEY_FAVOURITE_CITIES)
     }
 
-    suspend fun addFavouriteCity(city: FavouriteCity) {
-        context.dataStore.edit { prefs ->
-            val current = prefs[KEY_FAVOURITE_CITIES]?.let {
-                try { json.decodeFromString<List<FavouriteCity>>(it) } catch (_: Exception) { null }
-            } ?: emptyList()
-            val updated = current.toMutableList().apply {
-                removeAll { it.name == city.name }
-                add(city)
-            }
-            prefs[KEY_FAVOURITE_CITIES] = json.encodeToString(updated)
-        }
-    }
+    suspend fun addFavouriteCity(city: FavouriteCity) =
+        updateCityList(KEY_FAVOURITE_CITIES) { it.upsert(city) }
 
-    suspend fun removeFavouriteCity(name: String) {
-        context.dataStore.edit { prefs ->
-            val current = prefs[KEY_FAVOURITE_CITIES]?.let {
-                try { json.decodeFromString<List<FavouriteCity>>(it) } catch (_: Exception) { null }
-            } ?: emptyList()
-            prefs[KEY_FAVOURITE_CITIES] = json.encodeToString(current.filter { it.name != name })
-        }
-    }
+    suspend fun removeFavouriteCity(name: String) =
+        updateCityList(KEY_FAVOURITE_CITIES) { list -> list.filterNot { it.name == name } }
 
-    suspend fun setFavouriteCities(cities: List<FavouriteCity>) {
-        context.dataStore.edit { prefs ->
-            prefs[KEY_FAVOURITE_CITIES] = json.encodeToString(cities)
-        }
-    }
+    suspend fun setFavouriteCities(cities: List<FavouriteCity>) =
+        updateCityList(KEY_FAVOURITE_CITIES) { cities }
 
     val recentCities: Flow<List<FavouriteCity>> = context.dataStore.data.map { prefs ->
-        val raw = prefs[KEY_RECENT_CITIES]
-        if (raw.isNullOrBlank()) emptyList()
-        else try { json.decodeFromString<List<FavouriteCity>>(raw) } catch (_: Exception) { emptyList() }
+        prefs.cities(KEY_RECENT_CITIES)
     }
 
-    suspend fun addRecentCity(city: FavouriteCity) {
-        context.dataStore.edit { prefs ->
-            val current = prefs[KEY_RECENT_CITIES]?.let {
-                try { json.decodeFromString<List<FavouriteCity>>(it) } catch (_: Exception) { null }
-            } ?: emptyList()
-            val updated = current.toMutableList().apply {
-                removeAll { it.name == city.name }
-                add(0, city)
-            }.take(MAX_RECENT_CITIES)
-            prefs[KEY_RECENT_CITIES] = json.encodeToString(updated)
-        }
-    }
+    suspend fun addRecentCity(city: FavouriteCity) =
+        updateCityList(KEY_RECENT_CITIES) { it.upsert(city, atTop = true) }
 
-    suspend fun removeRecentCity(name: String) {
-        context.dataStore.edit { prefs ->
-            val current = prefs[KEY_RECENT_CITIES]?.let {
-                try { json.decodeFromString<List<FavouriteCity>>(it) } catch (_: Exception) { null }
-            } ?: emptyList()
-            prefs[KEY_RECENT_CITIES] = json.encodeToString(current.filter { it.name != name })
-        }
-    }
+    suspend fun removeRecentCity(name: String) =
+        updateCityList(KEY_RECENT_CITIES) { list -> list.filterNot { it.name == name } }
 }

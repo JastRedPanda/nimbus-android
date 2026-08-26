@@ -3,7 +3,6 @@ package com.nimbus.weather
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
-import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -65,15 +64,9 @@ class MainActivity : ComponentActivity() {
         val language = try {
             runBlocking { SettingsDataStore(newBase).appLanguage.first() }
         } catch (_: Exception) { "auto" }
-        val locale = if (language == "auto") {
-            LanguageHelper.resolveLocale()
-        } else {
-            LanguageHelper.resolveLocale(language)
-        }
-        val config = Configuration(newBase.resources.configuration)
-        config.setLocale(locale)
+        val locale = LanguageHelper.resolveLocale(language)
         Locale.setDefault(locale)
-        super.attachBaseContext(newBase.createConfigurationContext(config))
+        super.attachBaseContext(LanguageHelper.createContextWithLocale(newBase, locale))
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -82,9 +75,10 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         NotificationHelper.createChannel(this)
-        WeatherUpdateScheduler.schedule(this)
 
         lifecycleScope.launch(Dispatchers.IO) {
+            val interval = SettingsDataStore(this@MainActivity).updateIntervalHours.first()
+            WeatherUpdateScheduler.schedule(this@MainActivity, interval)
             WidgetUpdateManager.refreshAllWidgets(this@MainActivity)
         }
 

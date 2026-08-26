@@ -40,27 +40,23 @@ class WeatherUpdateWorker(
 }
 
 object WeatherUpdateScheduler {
-    fun schedule(context: Context, intervalHours: Int = 2) {
-        val request = PeriodicWorkRequestBuilder<WeatherUpdateWorker>(
-            intervalHours.toLong(), TimeUnit.HOURS
-        ).build()
 
+    private fun buildRequest(intervalHours: Int) =
+        PeriodicWorkRequestBuilder<WeatherUpdateWorker>(intervalHours.toLong(), TimeUnit.HOURS).build()
+
+    fun schedule(context: Context, intervalHours: Int = 2) {
         WorkManager.getInstance(context).enqueueUniquePeriodicWork(
             Constants.WEATHER_WORK_NAME,
             ExistingPeriodicWorkPolicy.KEEP,
-            request
+            buildRequest(intervalHours)
         )
     }
 
     fun reschedule(context: Context, intervalHours: Int) {
-        val request = PeriodicWorkRequestBuilder<WeatherUpdateWorker>(
-            intervalHours.toLong(), TimeUnit.HOURS
-        ).build()
-
         WorkManager.getInstance(context).enqueueUniquePeriodicWork(
             Constants.WEATHER_WORK_NAME,
             ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE,
-            request
+            buildRequest(intervalHours)
         )
     }
 }

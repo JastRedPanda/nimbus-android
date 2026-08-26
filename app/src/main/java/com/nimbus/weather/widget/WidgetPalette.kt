@@ -54,7 +54,7 @@ fun resolveWidgetPalette(
     return WidgetPalette(background = background, text = text)
 }
 
-private fun parseHexColor(hex: String): Color? {
+fun parseHexColor(hex: String): Color? {
     return try {
         val value = if (hex.startsWith("#")) hex else "#$hex"
         Color(android.graphics.Color.parseColor(value))

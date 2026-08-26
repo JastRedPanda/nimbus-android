@@ -6,6 +6,8 @@ import java.util.Locale
 
 object LanguageHelper {
 
+    const val AUTO = "auto"
+
     private val CYRILLIC_FALLBACK = setOf(
         "be", "bg", "kk", "mk", "mn", "sr", "tg", "ky", "os", "ba", "cv", "ce"
     )
@@ -28,6 +30,10 @@ object LanguageHelper {
             "en" -> Locale("en")
             else -> resolveLocale(Locale.getDefault())
         }
+    }
+
+    fun resolve(appLanguage: String): String {
+        return if (appLanguage == AUTO) resolveLocale().language else appLanguage
     }
 
     fun createContextWithLocale(context: Context, locale: Locale = resolveLocale()): Context {

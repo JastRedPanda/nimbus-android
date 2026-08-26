@@ -6,6 +6,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.nimbus.weather.data.local.SettingsDataStore
 import com.nimbus.weather.service.WidgetUpdateManager
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -41,32 +42,18 @@ class WidgetCustomizeViewModel(
     private val _state = MutableStateFlow(WidgetCustomizeUiState())
     val state: StateFlow<WidgetCustomizeUiState> = _state.asStateFlow()
 
+    private fun <T> Flow<T>.intoState(reduce: WidgetCustomizeUiState.(T) -> WidgetCustomizeUiState) {
+        viewModelScope.launch {
+            collect { value -> _state.update { it.reduce(value) } }
+        }
+    }
+
     init {
-        viewModelScope.launch {
-            settings.widgetBgColor.collect { color ->
-                _state.update { it.copy(bgColorHex = color) }
-            }
-        }
-        viewModelScope.launch {
-            settings.widgetBgAlpha.collect { alpha ->
-                _state.update { it.copy(bgAlpha = alpha) }
-            }
-        }
-        viewModelScope.launch {
-            settings.widgetTextColor.collect { option ->
-                _state.update { it.copy(textOption = option) }
-            }
-        }
-        viewModelScope.launch {
-            settings.widgetDateFormat.collect { format ->
-                _state.update { it.copy(dateFormat = format) }
-            }
-        }
-        viewModelScope.launch {
-            settings.widgetFontScale.collect { scale ->
-                _state.update { it.copy(fontScale = scale) }
-            }
-        }
+        settings.widgetBgColor.intoState { copy(bgColorHex = it) }
+        settings.widgetBgAlpha.intoState { copy(bgAlpha = it) }
+        settings.widgetTextColor.intoState { copy(textOption = it) }
+        settings.widgetDateFormat.intoState { copy(dateFormat = it) }
+        settings.widgetFontScale.intoState { copy(fontScale = it) }
     }
 
     private fun persist(block: suspend () -> Unit) {

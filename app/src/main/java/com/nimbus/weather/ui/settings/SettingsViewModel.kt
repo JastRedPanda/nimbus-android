@@ -7,12 +7,14 @@ import androidx.lifecycle.viewModelScope
 import com.nimbus.weather.data.local.SettingsDataStore
 import com.nimbus.weather.data.local.SettingsDataStore.FavouriteCity
 import com.nimbus.weather.data.repository.WeatherRepository
+import com.nimbus.weather.service.NotificationHelper
 import com.nimbus.weather.service.WeatherUpdateScheduler
 import com.nimbus.weather.util.CityNameResolver
 import com.nimbus.weather.util.CityNameTranslator
 import com.nimbus.weather.util.LanguageHelper
 import com.nimbus.weather.util.ThemeMode
 import com.nimbus.weather.util.TemperatureUnit
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -41,72 +43,38 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private val _state = MutableStateFlow(SettingsUiState())
     val state: StateFlow<SettingsUiState> = _state.asStateFlow()
 
+    private fun <T> Flow<T>.intoState(reduce: SettingsUiState.(T) -> SettingsUiState) {
+        viewModelScope.launch {
+            collect { value -> _state.value = _state.value.reduce(value) }
+        }
+    }
+
     init {
-        viewModelScope.launch {
-            settings.useFeelsLike.collect { value ->
-                _state.value = _state.value.copy(useFeelsLike = value)
-            }
+        settings.useFeelsLike.intoState { copy(useFeelsLike = it) }
+        settings.tempUnit.intoState { copy(tempUnit = it) }
+        settings.themeMode.intoState { copy(themeMode = it) }
+        settings.cityName.intoState { copy(cityName = it) }
+        settings.cityLocalNames.intoState { copy(cityLocalNames = it) }
+        settings.notificationsEnabled.intoState { copy(notificationsEnabled = it) }
+        settings.updateIntervalHours.intoState { copy(updateIntervalHours = it) }
+        settings.hourlyIntervalHours.intoState { copy(hourlyIntervalHours = it) }
+        settings.showAqi.intoState { copy(showAqi = it) }
+        settings.appLanguage.intoState { lang ->
+            copy(
+                appLanguage = lang,
+                favouriteDisplayNames = buildDisplayNames(favouriteCities, lang)
+            )
         }
-        viewModelScope.launch {
-            settings.tempUnit.collect { unit ->
-                _state.value = _state.value.copy(tempUnit = unit)
-            }
-        }
-        viewModelScope.launch {
-            settings.themeMode.collect { mode ->
-                _state.value = _state.value.copy(themeMode = mode)
-            }
-        }
-        viewModelScope.launch {
-            settings.cityName.collect { name ->
-                _state.value = _state.value.copy(cityName = name)
-            }
-        }
-        viewModelScope.launch {
-            settings.cityLocalNames.collect { localNames ->
-                _state.value = _state.value.copy(cityLocalNames = localNames)
-            }
-        }
-        viewModelScope.launch {
-            settings.notificationsEnabled.collect { enabled ->
-                _state.value = _state.value.copy(notificationsEnabled = enabled)
-            }
-        }
-        viewModelScope.launch {
-            settings.updateIntervalHours.collect { hours ->
-                _state.value = _state.value.copy(updateIntervalHours = hours)
-            }
-        }
-        viewModelScope.launch {
-            settings.appLanguage.collect { lang ->
-                _state.value = _state.value.copy(
-                    appLanguage = lang,
-                    favouriteDisplayNames = buildDisplayNames(_state.value.favouriteCities, lang)
-                )
-            }
-        }
-        viewModelScope.launch {
-            settings.hourlyIntervalHours.collect { hours ->
-                _state.value = _state.value.copy(hourlyIntervalHours = hours)
-            }
-        }
-        viewModelScope.launch {
-            settings.showAqi.collect { show ->
-                _state.value = _state.value.copy(showAqi = show)
-            }
-        }
-        viewModelScope.launch {
-            settings.favouriteCities.collect { cities ->
-                _state.value = _state.value.copy(
-                    favouriteCities = cities,
-                    favouriteDisplayNames = buildDisplayNames(cities, _state.value.appLanguage)
-                )
-            }
+        settings.favouriteCities.intoState { cities ->
+            copy(
+                favouriteCities = cities,
+                favouriteDisplayNames = buildDisplayNames(cities, appLanguage)
+            )
         }
     }
 
     private fun buildDisplayNames(cities: List<FavouriteCity>, appLanguage: String): Map<String, String> {
-        val lang = if (appLanguage == "auto") LanguageHelper.resolveLocale().language else appLanguage
+        val lang = LanguageHelper.resolve(appLanguage)
         return cities.associate { city ->
             city.name to CityNameResolver.displayName(city.name, city.localNames, lang)
         }
@@ -122,11 +90,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             translateCitiesForLanguage(language)
             settings.setAppLanguage(language)
-            val ctx = getApplication<Application>()
-            val intent = ctx.packageManager.getLaunchIntentForPackage(ctx.packageName)
-            intent?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-            ctx.startActivity(intent)
-            Runtime.getRuntime().exit(0)
+            restartApp()
         }
     }
 
@@ -144,17 +108,22 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    private fun restartApp() {
+        val ctx = getApplication<Application>()
+        val intent = ctx.packageManager.getLaunchIntentForPackage(ctx.packageName)
+        intent?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+        ctx.startActivity(intent)
+        Runtime.getRuntime().exit(0)
+    }
+
     fun setNotificationsEnabled(enabled: Boolean) {
         viewModelScope.launch {
             settings.setNotificationsEnabled(enabled)
             if (enabled) {
                 try {
                     val loc = settings.getLocationSnapshot()
-                    val repository = com.nimbus.weather.data.repository.WeatherRepository()
-                    val response = repository.getWeather(loc.lat, loc.lon, getApplication())
-                    com.nimbus.weather.service.NotificationHelper.showWeatherNotification(
-                        getApplication(), response
-                    )
+                    val response = WeatherRepository().getWeather(loc.lat, loc.lon, getApplication())
+                    NotificationHelper.showWeatherNotification(getApplication(), response)
                 } catch (_: Exception) {
                 }
             }
@@ -193,10 +162,9 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             if (index < 0) return@launch
             val target = if (up) index - 1 else index + 1
             if (target < 0 || target >= current.size) return@launch
-            val updated = current.toMutableList().apply {
-                add(target, removeAt(index))
-            }
-            settings.setFavouriteCities(updated)
+            settings.setFavouriteCities(
+                current.toMutableList().apply { add(target, removeAt(index)) }
+            )
         }
     }
 
@@ -216,11 +184,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             settings.resetAll()
             WeatherUpdateScheduler.reschedule(getApplication(), SettingsDataStore.DEFAULT_UPDATE_INTERVAL_HOURS)
-            val ctx = getApplication<Application>()
-            val intent = ctx.packageManager.getLaunchIntentForPackage(ctx.packageName)
-            intent?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-            ctx.startActivity(intent)
-            Runtime.getRuntime().exit(0)
+            restartApp()
         }
     }
 }

@@ -1,7 +1,6 @@
 package com.nimbus.weather.widget
 
 import android.content.Context
-import android.text.TextPaint
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
@@ -31,32 +30,16 @@ import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import com.nimbus.weather.MainActivity
 import com.nimbus.weather.data.local.SettingsDataStore
-import com.nimbus.weather.data.model.WeatherResponse
 import com.nimbus.weather.data.repository.WeatherCache
 import com.nimbus.weather.service.WidgetUpdateManager
-import com.nimbus.weather.util.TemperatureUnit
-import com.nimbus.weather.util.ThemeMode
 import com.nimbus.weather.util.displayString
 import com.nimbus.weather.util.toCelsiusOrFahrenheit
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-private const val MIN_FONT_SP = 10f
-private const val MAX_FONT_SP = 400f
-private const val TEMP_RATIO = 0.92f
-private const val GAP_EM = 0.55f
-
-private data class WidgetRenderData(
-    val fontScale: Int = SettingsDataStore.DEFAULT_WIDGET_FONT_SCALE,
-    val dateFormat: String = SettingsDataStore.DEFAULT_WIDGET_DATE_FORMAT,
-    val useFeelsLike: Boolean = false,
-    val tempUnit: TemperatureUnit = TemperatureUnit.CELSIUS,
-    val palette: WidgetPalette = WidgetPalette.defaultLight
-)
+private const val WIDGET_PADDING_DP = 8
 
 class ClockTempWidget : GlanceAppWidget() {
 
@@ -85,11 +68,11 @@ class ClockTempWidget : GlanceAppWidget() {
             } else {
                 SimpleDateFormat("dd.MM.yyyy", Locale.getDefault()).format(Date(nowMillis))
             }
-            val tempText = if (weather?.current != null) {
-                val t = if (renderData.useFeelsLike) weather.current.apparentTemperature
-                else weather.current.temperature
+            val tempText = weather?.current?.let { current ->
+                val t = if (renderData.useFeelsLike) current.apparentTemperature
+                else current.temperature
                 "${t.toCelsiusOrFahrenheit(renderData.tempUnit).toInt()}${renderData.tempUnit.displayString()}"
-            } else "--°"
+            } ?: "--°"
 
             val padPx = 16f * density
             val availPx = (widthDp * density - padPx).coerceAtLeast(10f)
@@ -104,13 +87,13 @@ class ClockTempWidget : GlanceAppWidget() {
                 multiplier = multiplier
             )
             val timeSp = baseSp
-            val tempSp = baseSp * TEMP_RATIO
+            val tempSp = baseSp * 0.92f
             val dateSp = baseSp
 
             Column(
                 modifier = GlanceModifier
                     .fillMaxSize()
-                    .padding(8.dp)
+                    .padding(WIDGET_PADDING_DP.dp)
                     .cornerRadius(16.dp)
                     .background(renderData.palette.background),
                 verticalAlignment = Alignment.CenterVertically,
@@ -160,81 +143,6 @@ class ClockTempWidget : GlanceAppWidget() {
             }
         }
     }
-}
-
-private fun renderDataFlow(context: Context, settings: SettingsDataStore): Flow<WidgetRenderData> {
-    val paletteFlow = combine(
-        settings.themeMode,
-        settings.widgetBgColor,
-        settings.widgetBgAlpha,
-        settings.widgetTextColor
-    ) { theme, bg, alpha, text ->
-        resolveWidgetPalette(
-            dark = isDarkTheme(context, theme),
-            bgColorHex = bg,
-            bgAlpha = alpha,
-            textOption = text
-        )
-    }
-    return combine(
-        paletteFlow,
-        settings.widgetDateFormat,
-        settings.widgetFontScale,
-        settings.useFeelsLike,
-        settings.tempUnit
-    ) { palette, dateFormat, fontScale, useFeelsLike, tempUnit ->
-        WidgetRenderData(
-            fontScale = fontScale,
-            dateFormat = dateFormat,
-            useFeelsLike = useFeelsLike,
-            tempUnit = tempUnit,
-            palette = palette
-        )
-    }
-}
-
-private fun fitBaseSp(
-    timeText: String,
-    dateText: String,
-    tempText: String,
-    availPx: Float,
-    density: Float,
-    multiplier: Float
-): Pair<Float, Boolean> {
-    val paint = TextPaint()
-
-    fun totalWidth(sp: Float, withDate: Boolean): Float {
-        fun widthOf(text: String, ratio: Float): Float {
-            paint.textSize = sp * ratio * density * multiplier
-            return paint.measureText(text)
-        }
-
-        val timeWidth = widthOf(timeText, 1f)
-        val tempWidth = widthOf(tempText, TEMP_RATIO)
-        val dateWidth = if (withDate) widthOf(dateText, 1f) else 0f
-        val gaps = (if (withDate) 2 else 1) * sp * GAP_EM * density * multiplier
-        return timeWidth + tempWidth + dateWidth + gaps
-    }
-
-    fun maxSp(withDate: Boolean): Float {
-        var low = MIN_FONT_SP
-        var high = MAX_FONT_SP
-        var best = MIN_FONT_SP
-        repeat(36) {
-            val mid = (low + high) / 2f
-            if (totalWidth(mid, withDate) <= availPx) {
-                best = mid
-                low = mid
-            } else {
-                high = mid
-            }
-        }
-        return best
-    }
-
-    val withDateBest = maxSp(withDate = true)
-    if (withDateBest > MIN_FONT_SP) return withDateBest to true
-    return maxSp(withDate = false) to false
 }
 
 class ClockTempWidgetReceiver : GlanceAppWidgetReceiver() {

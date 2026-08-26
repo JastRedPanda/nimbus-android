@@ -8,6 +8,10 @@ import com.nimbus.weather.data.model.WeatherResponse
 
 class WeatherRepository {
 
+    private companion object {
+        const val DEFAULT_TTL_HOURS = 4
+    }
+
     private val weatherApi = ApiClient.weatherApi
     private val geocodingApi = ApiClient.geocodingApi
     private val airQualityApi = ApiClient.airQualityApi
@@ -20,24 +24,20 @@ class WeatherRepository {
         private set
 
     @Volatile
-    private var ttlHours: Int = 4
+    private var ttlHours: Int = DEFAULT_TTL_HOURS
 
     fun setTtlHours(hours: Int) {
         ttlHours = hours.coerceAtLeast(1)
-    }
-
-    fun initCache(context: Context) {
-        if (cache == null) {
-            cache = WeatherCache(context).also { it.setTtlHours(ttlHours) }
-        }
+        cache?.setTtlHours(ttlHours)
     }
 
     private fun getCache(context: Context): WeatherCache {
         val existing = cache
         if (existing != null) return existing
-        val created = WeatherCache(context).also { it.setTtlHours(ttlHours) }
-        cache = created
-        return created
+        return WeatherCache(context).also {
+            it.setTtlHours(ttlHours)
+            cache = it
+        }
     }
 
     suspend fun getWeather(lat: Double, lon: Double, context: Context? = null): WeatherResponse {
