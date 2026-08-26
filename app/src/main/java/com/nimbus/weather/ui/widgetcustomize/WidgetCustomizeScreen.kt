@@ -55,6 +55,7 @@ import com.nimbus.weather.util.ThemeMode
 import com.nimbus.weather.util.displayString
 import com.nimbus.weather.util.toCelsiusOrFahrenheit
 import com.nimbus.weather.widget.isDarkTheme
+import com.nimbus.weather.widget.parseHexColor
 import com.nimbus.weather.widget.resolveWidgetPalette
 
 private val BG_PALETTE = listOf(
@@ -249,7 +250,7 @@ private fun ColorDot(
     selected: Boolean,
     onClick: () -> Unit
 ) {
-    val bg = color?.let { parseHex(it) } ?: Color.Transparent
+    val bg = color?.let { parseHexColor(it) } ?: Color.Transparent
     val borderColor = if (selected) {
         MaterialTheme.colorScheme.primary
     } else {
@@ -360,14 +361,5 @@ private fun WidgetPreviewBox(
                 modifier = Modifier.weight(1f)
             )
         }
-    }
-}
-
-private fun parseHex(hex: String): Color {
-    return try {
-        val value = if (hex.startsWith("#")) hex else "#$hex"
-        Color(android.graphics.Color.parseColor(value))
-    } catch (_: Exception) {
-        Color.Transparent
     }
 }

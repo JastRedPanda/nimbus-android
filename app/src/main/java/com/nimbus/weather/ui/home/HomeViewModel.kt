@@ -11,6 +11,7 @@ import com.nimbus.weather.data.model.HourlyWeather
 import com.nimbus.weather.data.model.WeatherResponse
 import com.nimbus.weather.data.repository.WeatherRepository
 import com.nimbus.weather.service.NotificationHelper
+import com.nimbus.weather.service.WidgetUpdateManager
 import com.nimbus.weather.ui.components.DailyForecastData
 import com.nimbus.weather.ui.components.HourlyForecastData
 import com.nimbus.weather.util.CityNameResolver
@@ -86,11 +87,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 val translator = CityNameTranslator(repository, settings)
                 val appLanguage = settings.appLanguage.first()
-                val lang = if (appLanguage == "auto") {
-                    LanguageHelper.resolveLocale().language
-                } else {
-                    appLanguage
-                }
+                val lang = LanguageHelper.resolve(appLanguage)
                 val loc = settings.getLocationSnapshot()
                 val cities = buildList {
                     add(FavouriteCity(loc.name, loc.lat, loc.lon, loc.tz, loc.localNames))
@@ -112,7 +109,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun buildDisplayNames(cities: List<FavouriteCity>, appLanguage: String): Map<String, String> {
-        val lang = if (appLanguage == "auto") LanguageHelper.resolveLocale().language else appLanguage
+        val lang = LanguageHelper.resolve(appLanguage)
         return cities.associate { city ->
             city.name to CityNameResolver.displayName(city.name, city.localNames, lang)
         }
@@ -143,6 +140,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 val appLanguage = settings.appLanguage.first()
                 repository.setTtlHours(updateInterval * 2)
                 val response = repository.getWeather(loc.lat, loc.lon, ctx)
+                WidgetUpdateManager.updateAllWidgets(ctx, response)
                 val tempUnit = settings.tempUnit.first()
                 val feelsLike = settings.useFeelsLike.first()
                 val hourlyInterval = settings.hourlyIntervalHours.first()
@@ -157,11 +155,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                     } catch (_: Exception) { null }
                 } else null
 
-                val lang = if (appLanguage == "auto") {
-                    LanguageHelper.resolveLocale().language
-                } else {
-                    appLanguage
-                }
+                val lang = LanguageHelper.resolve(appLanguage)
 
                 _state.value = _state.value.copy(
                     cityName = CityNameResolver.displayName(loc.name, loc.localNames, lang),

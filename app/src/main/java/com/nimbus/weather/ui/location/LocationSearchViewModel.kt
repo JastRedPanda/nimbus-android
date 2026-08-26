@@ -4,9 +4,11 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.nimbus.weather.data.local.SettingsDataStore
+import com.nimbus.weather.data.local.SettingsDataStore.FavouriteCity
 import com.nimbus.weather.data.model.GeocodingResult
 import com.nimbus.weather.data.repository.WeatherRepository
 import com.nimbus.weather.util.CityNameTranslator
+import com.nimbus.weather.util.LanguageHelper
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,7 +22,7 @@ data class LocationSearchUiState(
     val loading: Boolean = false,
     val noResults: Boolean = false,
     val favouriteNames: Set<String> = emptySet(),
-    val recentCities: List<SettingsDataStore.FavouriteCity> = emptyList(),
+    val recentCities: List<FavouriteCity> = emptyList(),
     val appLanguage: String = "auto"
 )
 
@@ -37,9 +39,7 @@ class LocationSearchViewModel(application: Application) : AndroidViewModel(appli
     init {
         viewModelScope.launch {
             settings.favouriteCities.collect { cities ->
-                _state.value = _state.value.copy(
-                    favouriteNames = cities.map { it.name }.toSet()
-                )
+                _state.value = _state.value.copy(favouriteNames = cities.map { it.name }.toSet())
             }
         }
         viewModelScope.launch {
@@ -63,18 +63,14 @@ class LocationSearchViewModel(application: Application) : AndroidViewModel(appli
                 search(query)
             }
         } else {
-            _state.value = _state.value.copy(
-                results = emptyList(),
-                noResults = false
-            )
+            _state.value = _state.value.copy(results = emptyList(), noResults = false)
         }
     }
 
     private suspend fun search(query: String) {
         _state.value = _state.value.copy(loading = true, noResults = false)
         try {
-            val lang = resolveLanguage(_state.value.appLanguage)
-            val results = repository.searchCities(query, lang)
+            val results = repository.searchCities(query, LanguageHelper.resolve(_state.value.appLanguage))
             _state.value = _state.value.copy(
                 results = results,
                 loading = false,
@@ -85,62 +81,31 @@ class LocationSearchViewModel(application: Application) : AndroidViewModel(appli
         }
     }
 
-    private fun resolveLanguage(appLanguage: String): String {
-        return if (appLanguage == "auto") {
-            com.nimbus.weather.util.LanguageHelper.resolveLocale().language
-        } else {
-            appLanguage
-        }
+    fun selectCity(result: GeocodingResult) {
+        applyCity(result.toCity())
     }
 
-    fun selectCity(result: GeocodingResult) {
+    fun selectRecentCity(city: FavouriteCity) {
+        applyCity(city)
+    }
+
+    fun toggleFavourite(result: GeocodingResult) {
+        toggleFavourite(result.toCity())
+    }
+
+    fun toggleRecentFavourite(city: FavouriteCity) {
+        toggleFavourite(city)
+    }
+
+    private fun applyCity(city: FavouriteCity) {
         viewModelScope.launch {
-            val city = SettingsDataStore.FavouriteCity(
-                name = result.name,
-                lat = result.latitude,
-                lon = result.longitude,
-                tz = result.timezone ?: "Europe/Kiev",
-                localNames = result.localNames.orEmpty()
-            )
             settings.setLocation(city.name, city.lat, city.lon, city.tz, city.localNames)
             settings.addRecentCity(city)
             translateAll(city)
         }
     }
 
-    fun selectRecentCity(city: SettingsDataStore.FavouriteCity) {
-        viewModelScope.launch {
-            settings.setLocation(
-                name = city.name,
-                lat = city.lat,
-                lon = city.lon,
-                tz = city.tz,
-                localNames = city.localNames
-            )
-            settings.addRecentCity(city)
-            translateAll(city)
-        }
-    }
-
-    fun toggleFavourite(result: GeocodingResult) {
-        viewModelScope.launch {
-            val city = SettingsDataStore.FavouriteCity(
-                name = result.name,
-                lat = result.latitude,
-                lon = result.longitude,
-                tz = result.timezone ?: "Europe/Kiev",
-                localNames = result.localNames.orEmpty()
-            )
-            if (_state.value.favouriteNames.contains(result.name)) {
-                settings.removeFavouriteCity(result.name)
-            } else {
-                settings.addFavouriteCity(city)
-                translateAll(city)
-            }
-        }
-    }
-
-    fun toggleRecentFavourite(city: SettingsDataStore.FavouriteCity) {
+    private fun toggleFavourite(city: FavouriteCity) {
         viewModelScope.launch {
             if (_state.value.favouriteNames.contains(city.name)) {
                 settings.removeFavouriteCity(city.name)
@@ -151,21 +116,28 @@ class LocationSearchViewModel(application: Application) : AndroidViewModel(appli
         }
     }
 
-    private suspend fun translateAll(city: SettingsDataStore.FavouriteCity) {
+    private suspend fun translateAll(city: FavouriteCity) {
         try {
-            CityNameTranslator(repository, settings)
-                .ensureTranslations(listOf(city), ALL_CITY_LANGUAGES)
+            CityNameTranslator(repository, settings).ensureTranslations(listOf(city), ALL_CITY_LANGUAGES)
         } catch (_: Exception) {
         }
-    }
-
-    companion object {
-        private val ALL_CITY_LANGUAGES = listOf("ru", "uk", "en", "cs")
     }
 
     fun removeRecentCity(name: String) {
         viewModelScope.launch {
             settings.removeRecentCity(name)
         }
+    }
+
+    private fun GeocodingResult.toCity(): FavouriteCity = FavouriteCity(
+        name = name,
+        lat = latitude,
+        lon = longitude,
+        tz = timezone ?: "Europe/Kiev",
+        localNames = localNames.orEmpty()
+    )
+
+    companion object {
+        private val ALL_CITY_LANGUAGES = listOf("ru", "uk", "en", "cs")
     }
 }
