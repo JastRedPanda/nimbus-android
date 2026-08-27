@@ -96,7 +96,7 @@ ui/
 widget/         ClockTempWidget.kt (и ClockTempWidgetReceiver внутри), WidgetPalette.kt,
                 WidgetRender.kt (поток рендер-данных + fitBaseSp — адаптивный шрифт)
 service/        WeatherUpdateWorker.kt (и object WeatherUpdateScheduler внутри),
-                NotificationHelper.kt, WidgetUpdateManager.kt
+                NotificationHelper.kt, WidgetUpdateManager.kt, KeepAliveService.kt
 util/           CityNameResolver.kt, CityNameTranslator.kt, LanguageHelper.kt,
                 DateTimeUtils.kt, WeatherCodeUtils.kt, TemperatureUtils.kt,
                 WindDirection.kt, Constants.kt, ThemeMode.kt
@@ -153,3 +153,4 @@ junit 4.13.2, kotlinx-coroutines-test 1.9.0, mockk 1.13.13, turbine 1.2.0
 - **CI-сборка (`.github/workflows/android.yml`)**: на каждый push/PR в `main` — `assembleDebug` + `test`, debug APK заливается артефактом; не публикует релиз
 - **Релиз в CI (`.github/workflows/release.yml`)**: пуш тега `v*` → `-PversionName` из тега, `-PversionCode` из `git rev-list --count HEAD` (монотонно), ключ `DEBUG_KEYSTORE_B64` из secrets восстанавливается в `~/.android/debug.keystore`; подпись — явная `signingConfigs.create("release")` в app/build.gradle.kts (SHA-1 `b9cdf73d…`, постоянный с v1.6; `signingConfigs.getByName("debug")` в CI не работает — AGP генерирует свой ключ)
 - **POST_NOTIFICATIONS**: без пермишна в манифесте и runtime-запроса `showWeatherNotification` молча выходит на Android 13+
+- **KeepAliveService (foreground, `START_STICKY`)**: тумблер «Перезапуск при закрытии» в настройках. Сервис с foreground-уведомлением канала `keep_alive` (`PRIORITY_MIN`, `CATEGORY_SERVICE`) + `foregroundServiceType="specialUse"` (`PROPERTY_SPECIAL_USE_FGS_SUBTYPE` обязателен на Android 14+). При `onTaskRemoved` сам себя перезапускает через `startForegroundService`. Не спасает от force-stop — это системное ограничение, обойти нельзя. На агрессивных прошивках (MIUI/EMUI/HyperOS и т. п.) ОС всё равно может убить процесс — пользователю нужно вручную отключить оптимизацию батареи для Nimbus

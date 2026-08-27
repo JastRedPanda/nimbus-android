@@ -39,6 +39,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.nimbus.weather.data.local.SettingsDataStore
+import com.nimbus.weather.service.KeepAliveService
 import com.nimbus.weather.service.NotificationHelper
 import com.nimbus.weather.service.WeatherUpdateScheduler
 import com.nimbus.weather.service.WidgetUpdateManager
@@ -77,8 +78,12 @@ class MainActivity : ComponentActivity() {
         NotificationHelper.createChannel(this)
 
         lifecycleScope.launch(Dispatchers.IO) {
-            val interval = SettingsDataStore(this@MainActivity).updateIntervalHours.first()
+            val settings = SettingsDataStore(this@MainActivity)
+            val interval = settings.updateIntervalHours.first()
             WeatherUpdateScheduler.schedule(this@MainActivity, interval)
+            if (settings.keepAliveEnabled.first()) {
+                KeepAliveService.start(this@MainActivity)
+            }
             WidgetUpdateManager.refreshAllWidgets(this@MainActivity)
         }
 

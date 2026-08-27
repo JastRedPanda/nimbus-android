@@ -45,6 +45,15 @@
     <string name="notifications">Oznámení</string>
     <string name="notifications_enabled">Oznámení o počasí</string>
 
+    <!-- Ostatní / Restart -->
+    <string name="other">Ostatní</string>
+    <string name="keep_alive_title">Restart při zavření</string>
+    <string name="keep_alive_summary">Restartovat aplikaci, pokud je zavřená. Zajišťuje spolehlivost widgetu a oznámení.</string>
+    <string name="keep_alive_channel_name">Služba na pozadí</string>
+    <string name="keep_alive_channel_description">Udržuje proces aplikace aktivní, aby widget a oznámení zůstaly aktuální.</string>
+    <string name="keep_alive_notification_title">Nimbus Weather běží na pozadí</string>
+    <string name="keep_alive_notification_text">Udržuje widget a oznámení aktuální.</string>
+
     <!-- Settings -->
     <string name="settings">Nastavení</string>
     <string name="language_auto">Automaticky</string>

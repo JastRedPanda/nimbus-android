@@ -47,6 +47,7 @@ class SettingsDataStore(private val context: Context) {
         private val KEY_HOURLY_INTERVAL_HOURS = intPreferencesKey("hourly_interval_hours")
         private val KEY_SHOW_AQI = booleanPreferencesKey("show_aqi")
         private val KEY_RECENT_CITIES = stringPreferencesKey("recent_cities")
+        private val KEY_KEEP_ALIVE_ENABLED = booleanPreferencesKey("keep_alive_enabled")
 
         const val DEFAULT_CITY = "Киев"
         const val DEFAULT_LAT = 50.4501
@@ -161,6 +162,10 @@ class SettingsDataStore(private val context: Context) {
         prefs[KEY_SHOW_AQI] ?: true
     }
 
+    val keepAliveEnabled: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[KEY_KEEP_ALIVE_ENABLED] ?: false
+    }
+
     suspend fun setOnboardingDone() {
         context.dataStore.edit { prefs ->
             prefs[KEY_ONBOARDING_DONE] = true
@@ -239,6 +244,12 @@ class SettingsDataStore(private val context: Context) {
     suspend fun setShowAqi(show: Boolean) {
         context.dataStore.edit { prefs ->
             prefs[KEY_SHOW_AQI] = show
+        }
+    }
+
+    suspend fun setKeepAliveEnabled(enabled: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[KEY_KEEP_ALIVE_ENABLED] = enabled
         }
     }
 
