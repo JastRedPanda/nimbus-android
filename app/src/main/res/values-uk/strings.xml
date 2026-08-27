@@ -51,6 +51,15 @@
     <string name="notifications">Сповіщення</string>
     <string name="notifications_enabled">Сповіщення про погоду</string>
 
+    <!-- Інше / Перезапуск -->
+    <string name="other">Інше</string>
+    <string name="keep_alive_title">Перезапуск при закритті</string>
+    <string name="keep_alive_summary">Перезапускати застосунок, якщо його закрито. Забезпечує надійність віджета та сповіщень.</string>
+    <string name="keep_alive_channel_name">Фоновий сервіс</string>
+    <string name="keep_alive_channel_description">Підтримує процес застосунка активним, щоб віджет і сповіщення залишалися актуальними.</string>
+    <string name="keep_alive_notification_title">Nimbus Weather працює у фоні</string>
+    <string name="keep_alive_notification_text">Підтримує актуальність віджета та сповіщень.</string>
+
     <!-- Налаштування -->
     <string name="settings">Налаштування</string>
     <string name="widget_temp_mode">Режим температури в віджетах</string>

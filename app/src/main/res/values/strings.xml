@@ -51,6 +51,15 @@
     <string name="notifications">Notifications</string>
     <string name="notifications_enabled">Weather notifications</string>
 
+    <!-- Other / Keep alive -->
+    <string name="other">Other</string>
+    <string name="keep_alive_title">Restart on close</string>
+    <string name="keep_alive_summary">Restart the app if it is closed. Keeps widget and notifications reliable.</string>
+    <string name="keep_alive_channel_name">Background service</string>
+    <string name="keep_alive_channel_description">Keeps the app process alive so the weather widget stays current.</string>
+    <string name="keep_alive_notification_title">Nimbus Weather is running</string>
+    <string name="keep_alive_notification_text">Keeping widget and notifications up to date.</string>
+
     <!-- Settings -->
     <string name="settings">Settings</string>
     <string name="widget_temp_mode">Widget temperature mode</string>

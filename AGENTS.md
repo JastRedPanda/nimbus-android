@@ -25,7 +25,7 @@ Android-приложение погоды: Open-Meteo, Compose, Glance-видж�
 - `data/local` — `SettingsDataStore` (Preferences + JSON-списки избранных/недавних)
 - `ui/{home,settings,location,onboarding,widgetcustomize,components,theme}` — экраны и компоненты; навигация NavHost прямо в `MainActivity`
 - `widget` — `ClockTempWidget` (Glance) + `WidgetRender` (подбор шрифта, поток рендер-данных) + `WidgetPalette` (фон/прозрачность/текст)
-- `service` — `WeatherUpdateWorker` (WorkManager; `WeatherUpdateScheduler` живёт в нём же), `NotificationHelper`, `WidgetUpdateManager`
+- `service` — `WeatherUpdateWorker` (WorkManager; `WeatherUpdateScheduler` живёт в нём же), `NotificationHelper`, `WidgetUpdateManager`, `KeepAliveService` (foreground, START_STICKY — тумблер «Перезапуск при закрытии»)
 - `util` — `CityNameResolver` (ручной словарь переводов городов), `CityNameTranslator` (сетевой перевод через геокодинг), `LanguageHelper`, `DateTimeUtils`, `WeatherCodeUtils` (WMO), `TemperatureUtils`, `WindDirection`, `Constants`, `ThemeMode`
 
 ## Конвенции

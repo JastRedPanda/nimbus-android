@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.nimbus.weather.data.local.SettingsDataStore
 import com.nimbus.weather.data.local.SettingsDataStore.FavouriteCity
 import com.nimbus.weather.data.repository.WeatherRepository
+import com.nimbus.weather.service.KeepAliveService
 import com.nimbus.weather.service.NotificationHelper
 import com.nimbus.weather.service.WeatherUpdateScheduler
 import com.nimbus.weather.util.CityNameResolver
@@ -33,7 +34,8 @@ data class SettingsUiState(
     val hourlyIntervalHours: Int = 1,
     val showAqi: Boolean = true,
     val favouriteCities: List<FavouriteCity> = emptyList(),
-    val favouriteDisplayNames: Map<String, String> = emptyMap()
+    val favouriteDisplayNames: Map<String, String> = emptyMap(),
+    val keepAliveEnabled: Boolean = false
 )
 
 class SettingsViewModel(application: Application) : AndroidViewModel(application) {
@@ -71,6 +73,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                 favouriteDisplayNames = buildDisplayNames(cities, appLanguage)
             )
         }
+        settings.keepAliveEnabled.intoState { copy(keepAliveEnabled = it) }
     }
 
     private fun buildDisplayNames(cities: List<FavouriteCity>, appLanguage: String): Map<String, String> {
@@ -177,6 +180,22 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun setShowAqi(show: Boolean) {
         viewModelScope.launch {
             settings.setShowAqi(show)
+        }
+    }
+
+    fun setKeepAliveEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            settings.setKeepAliveEnabled(enabled)
+            val ctx = getApplication<Application>()
+            if (enabled) {
+                WeatherUpdateScheduler.schedule(
+                    ctx,
+                    settings.updateIntervalHours.first()
+                )
+                KeepAliveService.start(ctx)
+            } else {
+                KeepAliveService.stop(ctx)
+            }
         }
     }
 

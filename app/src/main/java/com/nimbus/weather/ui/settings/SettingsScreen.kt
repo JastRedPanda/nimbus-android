@@ -374,6 +374,23 @@ import com.nimbus.weather.util.TemperatureUnit
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            // Other
+            SectionHeader(title = stringResource(R.string.other))
+
+            SettingsToggle(
+                label = stringResource(R.string.keep_alive_title),
+                checked = state.keepAliveEnabled,
+                onCheck = { viewModel.setKeepAliveEnabled(it) }
+            )
+            Text(
+                text = stringResource(R.string.keep_alive_summary),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 4.dp, end = 4.dp, bottom = 4.dp)
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
             OutlinedButton(
                 onClick = { showResetDialog = true },
                 modifier = Modifier.fillMaxWidth(),
