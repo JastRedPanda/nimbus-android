@@ -9,6 +9,7 @@ import androidx.work.WorkerParameters
 import com.nimbus.weather.data.local.SettingsDataStore
 import com.nimbus.weather.data.repository.WeatherRepository
 import com.nimbus.weather.util.Constants
+import kotlinx.coroutines.flow.first
 import java.util.concurrent.TimeUnit
 
 class WeatherUpdateWorker(
@@ -24,9 +25,14 @@ class WeatherUpdateWorker(
             repository.setTtlHours(home.updateIntervalHours * 2)
 
             val ctx = applicationContext
-            val response = repository.getWeather(home.lat, home.lon, ctx)
+            val favourites = settings.favouriteCities.first()
+            val target = favourites.firstOrNull()
+            val response = target?.let {
+                repository.getWeather(it.lat, it.lon, ctx)
+            } ?: repository.getWeather(home.lat, home.lon, ctx)
+            val responseCity = target?.name ?: home.cityName
 
-            WidgetUpdateManager.updateAllWidgets(applicationContext, response)
+            WidgetUpdateManager.updateAllWidgets(applicationContext, response, responseCity)
 
             if (home.notificationsEnabled) {
                 NotificationHelper.showWeatherNotification(applicationContext, response)

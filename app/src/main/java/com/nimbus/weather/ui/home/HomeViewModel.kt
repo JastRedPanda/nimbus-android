@@ -160,7 +160,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             val ctx = getApplication<Application>()
             repository.setTtlHours(home.updateIntervalHours * 2)
             val response = repository.getWeather(home.lat, home.lon, ctx)
-            WidgetUpdateManager.updateAllWidgets(ctx, response)
+            WidgetUpdateManager.updateAllWidgets(ctx, response, home.cityName)
 
             if (home.notificationsEnabled) {
                 NotificationHelper.showWeatherNotification(ctx, response)

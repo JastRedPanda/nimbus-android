@@ -83,6 +83,7 @@
     <string name="search_city">Hledat město…</string>
     <string name="recent_cities_title">Vybraná města</string>
     <string name="add_to_favourites">Přidat k oblíbeným</string>
+    <string name="remove_from_favourites">Odebrat z oblíbených</string>
     <string name="remove_from_history">Odebrat z historie</string>
     <string name="no_results">Nic nenalezeno</string>
     <string name="favourite_cities">Oblíbená města</string>

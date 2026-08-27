@@ -3,7 +3,6 @@ package com.nimbus.weather.ui.home
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,9 +21,16 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -35,13 +41,17 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.ui.text.font.FontWeight
 import android.content.res.Configuration
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
@@ -65,6 +75,7 @@ fun HomeScreen(
     onSettingsClick: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
+    var favouriteListExpanded by rememberSaveable { mutableStateOf(false) }
 
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
@@ -85,6 +96,13 @@ fun HomeScreen(
                     containerColor = MaterialTheme.colorScheme.surface
                 ),
                 actions = {
+                    if (state.favouriteCities.size > 1) {
+                        FavouriteCitiesButton(
+                            count = state.favouriteCities.size,
+                            expanded = favouriteListExpanded,
+                            onClick = { favouriteListExpanded = !favouriteListExpanded }
+                        )
+                    }
                     IconButton(onClick = onSettingsClick) {
                         Icon(
                             imageVector = Icons.Default.Settings,
@@ -165,13 +183,17 @@ fun HomeScreen(
                             ) {
                                 WeatherContent(
                                     state = state,
-                                    onCitySwitch = { viewModel.switchToCity(it) }
+                                    onCitySwitch = { viewModel.switchToCity(it) },
+                                    favouriteListExpanded = favouriteListExpanded,
+                                    onCollapseFavourites = { favouriteListExpanded = false }
                                 )
                             }
                         } else {
                             WeatherContent(
                                 state = state,
-                                onCitySwitch = { viewModel.switchToCity(it) }
+                                onCitySwitch = { viewModel.switchToCity(it) },
+                                favouriteListExpanded = favouriteListExpanded,
+                                onCollapseFavourites = { favouriteListExpanded = false }
                             )
                         }
                     }
@@ -184,7 +206,9 @@ fun HomeScreen(
 @Composable
 private fun WeatherContent(
     state: HomeUiState,
-    onCitySwitch: (com.nimbus.weather.data.local.SettingsDataStore.FavouriteCity) -> Unit
+    onCitySwitch: (com.nimbus.weather.data.local.SettingsDataStore.FavouriteCity) -> Unit,
+    favouriteListExpanded: Boolean,
+    onCollapseFavourites: () -> Unit
 ) {
     val aqi = state.aqi
 
@@ -194,9 +218,9 @@ private fun WeatherContent(
             val isTablet = config.screenWidthDp >= 600
 
             if (isTablet) {
-                TabletLayout(state, current, aqi, onCitySwitch)
+                TabletLayout(state, current, aqi, onCitySwitch, favouriteListExpanded, onCollapseFavourites)
             } else {
-                PhoneLayout(state, current, aqi, onCitySwitch)
+                PhoneLayout(state, current, aqi, onCitySwitch, favouriteListExpanded, onCollapseFavourites)
             }
         }
     }
@@ -207,61 +231,67 @@ private fun TabletLayout(
     state: HomeUiState,
     current: com.nimbus.weather.data.model.CurrentWeather,
     aqi: com.nimbus.weather.data.model.AirQualityCurrent?,
-    onCitySwitch: (com.nimbus.weather.data.local.SettingsDataStore.FavouriteCity) -> Unit
+    onCitySwitch: (com.nimbus.weather.data.local.SettingsDataStore.FavouriteCity) -> Unit,
+    favouriteListExpanded: Boolean,
+    onCollapseFavourites: () -> Unit
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        Column(
-            modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            if (state.favouriteCities.size > 1) {
-                FavouriteCitiesRow(
-                    cities = state.favouriteCities,
-                    displayNames = state.favouriteDisplayNames,
-                    currentCity = state.cityName,
-                    onCityClick = onCitySwitch
-                )
-            }
-            CurrentWeatherCard(
-                current = current,
-                cityName = state.cityName,
-                sunrise = state.sunrise,
-                sunset = state.sunset,
-                tempUnit = state.tempUnit,
-                modifier = Modifier.fillMaxWidth()
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        if (favouriteListExpanded && state.favouriteCities.size > 1) {
+            FavouriteCitiesList(
+                cities = state.favouriteCities,
+                displayNames = state.favouriteDisplayNames,
+                currentCity = state.cityName,
+                onCityClick = onCitySwitch,
+                onCollapse = onCollapseFavourites
             )
-            if (state.hourly.isNotEmpty()) {
-                HourlyForecastBar(
-                    hourly = state.hourly,
+            Spacer(modifier = Modifier.height(12.dp))
+        }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Column(
+                modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                CurrentWeatherCard(
+                    current = current,
+                    cityName = state.cityName,
+                    sunrise = state.sunrise,
+                    sunset = state.sunset,
                     tempUnit = state.tempUnit,
                     modifier = Modifier.fillMaxWidth()
                 )
+                if (state.hourly.isNotEmpty()) {
+                    HourlyForecastBar(
+                        hourly = state.hourly,
+                        tempUnit = state.tempUnit,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+                if (aqi != null) {
+                    AqiCard(aqi = aqi, modifier = Modifier.fillMaxWidth())
+                }
+                if (state.fromCache) {
+                    AssistChip(
+                        onClick = { },
+                        label = { Text(stringResource(R.string.cached_data)) }
+                    )
+                }
             }
-            if (aqi != null) {
-                AqiCard(aqi = aqi, modifier = Modifier.fillMaxWidth())
-            }
-            if (state.fromCache) {
-                AssistChip(
-                    onClick = { },
-                    label = { Text(stringResource(R.string.cached_data)) }
+            Column(
+                modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = stringResource(R.string.forecast_7_days),
+                    style = MaterialTheme.typography.titleMedium
                 )
-            }
-        }
-        Column(
-            modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Text(
-                text = stringResource(R.string.forecast_7_days),
-                style = MaterialTheme.typography.titleMedium
-            )
-            state.daily.forEach { day ->
-                DailyForecastCard(day = day, tempUnit = state.tempUnit)
+                state.daily.forEach { day ->
+                    DailyForecastCard(day = day, tempUnit = state.tempUnit)
+                }
             }
         }
     }
@@ -272,20 +302,23 @@ private fun PhoneLayout(
     state: HomeUiState,
     current: com.nimbus.weather.data.model.CurrentWeather,
     aqi: com.nimbus.weather.data.model.AirQualityCurrent?,
-    onCitySwitch: (com.nimbus.weather.data.local.SettingsDataStore.FavouriteCity) -> Unit = {}
+    onCitySwitch: (com.nimbus.weather.data.local.SettingsDataStore.FavouriteCity) -> Unit = {},
+    favouriteListExpanded: Boolean = false,
+    onCollapseFavourites: () -> Unit = {}
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        if (state.favouriteCities.size > 1) {
+        if (favouriteListExpanded && state.favouriteCities.size > 1) {
             item {
-                FavouriteCitiesRow(
+                FavouriteCitiesList(
                     cities = state.favouriteCities,
                     displayNames = state.favouriteDisplayNames,
                     currentCity = state.cityName,
-                    onCityClick = onCitySwitch
+                    onCityClick = onCitySwitch,
+                    onCollapse = onCollapseFavourites
                 )
             }
         }
@@ -334,28 +367,89 @@ private fun PhoneLayout(
 }
 
 @Composable
-private fun FavouriteCitiesRow(
+private fun FavouriteCitiesButton(
+    count: Int,
+    expanded: Boolean,
+    onClick: () -> Unit
+) {
+    IconButton(onClick = onClick) {
+        BadgedBox(
+            badge = {
+                if (count > 0) {
+                    Badge { Text(count.toString()) }
+                }
+            }
+        ) {
+            Icon(
+                imageVector = Icons.Default.Bookmark,
+                contentDescription = stringResource(R.string.favourite_cities),
+                tint = if (expanded) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.onSurface
+            )
+        }
+    }
+}
+
+@Composable
+private fun FavouriteCitiesList(
     cities: List<com.nimbus.weather.data.local.SettingsDataStore.FavouriteCity>,
     displayNames: Map<String, String>,
     currentCity: String,
-    onCityClick: (com.nimbus.weather.data.local.SettingsDataStore.FavouriteCity) -> Unit
+    onCityClick: (com.nimbus.weather.data.local.SettingsDataStore.FavouriteCity) -> Unit,
+    onCollapse: () -> Unit
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
     ) {
-        cities.forEach { city ->
-            AssistChip(
-                onClick = { onCityClick(city) },
-                label = {
-                    Text(
-                        text = displayNames[city.name] ?: city.name,
-                        style = MaterialTheme.typography.labelMedium
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.favourite_cities),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f)
+                )
+                IconButton(onClick = onCollapse) {
+                    Icon(
+                        imageVector = Icons.Default.ExpandLess,
+                        contentDescription = stringResource(R.string.cancel)
                     )
                 }
-            )
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            cities.forEach { city ->
+                val displayName = displayNames[city.name] ?: city.name
+                val isCurrent = city.name == currentCity
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onCityClick(city) }
+                        .padding(vertical = 10.dp, horizontal = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = displayName,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
+                        color = if (isCurrent) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.weight(1f)
+                    )
+                    if (isCurrent) {
+                        Text(
+                            text = stringResource(R.string.today).take(2),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+            }
         }
     }
 }

@@ -10,6 +10,7 @@ import com.nimbus.weather.data.repository.WeatherRepository
 import com.nimbus.weather.service.KeepAliveService
 import com.nimbus.weather.service.NotificationHelper
 import com.nimbus.weather.service.WeatherUpdateScheduler
+import com.nimbus.weather.service.WidgetUpdateManager
 import com.nimbus.weather.util.CityNameResolver
 import com.nimbus.weather.util.CityNameTranslator
 import com.nimbus.weather.util.LanguageHelper
@@ -155,6 +156,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun removeFavouriteCity(name: String) {
         viewModelScope.launch {
             settings.removeFavouriteCity(name)
+            WidgetUpdateManager.updateFromTargetCity(getApplication())
         }
     }
 
@@ -168,6 +170,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             settings.setFavouriteCities(
                 current.toMutableList().apply { add(target, removeAt(index)) }
             )
+            WidgetUpdateManager.updateFromTargetCity(getApplication())
         }
     }
 

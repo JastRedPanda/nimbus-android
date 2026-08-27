@@ -84,7 +84,7 @@ class MainActivity : ComponentActivity() {
             if (settings.keepAliveEnabled.first()) {
                 KeepAliveService.start(this@MainActivity)
             }
-            WidgetUpdateManager.refreshAllWidgets(this@MainActivity)
+            WidgetUpdateManager.updateFromTargetCity(this@MainActivity)
         }
 
         setContent {
