@@ -133,52 +133,48 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     private suspend fun performLoad() {
         try {
-                val loc = settings.getLocationSnapshot()
-                val ctx = getApplication<Application>()
-                val updateInterval = settings.updateIntervalHours.first()
-                val showAqi = settings.showAqi.first()
-                val appLanguage = settings.appLanguage.first()
-                repository.setTtlHours(updateInterval * 2)
-                val response = repository.getWeather(loc.lat, loc.lon, ctx)
-                WidgetUpdateManager.updateAllWidgets(ctx, response)
-                val tempUnit = settings.tempUnit.first()
-                val feelsLike = settings.useFeelsLike.first()
-                val hourlyInterval = settings.hourlyIntervalHours.first()
+            val homeSettings = settings.getHomeSettings()
+            val ctx = getApplication<Application>()
+            repository.setTtlHours(homeSettings.updateIntervalHours * 2)
+            val response = repository.getWeather(homeSettings.lat, homeSettings.lon, ctx)
+            WidgetUpdateManager.updateAllWidgets(ctx, response)
 
-                if (settings.notificationsEnabled.first()) {
-                    NotificationHelper.showWeatherNotification(ctx, response)
-                }
-
-                val aqi = if (showAqi) {
-                    try {
-                        repository.getAirQuality(loc.lat, loc.lon, ctx).current
-                    } catch (_: Exception) { null }
-                } else null
-
-                val lang = LanguageHelper.resolve(appLanguage)
-
-                _state.value = _state.value.copy(
-                    cityName = CityNameResolver.displayName(loc.name, loc.localNames, lang),
-                    current = response.current,
-                    hourly = mapHourly(response, hourlyInterval),
-                    sunrise = response.daily?.sunrise?.firstOrNull() ?: "",
-                    sunset = response.daily?.sunset?.firstOrNull() ?: "",
-                    daily = mapDaily(response),
-                    aqi = aqi,
-                    tempUnit = tempUnit,
-                    useFeelsLike = feelsLike,
-                    showAqi = showAqi,
-                    fromCache = repository.showingCachedWeather,
-                    loading = false,
-                    refreshing = false
-                )
-            } catch (e: Exception) {
-                _state.value = _state.value.copy(
-                    loading = false,
-                    refreshing = false,
-                    error = e.message ?: "Unknown error"
-                )
+            if (homeSettings.notificationsEnabled) {
+                NotificationHelper.showWeatherNotification(ctx, response)
             }
+
+            val aqi = if (homeSettings.showAqi) {
+                try {
+                    repository.getAirQuality(homeSettings.lat, homeSettings.lon, ctx).current
+                } catch (_: Exception) { null }
+            } else null
+
+            val lang = LanguageHelper.resolve(homeSettings.appLanguage)
+
+            _state.value = _state.value.copy(
+                cityName = CityNameResolver.displayName(
+                    homeSettings.cityName, homeSettings.localNames, lang
+                ),
+                current = response.current,
+                hourly = mapHourly(response, homeSettings.hourlyIntervalHours),
+                sunrise = response.daily?.sunrise?.firstOrNull() ?: "",
+                sunset = response.daily?.sunset?.firstOrNull() ?: "",
+                daily = mapDaily(response),
+                aqi = aqi,
+                tempUnit = homeSettings.tempUnit,
+                useFeelsLike = homeSettings.useFeelsLike,
+                showAqi = homeSettings.showAqi,
+                fromCache = repository.showingCachedWeather,
+                loading = false,
+                refreshing = false
+            )
+        } catch (e: Exception) {
+            _state.value = _state.value.copy(
+                loading = false,
+                refreshing = false,
+                error = e.message ?: "Unknown error"
+            )
+        }
     }
 
     fun switchToCity(city: FavouriteCity) {
@@ -195,41 +191,52 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         if (startIndex < 0) return emptyList()
         val step = intervalHours.coerceIn(1, 6)
         val endIndex = (startIndex + 24).coerceAtMost(hourly.time.size)
-        return (startIndex until endIndex step step).map { i ->
-            HourlyForecastData(
-                time = hourly.time[i],
-                temperature = hourly.temperature.getOrElse(i) { 0.0 },
-                precipitation = hourly.precipitation.getOrElse(i) { 0.0 },
-                weatherCode = hourly.weatherCode.getOrElse(i) { 0 },
-                windSpeed = hourly.windSpeed.getOrElse(i) { 0.0 },
-                windDirection = hourly.windDirection.getOrElse(i) { 0.0 },
-                humidity = hourly.humidity.getOrElse(i) { 0.0 },
-                apparentTemperature = hourly.apparentTemperature.getOrElse(i) { 0.0 },
-                uvIndex = hourly.uvIndex.getOrElse(i) { 0.0 }
+        val size = endIndex - startIndex
+        val result = ArrayList<HourlyForecastData>(size / step + 1)
+        var i = startIndex
+        while (i < endIndex) {
+            result.add(
+                HourlyForecastData(
+                    time = hourly.time[i],
+                    temperature = hourly.temperature.getOrElse(i) { 0.0 },
+                    precipitation = hourly.precipitation.getOrElse(i) { 0.0 },
+                    weatherCode = hourly.weatherCode.getOrElse(i) { 0 },
+                    windSpeed = hourly.windSpeed.getOrElse(i) { 0.0 },
+                    windDirection = hourly.windDirection.getOrElse(i) { 0.0 },
+                    humidity = hourly.humidity.getOrElse(i) { 0.0 },
+                    apparentTemperature = hourly.apparentTemperature.getOrElse(i) { 0.0 },
+                    uvIndex = hourly.uvIndex.getOrElse(i) { 0.0 }
+                )
             )
+            i += step
         }
+        return result
     }
 
     private fun mapDaily(response: WeatherResponse): List<DailyForecastData> {
         val daily = response.daily ?: return emptyList()
         val size = daily.time.size
-        return List(size) { i ->
-            DailyForecastData(
-                date = daily.time[i],
-                weatherCode = daily.weatherCode.getOrElse(i) { 0 },
-                tempMax = daily.temperatureMax.getOrElse(i) { 0.0 },
-                tempMin = daily.temperatureMin.getOrElse(i) { 0.0 },
-                feelsLikeMax = daily.apparentTemperatureMax.getOrElse(i) { 0.0 },
-                feelsLikeMin = daily.apparentTemperatureMin.getOrElse(i) { 0.0 },
-                sunrise = daily.sunrise.getOrElse(i) { "" },
-                sunset = daily.sunset.getOrElse(i) { "" },
-                precipitation = daily.precipitationSum.getOrElse(i) { 0.0 },
-                precipProbability = daily.precipitationProbabilityMax.getOrElse(i) { 0 },
-                windMax = daily.windSpeedMax.getOrElse(i) { 0.0 },
-                windGusts = daily.windGustsMax.getOrElse(i) { 0.0 },
-                windDirection = daily.windDirectionDominant.getOrElse(i) { 0.0 },
-                uvIndexMax = daily.uvIndexMax.getOrElse(i) { 0.0 }
+        val result = ArrayList<DailyForecastData>(size)
+        for (i in 0 until size) {
+            result.add(
+                DailyForecastData(
+                    date = daily.time[i],
+                    weatherCode = daily.weatherCode.getOrElse(i) { 0 },
+                    tempMax = daily.temperatureMax.getOrElse(i) { 0.0 },
+                    tempMin = daily.temperatureMin.getOrElse(i) { 0.0 },
+                    feelsLikeMax = daily.apparentTemperatureMax.getOrElse(i) { 0.0 },
+                    feelsLikeMin = daily.apparentTemperatureMin.getOrElse(i) { 0.0 },
+                    sunrise = daily.sunrise.getOrElse(i) { "" },
+                    sunset = daily.sunset.getOrElse(i) { "" },
+                    precipitation = daily.precipitationSum.getOrElse(i) { 0.0 },
+                    precipProbability = daily.precipitationProbabilityMax.getOrElse(i) { 0 },
+                    windMax = daily.windSpeedMax.getOrElse(i) { 0.0 },
+                    windGusts = daily.windGustsMax.getOrElse(i) { 0.0 },
+                    windDirection = daily.windDirectionDominant.getOrElse(i) { 0.0 },
+                    uvIndexMax = daily.uvIndexMax.getOrElse(i) { 0.0 }
+                )
             )
         }
+        return result
     }
 }

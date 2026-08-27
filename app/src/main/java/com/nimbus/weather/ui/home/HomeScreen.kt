@@ -135,7 +135,7 @@ fun HomeScreen(
                                     add(FavouriteCity(state.cityName, 0.0, 0.0, ""))
                                 }
                                 state.favouriteCities
-                                    .filter { city -> none { it.name == city.name } }
+                                    .filter { it.name != state.cityName }
                                     .forEach { add(it) }
                             }
                         }

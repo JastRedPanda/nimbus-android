@@ -21,6 +21,7 @@ class WeatherUpdateWorker(
         return try {
             val settings = SettingsDataStore(applicationContext)
             val repository = WeatherRepository()
+            repository.setTtlHours(SettingsDataStore.DEFAULT_UPDATE_INTERVAL_HOURS * 2)
 
             val loc = settings.getLocationSnapshot()
             val ctx = applicationContext
