@@ -142,7 +142,7 @@ private fun WeatherDetailItem(
     label: String,
     value: String
 ) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(horizontalAlignment = Alignment.Start) {
         Text(
             text = value,
             style = MaterialTheme.typography.titleMedium,
