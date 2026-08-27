@@ -441,13 +441,6 @@ private fun FavouriteCitiesList(
                         else MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.weight(1f)
                     )
-                    if (isCurrent) {
-                        Text(
-                            text = stringResource(R.string.today).take(2),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
                 }
             }
         }
