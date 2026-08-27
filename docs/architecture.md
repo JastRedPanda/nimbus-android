@@ -93,12 +93,13 @@ ui/
 ├── widgetcustomize/ WidgetCustomizeScreen.kt, WidgetCustomizeViewModel.kt
 └── components/ CurrentWeatherCard.kt, DailyForecastCard.kt, HourlyForecastBar.kt,
                 AqiCard.kt, WeatherIcon.kt
-widget/         ClockTempWidget.kt (и ClockTempWidgetReceiver внутри), WidgetPalette.kt
+widget/         ClockTempWidget.kt (и ClockTempWidgetReceiver внутри), WidgetPalette.kt,
+                WidgetRender.kt (поток рендер-данных + fitBaseSp — адаптивный шрифт)
 service/        WeatherUpdateWorker.kt (и object WeatherUpdateScheduler внутри),
                 NotificationHelper.kt, WidgetUpdateManager.kt
-util/           CityNameResolver.kt, LanguageHelper.kt, DateTimeUtils.kt,
-                WeatherCodeUtils.kt, TemperatureUtils.kt, WindDirection.kt,
-                Constants.kt, ThemeMode.kt
+util/           CityNameResolver.kt, CityNameTranslator.kt, LanguageHelper.kt,
+                DateTimeUtils.kt, WeatherCodeUtils.kt, TemperatureUtils.kt,
+                WindDirection.kt, Constants.kt, ThemeMode.kt
 ```
 
 ## Кэш
@@ -149,5 +150,6 @@ junit 4.13.2, kotlinx-coroutines-test 1.9.0, mockk 1.13.13, turbine 1.2.0
 - **Glance 1.2.0-rc01**: нет `clip`, нет `Surface` в glance-material3, `background` без формы. Скругление углов — только `androidx.glance.appwidget.cornerRadius(dp)` (найдено в AAR; классы `CornerRadiusKt`/`CornerRadiusModifier`)
 - **Таймзона города — из геокодинга**: Open-Meteo отдаёт IANA-идентификатор в поле `timezone` ответа Geocoding API; валидация `DateTimeUtils.isValidTimeZoneId` (кэш `TimeZone.getAvailableIDs()`), fallback `Europe/Kiev`. GPS-определения города нет (play-services-location удалён в v1.5)
 - **versionCode — автоинкремент**: `preBuild` в app/build.gradle.kts читает `app/version.properties` (gitignored), +1 при каждой сборке; установка APK «поверх» работает. versionName меняется вручную. Сбить счётчик можно очисткой файла — тогда versionCode упадёт, и обновление «поверх» не встанет (вылечится следующим релизом)
+- **CI-сборка (`.github/workflows/android.yml`)**: на каждый push/PR в `main` — `assembleDebug` + `test`, debug APK заливается артефактом; не публикует релиз
 - **Релиз в CI (`.github/workflows/release.yml`)**: пуш тега `v*` → `-PversionName` из тега, `-PversionCode` из `git rev-list --count HEAD` (монотонно), ключ `DEBUG_KEYSTORE_B64` из secrets восстанавливается в `~/.android/debug.keystore`; подпись — явная `signingConfigs.create("release")` в app/build.gradle.kts (SHA-1 `b9cdf73d…`, постоянный с v1.6; `signingConfigs.getByName("debug")` в CI не работает — AGP генерирует свой ключ)
 - **POST_NOTIFICATIONS**: без пермишна в манифесте и runtime-запроса `showWeatherNotification` молча выходит на Android 13+

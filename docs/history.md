@@ -124,3 +124,11 @@
 - **Фикс**: `HomeViewModel.performLoad` после успешной загрузки вызывает `WidgetUpdateManager.updateAllWidgets(ctx, response)` — виджет сразу показывает свежие данные
 - **Заодно**: `MainActivity.onCreate` ставил периодическую работу `schedule(this)` с дефолтными 2 ч и политикой KEEP независимо от сохранённого интервала; теперь интервал читается из DataStore внутри корутины
 - **Причина 2 («само не работает»)**: после force-stop (принудительное закрытие) Android не запускает WorkManager-джобы приложения до следующего явного запуска — системное ограничение, обойти нельзя. Пока приложение не форс-стопнуто (обычный свайп из recents на стоковом Android процесс не убивает), воркер выполняется по расписанию
+
+## Сессия 2026-08-27 — рефакторинг после v1.7
+
+- **Виджет — выделен `WidgetRender.kt`**: ранее `fitBaseSp` (бинарный поиск адаптивного шрифта) жил внутри `ClockTempWidget`; теперь — отдельный файл, плюс `renderDataFlow` собирает `WidgetRenderData` (palette/dateFormat/fontScale/useFeelsLike/tempUnit) из `combine` настроек DataStore. Виджет читает данные через `collectAsState`, не дёргая DataStore точечно
+- **Главный экран — `HomeViewModel.ensureCityTranslations`**: при старте VM прогоняет текущий город + избранных через `CityNameTranslator.ensureTranslations` (новый класс в `util/`, сетевой геокодинг + кэш), затем обновляет `cityName` и `favouriteDisplayNames` — названия сразу на нужном языке без ручного входа в поиск
+- **`SettingsDataStore.getHomeSettings()`** — оптимизация: один `.first()` возвращает сразу все поля для загрузки главного экрана (город/координаты/таймзона/localNames/updateIntervalHours/tempUnit/useFeelsLike/hourlyIntervalHours/notificationsEnabled/appLanguage/showAqi); TTL = `updateIntervalHours * 2`; используется и в `HomeViewModel.performLoad`, и в `WeatherUpdateWorker`
+- **`ThemeMode` (enum) вынесен в `util/`** из `data/local/SettingsDataStore` — чтобы использовать и в UI (`WidgetCustomizeScreen` для превью палитры под текущую тему), и в `WidgetPalette.isDarkTheme`
+- Документация (AGENTS.md, docs/) актуализирована под актуальный код
