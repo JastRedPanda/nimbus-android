@@ -41,7 +41,9 @@ data class HomeUiState(
     val loading: Boolean = true,
     val refreshing: Boolean = false,
     val error: String? = null,
-    val favouriteCities: List<FavouriteCity> = emptyList()
+    val favouriteCities: List<FavouriteCity> = emptyList(),
+    val notificationsEnabled: Boolean = true,
+    val hourlyIntervalHours: Int = SettingsDataStore.DEFAULT_HOURLY_INTERVAL_HOURS
 )
 
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
@@ -76,6 +78,27 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             settings.showAqi.collect { show ->
                 _state.value = _state.value.copy(showAqi = show)
+            }
+        }
+        viewModelScope.launch {
+            settings.tempUnit.collect { unit ->
+                _state.value = _state.value.copy(tempUnit = unit)
+            }
+        }
+        viewModelScope.launch {
+            settings.useFeelsLike.collect { feels ->
+                _state.value = _state.value.copy(useFeelsLike = feels)
+            }
+        }
+        viewModelScope.launch {
+            settings.hourlyIntervalHours.collect { interval ->
+                val current = _state.value
+                _state.value = current.copy(hourlyIntervalHours = interval)
+            }
+        }
+        viewModelScope.launch {
+            settings.notificationsEnabled.collect { enabled ->
+                _state.value = _state.value.copy(notificationsEnabled = enabled)
             }
         }
         loadWeather()
@@ -133,37 +156,34 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     private suspend fun performLoad() {
         try {
-            val homeSettings = settings.getHomeSettings()
+            val loc = settings.getLocationSnapshot()
             val ctx = getApplication<Application>()
-            repository.setTtlHours(homeSettings.updateIntervalHours * 2)
-            val response = repository.getWeather(homeSettings.lat, homeSettings.lon, ctx)
+            val updateInterval = settings.updateIntervalHours.first()
+            repository.setTtlHours(updateInterval * 2)
+            val response = repository.getWeather(loc.lat, loc.lon, ctx)
             WidgetUpdateManager.updateAllWidgets(ctx, response)
 
-            if (homeSettings.notificationsEnabled) {
+            val currentState = _state.value
+            if (currentState.notificationsEnabled) {
                 NotificationHelper.showWeatherNotification(ctx, response)
             }
 
-            val aqi = if (homeSettings.showAqi) {
+            val aqi = if (currentState.showAqi) {
                 try {
-                    repository.getAirQuality(homeSettings.lat, homeSettings.lon, ctx).current
+                    repository.getAirQuality(loc.lat, loc.lon, ctx).current
                 } catch (_: Exception) { null }
             } else null
 
-            val lang = LanguageHelper.resolve(homeSettings.appLanguage)
+            val lang = LanguageHelper.resolve(currentState.appLanguage)
 
             _state.value = _state.value.copy(
-                cityName = CityNameResolver.displayName(
-                    homeSettings.cityName, homeSettings.localNames, lang
-                ),
+                cityName = CityNameResolver.displayName(loc.name, loc.localNames, lang),
                 current = response.current,
-                hourly = mapHourly(response, homeSettings.hourlyIntervalHours),
+                hourly = mapHourly(response, currentState.hourlyIntervalHours),
                 sunrise = response.daily?.sunrise?.firstOrNull() ?: "",
                 sunset = response.daily?.sunset?.firstOrNull() ?: "",
                 daily = mapDaily(response),
                 aqi = aqi,
-                tempUnit = homeSettings.tempUnit,
-                useFeelsLike = homeSettings.useFeelsLike,
-                showAqi = homeSettings.showAqi,
                 fromCache = repository.showingCachedWeather,
                 loading = false,
                 refreshing = false
