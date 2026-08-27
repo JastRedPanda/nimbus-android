@@ -75,7 +75,9 @@ class SettingsDataStore(private val context: Context) {
         buildList {
             addAll(this@upsert.filterNot { it.name == city.name })
             if (atTop) add(0, city) else add(city)
-        }.take(if (atTop) MAX_RECENT_CITIES else size)
+        }.let { result ->
+            if (atTop) result.take(MAX_RECENT_CITIES) else result
+        }
 
     private suspend fun updateCityList(
         key: Preferences.Key<String>,
