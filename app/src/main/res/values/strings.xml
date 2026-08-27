@@ -84,6 +84,7 @@
     <string name="search_city">Search city…</string>
     <string name="recent_cities_title">Selected cities</string>
     <string name="add_to_favourites">Add to favourites</string>
+    <string name="remove_from_favourites">Remove from favourites</string>
     <string name="remove_from_history">Remove from history</string>
     <string name="no_results">Nothing found</string>
     <string name="favourite_cities">Favourite cities</string>

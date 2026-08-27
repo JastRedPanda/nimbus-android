@@ -84,6 +84,7 @@
     <string name="search_city">Поиск города…</string>
     <string name="recent_cities_title">Выбранные города</string>
     <string name="add_to_favourites">Добавить в избранное</string>
+    <string name="remove_from_favourites">Удалить из избранного</string>
     <string name="remove_from_history">Удалить из истории</string>
     <string name="no_results">Ничего не найдено</string>
     <string name="favourite_cities">Избранные города</string>

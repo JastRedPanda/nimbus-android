@@ -7,6 +7,7 @@ import com.nimbus.weather.data.local.SettingsDataStore
 import com.nimbus.weather.data.local.SettingsDataStore.FavouriteCity
 import com.nimbus.weather.data.model.GeocodingResult
 import com.nimbus.weather.data.repository.WeatherRepository
+import com.nimbus.weather.service.WidgetUpdateManager
 import com.nimbus.weather.util.CityNameTranslator
 import com.nimbus.weather.util.LanguageHelper
 import kotlinx.coroutines.Job
@@ -113,6 +114,7 @@ class LocationSearchViewModel(application: Application) : AndroidViewModel(appli
                 settings.addFavouriteCity(city)
                 translateAll(city)
             }
+            WidgetUpdateManager.updateFromTargetCity(getApplication())
         }
     }
 

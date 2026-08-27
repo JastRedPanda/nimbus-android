@@ -19,6 +19,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -166,10 +167,16 @@ fun LocationSearchScreen(
                                     }
                                 }
                                 val isFavourite = state.favouriteNames.contains(result.name)
-                                IconButton(onClick = { viewModel.toggleFavourite(result) }) {
+                                IconToggleButton(
+                                    checked = isFavourite,
+                                    onCheckedChange = { viewModel.toggleFavourite(result) }
+                                ) {
                                     Icon(
                                         imageVector = if (isFavourite) Icons.Default.Star else Icons.Default.StarBorder,
-                                        contentDescription = stringResource(R.string.add_to_favourites),
+                                        contentDescription = stringResource(
+                                            if (isFavourite) R.string.remove_from_favourites
+                                            else R.string.add_to_favourites
+                                        ),
                                         tint = if (isFavourite) {
                                             MaterialTheme.colorScheme.primary
                                         } else {
@@ -206,10 +213,16 @@ private fun RecentCityRow(
             style = MaterialTheme.typography.bodyLarge,
             modifier = Modifier.weight(1f)
         )
-        IconButton(onClick = onToggleFavourite) {
+        IconToggleButton(
+            checked = isFavourite,
+            onCheckedChange = { onToggleFavourite() }
+        ) {
             Icon(
                 imageVector = if (isFavourite) Icons.Default.Star else Icons.Default.StarBorder,
-                contentDescription = stringResource(R.string.add_to_favourites),
+                contentDescription = stringResource(
+                    if (isFavourite) R.string.remove_from_favourites
+                    else R.string.add_to_favourites
+                ),
                 tint = if (isFavourite) {
                     MaterialTheme.colorScheme.primary
                 } else {
