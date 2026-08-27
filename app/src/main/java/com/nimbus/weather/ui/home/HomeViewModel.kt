@@ -156,30 +156,28 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     private suspend fun performLoad() {
         try {
-            val loc = settings.getLocationSnapshot()
+            val home = settings.getHomeSettings()
             val ctx = getApplication<Application>()
-            val updateInterval = settings.updateIntervalHours.first()
-            repository.setTtlHours(updateInterval * 2)
-            val response = repository.getWeather(loc.lat, loc.lon, ctx)
+            repository.setTtlHours(home.updateIntervalHours * 2)
+            val response = repository.getWeather(home.lat, home.lon, ctx)
             WidgetUpdateManager.updateAllWidgets(ctx, response)
 
-            val currentState = _state.value
-            if (currentState.notificationsEnabled) {
+            if (home.notificationsEnabled) {
                 NotificationHelper.showWeatherNotification(ctx, response)
             }
 
-            val aqi = if (currentState.showAqi) {
+            val aqi = if (home.showAqi) {
                 try {
-                    repository.getAirQuality(loc.lat, loc.lon, ctx).current
+                    repository.getAirQuality(home.lat, home.lon, ctx).current
                 } catch (_: Exception) { null }
             } else null
 
-            val lang = LanguageHelper.resolve(currentState.appLanguage)
+            val lang = LanguageHelper.resolve(home.appLanguage)
 
             _state.value = _state.value.copy(
-                cityName = CityNameResolver.displayName(loc.name, loc.localNames, lang),
+                cityName = CityNameResolver.displayName(home.cityName, home.localNames, lang),
                 current = response.current,
-                hourly = mapHourly(response, currentState.hourlyIntervalHours),
+                hourly = mapHourly(response, home.hourlyIntervalHours),
                 sunrise = response.daily?.sunrise?.firstOrNull() ?: "",
                 sunset = response.daily?.sunset?.firstOrNull() ?: "",
                 daily = mapDaily(response),
