@@ -24,9 +24,9 @@ Android-приложение погоды: Open-Meteo, Compose, Glance-видж�
 - `data/repository` — `WeatherRepository` (погода + AQI + поиск городов), `WeatherCache` (JSON в cacheDir, TTL)
 - `data/local` — `SettingsDataStore` (Preferences + JSON-списки избранных/недавних)
 - `ui/{home,settings,location,onboarding,widgetcustomize,components,theme}` — экраны и компоненты; навигация NavHost прямо в `MainActivity`
-- `widget` — `ClockTempWidget` (Glance) + `WidgetPalette` (фон/прозрачность/текст)
-- `service` — `WeatherUpdateWorker` (WorkManager), `WeatherUpdateScheduler`, `NotificationHelper`, `WidgetUpdateManager`
-- `util` — `CityNameResolver` (локализация названий городов), `LanguageHelper`, `DateTimeUtils`, `WeatherCodeUtils` (WMO), `TemperatureUtils`, `WindDirection`
+- `widget` — `ClockTempWidget` (Glance) + `WidgetRender` (подбор шрифта, поток рендер-данных) + `WidgetPalette` (фон/прозрачность/текст)
+- `service` — `WeatherUpdateWorker` (WorkManager; `WeatherUpdateScheduler` живёт в нём же), `NotificationHelper`, `WidgetUpdateManager`
+- `util` — `CityNameResolver` (ручной словарь переводов городов), `CityNameTranslator` (сетевой перевод через геокодинг), `LanguageHelper`, `DateTimeUtils`, `WeatherCodeUtils` (WMO), `TemperatureUtils`, `WindDirection`, `Constants`, `ThemeMode`
 
 ## Конвенции
 
@@ -43,6 +43,8 @@ gradlew.bat assembleDebug test
 
 Юниты: JUnit + coroutines-test + MockK + Turbine. Сборка должна проходить без ошибок (deprecation-предупреждения допустимы).
 
+CI (`.github/workflows/android.yml`) гоняет `assembleDebug test` на каждый push/PR в `main` и заливает debug APK артефактом.
+
 ## Подводные камни (проверено на практике)
 
 - **Glance 1.2.0-rc01**: нет `clip`, нет `Surface` в glance-material3, `background` не принимает форму. Скругление углов — только `androidx.glance.appwidget.cornerRadius(dp)`. Детали: @docs/architecture.md
@@ -52,7 +54,7 @@ gradlew.bat assembleDebug test
 - **Релиз — только тег**: `git tag v1.6 && git push origin v1.6`; workflow собирает release-APK (`-PversionName` из тега, `-PversionCode` из счёта коммитов, имя файла — `Nimbus <версия>.apk`), подписывает постоянным ключом из `DEBUG_KEYSTORE_B64` и публикует GitHub Release. Без тега ничего не публикуется
 - **Подпись НЕ менять никогда**: релизы v1.2–v1.5 подписывались разными ключами (секрет перевыставлялся) — установка «поверх» не работала. С v1.6 ключ постоянный: `nimbus-release.keystore` (пароль `android`, alias `androiddebugkey`), локальная копия рядом с проектом, резервная копия (base64) — в приватном gist https://gist.github.com/JastRedPanda/637b0f57f344a33290950c2ad2db88f6 и в секрете `DEBUG_KEYSTORE_B64`. Секрет менять запрещено; если локальная копия потеряна — восстановить из gist (пользователь знает URL) и заново залить в секрет тот же base64. После смены ключа пользователь ставит приложение начисто
 - **Явная подпись release — только так**: `signingConfigs.create("release")` в app/build.gradle.kts с явными `storeFile` (из `$HOME/.android/debug.keystore`), паролями и alias. `signingConfigs.getByName("debug")` НЕ работает в CI: AGP не подхватывает подложенный keystore и генерирует свой на каждом ране (подпись менялась от релиза к релизу даже при одном секрете). Проверка подписи: `apksigner verify --print-certs` (SHA-1 должен быть `b9cdf73d…`)
-- **Виджет**: сетка 1×4 (targetCellWidth=4), шрифты специально крупные (время 165sp / температура 150sp) под сетку лаунчеров
+- **Виджет**: сетка 1×4 (targetCellWidth=4); шрифт времени/даты/температуры подбирается адаптивно бинарным поиском под фактическую ширину (`WidgetRender.fitBaseSp`, 10–400sp) — фиксированных значений sp в коде нет, детали: @docs/architecture.md
 
 ## Внешняя документация (читать по задаче, лениво)
 
