@@ -274,11 +274,14 @@ class SettingsDataStore(private val context: Context) {
             }
             for (key in listOf(KEY_FAVOURITE_CITIES, KEY_RECENT_CITIES)) {
                 val cities = prefs.cities(key)
-                if (cities.any { it.name == name }) {
-                    prefs[key] = json.encodeToString(
-                        cities.map { if (it.name == name) it.copy(localNames = it.localNames + translations) else it }
-                    )
+                var changed = false
+                val updated = cities.map { city ->
+                    if (city.name == name) {
+                        changed = true
+                        city.copy(localNames = city.localNames + translations)
+                    } else city
                 }
+                if (changed) prefs[key] = json.encodeToString(updated)
             }
         }
     }
@@ -301,6 +304,43 @@ class SettingsDataStore(private val context: Context) {
         val tz: String = DEFAULT_TZ,
         val localNames: Map<String, String> = emptyMap()
     )
+
+    /**
+     * Читает все поля, нужные для загрузки главного экрана, одним запросом к DataStore.
+     * Заменяет ~8 последовательных .first() в HomeViewModel.performLoad.
+     */
+    data class HomeSettings(
+        val cityName: String = DEFAULT_CITY,
+        val lat: Double = DEFAULT_LAT,
+        val lon: Double = DEFAULT_LON,
+        val tz: String = DEFAULT_TZ,
+        val localNames: Map<String, String> = emptyMap(),
+        val updateIntervalHours: Int = DEFAULT_UPDATE_INTERVAL_HOURS,
+        val tempUnit: TemperatureUnit = TemperatureUnit.CELSIUS,
+        val useFeelsLike: Boolean = false,
+        val hourlyIntervalHours: Int = DEFAULT_HOURLY_INTERVAL_HOURS,
+        val notificationsEnabled: Boolean = true,
+        val appLanguage: String = LanguageHelper.AUTO,
+        val showAqi: Boolean = true
+    )
+
+    suspend fun getHomeSettings(): HomeSettings {
+        val prefs = context.dataStore.data.first()
+        return HomeSettings(
+            cityName = prefs[KEY_CITY_NAME] ?: DEFAULT_CITY,
+            lat = prefs[KEY_LATITUDE] ?: DEFAULT_LAT,
+            lon = prefs[KEY_LONGITUDE] ?: DEFAULT_LON,
+            tz = prefs[KEY_TIMEZONE] ?: DEFAULT_TZ,
+            localNames = decode(prefs[KEY_CITY_LOCAL_NAMES], emptyMap()),
+            updateIntervalHours = prefs[KEY_UPDATE_INTERVAL_HOURS] ?: DEFAULT_UPDATE_INTERVAL_HOURS,
+            tempUnit = decode(prefs[KEY_TEMP_UNIT], TemperatureUnit.CELSIUS),
+            useFeelsLike = prefs[KEY_USE_FEELS_LIKE] ?: false,
+            hourlyIntervalHours = prefs[KEY_HOURLY_INTERVAL_HOURS] ?: DEFAULT_HOURLY_INTERVAL_HOURS,
+            notificationsEnabled = prefs[KEY_NOTIFICATIONS_ENABLED] ?: true,
+            appLanguage = prefs[KEY_APP_LANGUAGE] ?: LanguageHelper.AUTO,
+            showAqi = prefs[KEY_SHOW_AQI] ?: true
+        )
+    }
 
     @Serializable
     data class FavouriteCity(

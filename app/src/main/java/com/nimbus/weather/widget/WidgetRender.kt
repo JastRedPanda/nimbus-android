@@ -82,7 +82,7 @@ internal fun fitBaseSp(
         var low = MIN_FONT_SP
         var high = MAX_FONT_SP
         var best = MIN_FONT_SP
-        repeat(36) {
+        repeat(20) {
             val mid = (low + high) / 2f
             if (totalWidth(mid, withDate) <= availPx) {
                 best = mid

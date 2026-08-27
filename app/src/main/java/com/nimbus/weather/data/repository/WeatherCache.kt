@@ -6,6 +6,7 @@ import com.nimbus.weather.data.model.WeatherResponse
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File
+import java.util.concurrent.atomic.AtomicLong
 
 class WeatherCache(private val context: Context) {
 
@@ -19,6 +20,9 @@ class WeatherCache(private val context: Context) {
 
     private val metaFile: File get() =
         File(context.cacheDir, "cache_meta.txt").apply { parentFile?.mkdirs() }
+
+    @Volatile private var cachedExpiry: Long = Long.MIN_VALUE
+    private val metaAccessLock = Any()
 
     fun getCachedWeather(): WeatherResponse? {
         if (!weatherFile.exists()) return null
@@ -51,20 +55,33 @@ class WeatherCache(private val context: Context) {
     }
 
     private fun isExpired(): Boolean {
-        return try {
-            val timestamp = metaFile.readText().toLongOrNull() ?: return true
-            (System.currentTimeMillis() - timestamp) > TTL_MILLIS
-        } catch (_: Exception) { true }
+        val now = System.currentTimeMillis()
+        synchronized(metaAccessLock) {
+            val cached = cachedExpiry
+            if (cached != Long.MIN_VALUE && now - cached <= TTL_MILLIS) return false
+            val timestamp = try {
+                metaFile.readText().toLongOrNull() ?: return true.also { cachedExpiry = Long.MIN_VALUE }
+            } catch (_: Exception) { return true.also { cachedExpiry = Long.MIN_VALUE } }
+            cachedExpiry = timestamp
+            return (now - timestamp) > TTL_MILLIS
+        }
     }
 
     private fun updateTimestamp() {
-        try { metaFile.writeText(System.currentTimeMillis().toString()) } catch (_: Exception) {}
+        val now = System.currentTimeMillis()
+        synchronized(metaAccessLock) {
+            cachedExpiry = now
+        }
+        try { metaFile.writeText(now.toString()) } catch (_: Exception) {}
     }
 
     fun clear() {
         weatherFile.delete()
         aqiFile.delete()
         metaFile.delete()
+        synchronized(metaAccessLock) {
+            cachedExpiry = Long.MIN_VALUE
+        }
     }
 
     fun setTtlHours(hours: Int) {

@@ -117,10 +117,14 @@ object CityNameResolver {
         mapOf("ru" to "Познань", "uk" to "Познань", "en" to "Poznań", "cs" to "Poznaň")
     )
 
-    private val KNOWN_TRANSLATIONS: Map<String, Map<String, String>> = buildMap {
-        TRANSLATION_SETS.forEach { set ->
-            set.forEach { (_, name) -> put(name, set) }
+    private val KNOWN_TRANSLATIONS: Map<String, Map<String, String>> = run {
+        val result = HashMap<String, Map<String, String>>(TRANSLATION_SETS.size * 4)
+        for (set in TRANSLATION_SETS) {
+            for ((_, name) in set) {
+                result[name] = set
+            }
         }
+        result
     }
 
     fun displayName(

@@ -5,6 +5,7 @@ import com.nimbus.weather.data.api.ApiClient
 import com.nimbus.weather.data.model.AirQualityResponse
 import com.nimbus.weather.data.model.GeocodingResult
 import com.nimbus.weather.data.model.WeatherResponse
+import java.util.concurrent.ConcurrentHashMap
 
 class WeatherRepository {
 
@@ -76,16 +77,51 @@ class WeatherRepository {
     }
 
     suspend fun translateCityName(name: String, lat: Double, lon: Double, toLang: String): String? {
+        val key = TranslationKey(name, toLang, lat, lon)
+        translationCache[key]?.let { return it }
+        if (key in translationMisses) return null
+
         val radiusKm = 25.0
         fun bestMatch(results: List<GeocodingResult>): GeocodingResult? {
-            val distances = results.map { it to distanceKm(it.latitude, it.longitude, lat, lon) }
-            return distances.filter { it.second <= radiusKm }.minByOrNull { it.second }?.first
+            var best: GeocodingResult? = null
+            var bestDist = Double.MAX_VALUE
+            for (r in results) {
+                val d = distanceKm(r.latitude, r.longitude, lat, lon)
+                if (d <= radiusKm && d < bestDist) {
+                    best = r
+                    bestDist = d
+                }
+            }
+            return best
         }
-        bestMatch(geocodingApi.searchCities(name = name, language = toLang).results.orEmpty())?.let { return it.name }
-        val canonical = bestMatch(geocodingApi.searchCities(name = name, language = "en").results.orEmpty())
-            ?: return null
-        return bestMatch(geocodingApi.searchCities(name = canonical.name, language = toLang).results.orEmpty())?.name
+
+        val targetResults = geocodingApi.searchCities(name = name, language = toLang).results.orEmpty()
+        bestMatch(targetResults)?.let {
+            translationCache[key] = it.name
+            return it.name
+        }
+        val canonical = bestMatch(
+            geocodingApi.searchCities(name = name, language = "en").results.orEmpty()
+        ) ?: run {
+            translationMisses.add(key)
+            return null
+        }
+        val result = bestMatch(
+            geocodingApi.searchCities(name = canonical.name, language = toLang).results.orEmpty()
+        )?.name
+        if (result != null) translationCache[key] = result else translationMisses.add(key)
+        return result
     }
+
+    private data class TranslationKey(
+        val name: String,
+        val lang: String,
+        val lat: Double,
+        val lon: Double
+    )
+
+    private val translationCache = ConcurrentHashMap<TranslationKey, String>()
+    private val translationMisses = ConcurrentHashMap.newKeySet<TranslationKey>()
 
     private fun distanceKm(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
         val earthRadiusKm = 6371.0
