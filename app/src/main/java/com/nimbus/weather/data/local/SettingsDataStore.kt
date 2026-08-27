@@ -90,7 +90,7 @@ class SettingsDataStore(private val context: Context) {
     }
 
     val themeMode: Flow<ThemeMode> = context.dataStore.data.map { prefs ->
-        decode(prefs[KEY_THEME_MODE], ThemeMode.SYSTEM)
+        ThemeMode.valueOf(prefs[KEY_THEME_MODE] ?: "SYSTEM")
     }
 
     val notificationsEnabled: Flow<Boolean> = context.dataStore.data.map { prefs ->
@@ -102,7 +102,7 @@ class SettingsDataStore(private val context: Context) {
     }
 
     val tempUnit: Flow<TemperatureUnit> = context.dataStore.data.map { prefs ->
-        decode(prefs[KEY_TEMP_UNIT], TemperatureUnit.CELSIUS)
+        TemperatureUnit.valueOf(prefs[KEY_TEMP_UNIT] ?: "CELSIUS")
     }
 
     val cityName: Flow<String> = context.dataStore.data.map { prefs ->
