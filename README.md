@@ -5,6 +5,8 @@ Free and open-source Android weather app. No ads, no trackers, no API keys.
 ## Features
 
 - Current weather, hourly strip and 7-day forecast: temperature, feels like, humidity, pressure, wind, UV index, precipitation, sunrise / sunset
+- Dynamic sky background following weather and time of day; frosted-glass cards tinted by the app theme with adaptive text
+- Hourly temperature sparkline scrolling together with the strip, colored from frost blue to heat red (frost threshold 0 °C)
 - Air quality index (AQI) with six components
 - City search with debounce, favourites and recent cities
 - Tablet-friendly layout on screens ≥ 600 dp
@@ -63,6 +65,8 @@ Single 1×4 home screen widget: large city time on the left (with date, text or 
 ## Можливості
 
 - Поточна погода, погодинний прогноз і прогноз на 7 днів: температура, відчуття, вологість, тиск, вітер, УФ-індекс, опади, схід / захід сонця
+- Динамічне небо, що підлаштовується під погоду й час доби; матове скло карток у тоні теми застосунку з адаптивним текстом
+- Спарклайн температури в погодинному прогнозі, що прокручується разом зі стрічкою, колір від морозно-синього до спекотно-червоного (поріг морозу 0 °C)
 - Індекс якості повітря (AQI) з шістьма компонентами
 - Пошук міст, обране та нещодавні міста
 - Планшетне компонування на екранах ≥ 600 dp
