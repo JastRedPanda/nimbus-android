@@ -15,16 +15,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.nimbus.weather.ui.theme.LocalGlassDark
-import com.nimbus.weather.ui.theme.LocalSkyDark
 
 /**
  * Базовый компонент «матового стекла».
  *
  * Тонировка — от темы приложения ([LocalGlassDark]): тёмная тема —
- * тонировка в тёмное, светлая — в белое. Текст под неё подгоняется
+ * тонировка в чёрное, светлая — в белое. Текст под неё подгоняется
  * там же, где читается [LocalGlassDark].
- * Исключение — тёмное стекло поверх светлого неба (тёмная тема днём
- * в снег/туман): тогда заливка плотнее, иначе белый текст не читается.
  *
  * Плюс тонкая градиентная фаска (1 dp), имитирующая отблеск
  * света на кромке стекла.
@@ -38,13 +35,13 @@ fun GlassCard(
     content: @Composable BoxScope.() -> Unit
 ) {
     val glassDark = LocalGlassDark.current
-    val skyDark = LocalSkyDark.current
     val shape = RoundedCornerShape(cornerRadius)
 
-    val fill = when {
-        !glassDark -> Color.White.copy(alpha = 0.55f)
-        skyDark -> Color.White.copy(alpha = 0.10f)
-        else -> Color.Black.copy(alpha = 0.45f)
+    val fill = if (!glassDark) {
+        Color.White.copy(alpha = 0.55f)
+    } else {
+        // Тёмная тема — стекло тонировано в чёрное, небо лишь просвечивает
+        Color.Black.copy(alpha = 0.45f)
     }
 
     val borderBrush = Brush.verticalGradient(
