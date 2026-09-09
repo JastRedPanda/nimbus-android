@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.nimbus.weather.R
 import com.nimbus.weather.ui.theme.LocalGlassDark
@@ -81,7 +82,7 @@ fun DailyForecastCard(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = t.title,
-                    modifier = Modifier.width(60.dp)
+                    maxLines = 1
                 )
 
                 WeatherIcon(code = day.weatherCode, size = 32.dp)
@@ -92,6 +93,8 @@ fun DailyForecastCard(
                     text = stringResource(weatherDescriptionRes(day.weatherCode)),
                     style = MaterialTheme.typography.bodySmall,
                     color = t.body,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f)
                 )
             }

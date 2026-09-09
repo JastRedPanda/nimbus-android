@@ -1,9 +1,10 @@
 package com.nimbus.weather.util
 
-import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import java.time.format.TextStyle
+import java.util.Locale
 import java.util.TimeZone
 
 private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
@@ -21,39 +22,18 @@ fun formatTime(isoString: String): String {
     }
 }
 
+/**
+ * Полное название дня недели на языке приложения («Четверг», «Thursday»).
+ * Через локаль — работает для всех языков, включая чешский.
+ * Первая буква заглавная, чтобы было единообразно со словом «Сегодня».
+ */
 fun formatDayOfWeek(dateStr: String): String {
     return try {
         val date = LocalDate.parse(dateStr)
-        val lang = LanguageHelper.getLocaleTag()
-        when (lang) {
-            "ru" -> when (date.dayOfWeek) {
-                DayOfWeek.MONDAY -> "Пн"
-                DayOfWeek.TUESDAY -> "Вт"
-                DayOfWeek.WEDNESDAY -> "Ср"
-                DayOfWeek.THURSDAY -> "Чт"
-                DayOfWeek.FRIDAY -> "Пт"
-                DayOfWeek.SATURDAY -> "Сб"
-                DayOfWeek.SUNDAY -> "Вс"
-            }
-            "uk" -> when (date.dayOfWeek) {
-                DayOfWeek.MONDAY -> "Пн"
-                DayOfWeek.TUESDAY -> "Вт"
-                DayOfWeek.WEDNESDAY -> "Ср"
-                DayOfWeek.THURSDAY -> "Чт"
-                DayOfWeek.FRIDAY -> "Пт"
-                DayOfWeek.SATURDAY -> "Сб"
-                DayOfWeek.SUNDAY -> "Нд"
-            }
-            else -> when (date.dayOfWeek) {
-                DayOfWeek.MONDAY -> "Mon"
-                DayOfWeek.TUESDAY -> "Tue"
-                DayOfWeek.WEDNESDAY -> "Wed"
-                DayOfWeek.THURSDAY -> "Thu"
-                DayOfWeek.FRIDAY -> "Fri"
-                DayOfWeek.SATURDAY -> "Sat"
-                DayOfWeek.SUNDAY -> "Sun"
-            }
-        }
+        val locale = Locale.forLanguageTag(LanguageHelper.getLocaleTag())
+        date.dayOfWeek
+            .getDisplayName(TextStyle.FULL, locale)
+            .replaceFirstChar { if (it.isLowerCase()) it.titlecase(locale) else it.toString() }
     } catch (_: Exception) {
         ""
     }
