@@ -31,6 +31,7 @@ import androidx.glance.unit.ColorProvider
 import com.nimbus.weather.MainActivity
 import com.nimbus.weather.data.local.SettingsDataStore
 import com.nimbus.weather.data.repository.WeatherCache
+import com.nimbus.weather.service.WeatherUpdateScheduler
 import com.nimbus.weather.service.WidgetUpdateManager
 import com.nimbus.weather.util.displayString
 import com.nimbus.weather.util.toCelsiusOrFahrenheit
@@ -46,7 +47,11 @@ class ClockTempWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val settings = SettingsDataStore(context)
         val weather = WidgetUpdateManager.getCachedWeather()
-            ?: runCatching { WeatherCache(context).getCachedWeather() }.getOrNull()
+            ?: runCatching { WeatherCache(context).getCachedWidgetWeather(allowExpired = true) }.getOrNull()
+            ?: runCatching { WeatherCache(context).getCachedWeather(allowExpired = true) }.getOrNull()
+        if (weather == null) {
+            WeatherUpdateScheduler.enqueueImmediate(context)
+        }
         val renderDataFlow = renderDataFlow(context, settings)
 
         provideContent {
@@ -147,4 +152,18 @@ class ClockTempWidget : GlanceAppWidget() {
 
 class ClockTempWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = ClockTempWidget()
+
+    override fun onUpdate(
+        context: Context,
+        appWidgetManager: android.appwidget.AppWidgetManager,
+        appWidgetIds: IntArray
+    ) {
+        super.onUpdate(context, appWidgetManager, appWidgetIds)
+        WeatherUpdateScheduler.enqueueImmediate(context)
+    }
+
+    override fun onEnabled(context: Context) {
+        super.onEnabled(context)
+        WeatherUpdateScheduler.enqueueImmediate(context)
+    }
 }

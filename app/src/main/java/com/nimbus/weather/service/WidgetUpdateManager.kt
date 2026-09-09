@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import com.nimbus.weather.data.local.SettingsDataStore
 import com.nimbus.weather.data.model.WeatherResponse
+import com.nimbus.weather.data.repository.WeatherCache
 import com.nimbus.weather.data.repository.WeatherRepository
 import com.nimbus.weather.widget.ClockTempWidget
 import kotlinx.coroutines.flow.first
@@ -13,6 +14,7 @@ object WidgetUpdateManager {
 
     private var cachedWeather: WeatherResponse? = null
     private var cachedForCity: String? = null
+    private var cachedTimestamp: Long = 0L
 
     fun getCachedWeather(): WeatherResponse? = cachedWeather
 
@@ -24,11 +26,17 @@ object WidgetUpdateManager {
     suspend fun updateAllWidgets(context: Context, response: WeatherResponse, cityName: String) {
         val target = resolveTargetCity(context)
         if (target != null && target.name != cityName) {
-            refreshAllWidgets(context)
+            if (cachedWeather == null || cachedForCity != target.name) {
+                updateFromTargetCity(context)
+            } else {
+                refreshAllWidgets(context)
+            }
             return
         }
         cachedWeather = response
         cachedForCity = cityName
+        cachedTimestamp = System.currentTimeMillis()
+        runCatching { WeatherCache(context).cacheWidgetWeather(response) }
         refreshAllWidgets(context)
     }
 
@@ -46,20 +54,26 @@ object WidgetUpdateManager {
      * favourite, or the current city when no favourites. Falls back silently
      * to whatever is already cached.
      */
-    suspend fun updateFromTargetCity(context: Context) {
+    suspend fun updateFromTargetCity(context: Context, force: Boolean = false) {
         val target = resolveTargetCity(context) ?: return
-        if (cachedForCity == target.name) {
+        val now = System.currentTimeMillis()
+        val settings = SettingsDataStore(context)
+        val interval = settings.updateIntervalHours.first()
+        val maxAgeMillis = interval * 60 * 60 * 1000L
+        val isStale = (now - cachedTimestamp) > maxAgeMillis
+
+        if (!force && cachedForCity == target.name && cachedWeather != null && !isStale) {
             refreshAllWidgets(context)
             return
         }
         runCatching {
             val repository = WeatherRepository()
-            val settings = SettingsDataStore(context)
-            val interval = settings.updateIntervalHours.first()
             repository.setTtlHours(interval * 2)
             val response = repository.getWeather(target.lat, target.lon, context)
             cachedWeather = response
             cachedForCity = target.name
+            cachedTimestamp = now
+            WeatherCache(context).cacheWidgetWeather(response)
             refreshAllWidgets(context)
         }.onFailure {
             Log.w("WidgetUpdateManager", "widget target refresh failed", it)

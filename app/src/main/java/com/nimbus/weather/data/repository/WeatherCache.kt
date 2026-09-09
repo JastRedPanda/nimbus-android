@@ -21,20 +21,37 @@ class WeatherCache(private val context: Context) {
     private val metaFile: File get() =
         File(context.cacheDir, "cache_meta.txt").apply { parentFile?.mkdirs() }
 
+    private val widgetWeatherFile: File get() =
+        File(context.cacheDir, "widget_weather_cache.json").apply { parentFile?.mkdirs() }
+
+    private val widgetMetaFile: File get() =
+        File(context.cacheDir, "widget_cache_meta.txt").apply { parentFile?.mkdirs() }
+
     @Volatile private var cachedExpiry: Long = Long.MIN_VALUE
+    @Volatile private var widgetCachedExpiry: Long = Long.MIN_VALUE
     private val metaAccessLock = Any()
 
-    fun getCachedWeather(): WeatherResponse? {
+    fun getCachedWeather(allowExpired: Boolean = false): WeatherResponse? {
         if (!weatherFile.exists()) return null
-        if (isExpired()) { clear(); return null }
+        if (!allowExpired && isExpired()) return null
         return try {
             json.decodeFromString<WeatherResponse>(weatherFile.readText())
         } catch (_: Exception) { null }
     }
 
-    fun getCachedAqi(): AirQualityResponse? {
+    fun getCachedWidgetWeather(allowExpired: Boolean = true): WeatherResponse? {
+        if (!widgetWeatherFile.exists()) return getCachedWeather(allowExpired = allowExpired)
+        if (!allowExpired && isWidgetExpired()) return null
+        return try {
+            json.decodeFromString<WeatherResponse>(widgetWeatherFile.readText())
+        } catch (_: Exception) {
+            getCachedWeather(allowExpired = allowExpired)
+        }
+    }
+
+    fun getCachedAqi(allowExpired: Boolean = false): AirQualityResponse? {
         if (!aqiFile.exists()) return null
-        if (isExpired()) { clear(); return null }
+        if (!allowExpired && isExpired()) return null
         return try {
             json.decodeFromString<AirQualityResponse>(aqiFile.readText())
         } catch (_: Exception) { null }
@@ -44,6 +61,17 @@ class WeatherCache(private val context: Context) {
         try {
             weatherFile.writeText(json.encodeToString(response))
             updateTimestamp()
+        } catch (_: Exception) {}
+    }
+
+    fun cacheWidgetWeather(response: WeatherResponse) {
+        try {
+            widgetWeatherFile.writeText(json.encodeToString(response))
+            val now = System.currentTimeMillis()
+            synchronized(metaAccessLock) {
+                widgetCachedExpiry = now
+            }
+            try { widgetMetaFile.writeText(now.toString()) } catch (_: Exception) {}
         } catch (_: Exception) {}
     }
 
@@ -67,6 +95,19 @@ class WeatherCache(private val context: Context) {
         }
     }
 
+    private fun isWidgetExpired(): Boolean {
+        val now = System.currentTimeMillis()
+        synchronized(metaAccessLock) {
+            val cached = widgetCachedExpiry
+            if (cached != Long.MIN_VALUE && now - cached <= TTL_MILLIS) return false
+            val timestamp = try {
+                widgetMetaFile.readText().toLongOrNull() ?: return true.also { widgetCachedExpiry = Long.MIN_VALUE }
+            } catch (_: Exception) { return true.also { widgetCachedExpiry = Long.MIN_VALUE } }
+            widgetCachedExpiry = timestamp
+            return (now - timestamp) > TTL_MILLIS
+        }
+    }
+
     private fun updateTimestamp() {
         val now = System.currentTimeMillis()
         synchronized(metaAccessLock) {
@@ -77,10 +118,13 @@ class WeatherCache(private val context: Context) {
 
     fun clear() {
         weatherFile.delete()
+        widgetWeatherFile.delete()
         aqiFile.delete()
         metaFile.delete()
+        widgetMetaFile.delete()
         synchronized(metaAccessLock) {
             cachedExpiry = Long.MIN_VALUE
+            widgetCachedExpiry = Long.MIN_VALUE
         }
     }
 

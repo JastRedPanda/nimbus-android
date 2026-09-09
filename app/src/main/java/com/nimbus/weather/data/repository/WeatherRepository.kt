@@ -49,7 +49,7 @@ class WeatherRepository {
             c?.cacheWeather(response)
             response
         } catch (e: Exception) {
-            val cached = c?.getCachedWeather()
+            val cached = c?.getCachedWeather(allowExpired = true)
             if (cached != null) {
                 showingCachedWeather = true
                 cached
@@ -67,7 +67,7 @@ class WeatherRepository {
             c?.cacheAqi(response)
             response
         } catch (e: Exception) {
-            val cached = c?.getCachedAqi()
+            val cached = c?.getCachedAqi(allowExpired = true)
             if (cached != null) cached else throw e
         }
     }
