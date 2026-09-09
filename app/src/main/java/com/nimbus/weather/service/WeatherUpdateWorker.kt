@@ -12,6 +12,11 @@ import com.nimbus.weather.util.Constants
 import kotlinx.coroutines.flow.first
 import java.util.concurrent.TimeUnit
 
+import androidx.work.Constraints
+import androidx.work.ExistingWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+
 class WeatherUpdateWorker(
     context: Context,
     params: WorkerParameters
@@ -47,8 +52,14 @@ class WeatherUpdateWorker(
 
 object WeatherUpdateScheduler {
 
+    private val networkConstraints = Constraints.Builder()
+        .setRequiredNetworkType(NetworkType.CONNECTED)
+        .build()
+
     private fun buildRequest(intervalHours: Int) =
-        PeriodicWorkRequestBuilder<WeatherUpdateWorker>(intervalHours.toLong(), TimeUnit.HOURS).build()
+        PeriodicWorkRequestBuilder<WeatherUpdateWorker>(intervalHours.toLong(), TimeUnit.HOURS)
+            .setConstraints(networkConstraints)
+            .build()
 
     fun schedule(context: Context, intervalHours: Int = 2) {
         WorkManager.getInstance(context).enqueueUniquePeriodicWork(
@@ -63,6 +74,17 @@ object WeatherUpdateScheduler {
             Constants.WEATHER_WORK_NAME,
             ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE,
             buildRequest(intervalHours)
+        )
+    }
+
+    fun enqueueImmediate(context: Context) {
+        val request = OneTimeWorkRequestBuilder<WeatherUpdateWorker>()
+            .setConstraints(networkConstraints)
+            .build()
+        WorkManager.getInstance(context).enqueueUniqueWork(
+            Constants.WEATHER_WORK_NAME + "_immediate",
+            ExistingWorkPolicy.REPLACE,
+            request
         )
     }
 }
