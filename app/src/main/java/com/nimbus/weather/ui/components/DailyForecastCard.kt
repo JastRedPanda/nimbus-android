@@ -94,13 +94,6 @@ fun DailyForecastCard(
                     color = t.body,
                     modifier = Modifier.weight(1f)
                 )
-
-                Text(
-                    text = "$tmax/$tmin${tempUnit.displayString()}",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = t.title
-                )
             }
 
             Spacer(modifier = Modifier.height(8.dp))
