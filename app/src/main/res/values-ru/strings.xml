@@ -42,6 +42,7 @@
     <string name="interval_2h">Каждые 2 часа</string>
     <string name="interval_12h">Каждые 12 часов</string>
     <string name="interval_24h">Каждые 24 часа</string>
+    <string name="hourly_forecast">Почасовой прогноз</string>
     <string name="hourly_interval">Интервал почасового прогноза</string>
     <string name="hourly_interval_1h">Каждый час</string>
     <string name="hourly_interval_3h">Каждые 3 часа</string>

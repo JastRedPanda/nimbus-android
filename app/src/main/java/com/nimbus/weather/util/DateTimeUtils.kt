@@ -74,3 +74,17 @@ fun isToday(dateStr: String): Boolean {
         false
     }
 }
+
+/**
+ * День ли сейчас: текущее время между восходом и закатом.
+ * Все три параметра — ISO-строки Open-Meteo («2026-09-09T08:35»),
+ * поэтому достаточно лексикографического сравнения.
+ */
+fun isDayNow(nowIso: String, sunriseIso: String, sunsetIso: String): Boolean {
+    return try {
+        if (nowIso.isBlank() || sunriseIso.isBlank() || sunsetIso.isBlank()) return true
+        nowIso >= sunriseIso && nowIso <= sunsetIso
+    } catch (_: Exception) {
+        true
+    }
+}

@@ -42,6 +42,7 @@
     <string name="interval_2h">Кожні 2 години</string>
     <string name="interval_12h">Кожні 12 годин</string>
     <string name="interval_24h">Кожні 24 години</string>
+    <string name="hourly_forecast">Погодинний прогноз</string>
     <string name="hourly_interval">Інтервал погодинного прогнозу</string>
     <string name="hourly_interval_1h">Кожну годину</string>
     <string name="hourly_interval_3h">Кожні 3 години</string>

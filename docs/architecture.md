@@ -85,14 +85,14 @@ data/
 ├── repository/ WeatherRepository.kt, WeatherCache.kt
 └── local/      SettingsDataStore.kt
 ui/
-├── theme/      Theme.kt, Color.kt, Type.kt
+├── theme/      Theme.kt, Color.kt, Type.kt, SkyBackground.kt (SkyPalette, LocalSkyDark/LocalGlassDark)
 ├── onboarding/ OnboardingScreen.kt
 ├── home/       HomeScreen.kt, HomeViewModel.kt
 ├── settings/   SettingsScreen.kt, SettingsViewModel.kt
 ├── location/   LocationSearchScreen.kt, LocationSearchViewModel.kt
 ├── widgetcustomize/ WidgetCustomizeScreen.kt, WidgetCustomizeViewModel.kt
-└── components/ CurrentWeatherCard.kt, DailyForecastCard.kt, HourlyForecastBar.kt,
-                AqiCard.kt, WeatherIcon.kt
+└── components/ CurrentWeatherCard.kt, DailyForecastCard.kt, HourlyForecastBar.kt (TempSparkline),
+                AqiCard.kt, WeatherIcon.kt, GlassCard.kt
 widget/         ClockTempWidget.kt (и ClockTempWidgetReceiver внутри), WidgetPalette.kt,
                 WidgetRender.kt (поток рендер-данных + fitBaseSp — адаптивный шрифт)
 service/        WeatherUpdateWorker.kt (и object WeatherUpdateScheduler внутри),
