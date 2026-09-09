@@ -3,20 +3,21 @@ package com.nimbus.weather.ui.components
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -50,6 +51,10 @@ data class HourlyForecastData(
     val uvIndex: Double
 )
 
+/** Ширина чипа часа и зазор — общие для ленты и спарклайна, чтобы точки легли под метки. */
+private val HourlyChipWidth = 56.dp
+private val HourlyChipGap = 8.dp
+
 @Composable
 fun HourlyForecastBar(
     hourly: List<HourlyForecastData>,
@@ -66,16 +71,19 @@ fun HourlyForecastBar(
                 color = t.title
             )
             Spacer(modifier = Modifier.height(8.dp))
-            TempSparkline(hourly = hourly, tempUnit = tempUnit)
-            Spacer(modifier = Modifier.height(4.dp))
-        LazyRow(
-            contentPadding = PaddingValues(horizontal = 0.dp, vertical = 0.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(hourly) { h ->
-                HourlyColumn(h, tempUnit)
+            // Линия и чипы в одном горизонтальном скролле:
+            // точки строго под метками времени, едут вместе
+            Box(modifier = Modifier.horizontalScroll(rememberScrollState())) {
+                Column {
+                    TempSparkline(hourly = hourly, tempUnit = tempUnit)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(HourlyChipGap)) {
+                        hourly.forEach { h ->
+                            HourlyColumn(h, tempUnit)
+                        }
+                    }
+                }
             }
-        }
         }
     }
 }
@@ -95,16 +103,17 @@ private fun TempSparkline(
 
     Canvas(
         modifier = modifier
-            .fillMaxWidth()
+            .width(HourlyChipWidth * hourly.size + HourlyChipGap * (hourly.size - 1))
             .height(56.dp)
     ) {
-        val w = size.width
         val h = size.height
-        val padX = 8.dp.toPx()
+        val chipW = HourlyChipWidth.toPx()
+        val gap = HourlyChipGap.toPx()
         val padTop = 8.dp.toPx()
         val padBottom = 8.dp.toPx()
         val n = temps.size
-        fun x(i: Int) = padX + i * (w - 2 * padX) / (n - 1)
+        // Центр i-го чипа — точка строго под его меткой времени
+        fun x(i: Int) = i * (chipW + gap) + chipW / 2f
         fun y(v: Double): Float {
             if (max == min) return h / 2f
             val f = ((v - min) / (max - min)).toFloat()
@@ -181,7 +190,7 @@ private fun HourlyColumn(
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
-            .width(56.dp)
+            .width(HourlyChipWidth)
             .clip(chipShape)
             .background(chipBg)
             .border(width = 0.5.dp, brush = chipBorder, shape = chipShape)
