@@ -2,6 +2,7 @@ package com.nimbus.weather.ui.home
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -29,8 +30,6 @@ import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -41,9 +40,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontWeight
 import android.content.res.Configuration
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -66,7 +68,13 @@ import com.nimbus.weather.data.local.SettingsDataStore.FavouriteCity
 import com.nimbus.weather.ui.components.AqiCard
 import com.nimbus.weather.ui.components.CurrentWeatherCard
 import com.nimbus.weather.ui.components.DailyForecastCard
+import com.nimbus.weather.ui.components.GlassCard
 import com.nimbus.weather.ui.components.HourlyForecastBar
+import com.nimbus.weather.ui.theme.LocalGlassDark
+import com.nimbus.weather.ui.theme.LocalSkyDark
+import com.nimbus.weather.ui.theme.SkyPalette
+import com.nimbus.weather.ui.theme.skyTextColors
+import com.nimbus.weather.util.isDayNow
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -88,12 +96,39 @@ fun HomeScreen(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
+    // Фон-небо под всем экраном, включая топбар
+    val isDay = state.current?.let { current ->
+        isDayNow(current.time, state.sunrise, state.sunset)
+    } ?: false
+    val weatherCode = state.current?.weatherCode ?: 0
+    val skyBrush = SkyPalette.resolveSkyBrush(weatherCode, isDay)
+    val skyDark = SkyPalette.isDarkSky(weatherCode, isDay)
+    val t = skyTextColors(skyDark)
+    // Тонировка стекла — от темы приложения (яркость surface),
+    // а не от неба: тёмная тема — тёмное стекло, светлая — белое.
+    val glassDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(skyBrush)
+    ) {
+    CompositionLocalProvider(
+        LocalSkyDark provides skyDark,
+        LocalGlassDark provides glassDark
+    ) {
     Scaffold(
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.app_name)) },
+                title = {
+                    Text(
+                        stringResource(R.string.app_name),
+                        color = t.title
+                    )
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
+                    containerColor = Color.Transparent
                 ),
                 actions = {
                     if (state.favouriteCities.size > 1) {
@@ -106,7 +141,8 @@ fun HomeScreen(
                     IconButton(onClick = onSettingsClick) {
                         Icon(
                             imageVector = Icons.Default.Settings,
-                            contentDescription = stringResource(R.string.settings)
+                            contentDescription = stringResource(R.string.settings),
+                            tint = t.title
                         )
                     }
                 }
@@ -126,7 +162,8 @@ fun HomeScreen(
                 when {
                     state.loading -> {
                         CircularProgressIndicator(
-                            modifier = Modifier.align(Alignment.Center)
+                            modifier = Modifier.align(Alignment.Center),
+                            color = t.title
                         )
                     }
                     state.error != null -> {
@@ -138,7 +175,7 @@ fun HomeScreen(
                         ) {
                             Text(
                                 text = stringResource(R.string.error_loading),
-                                color = MaterialTheme.colorScheme.error
+                                color = t.title
                             )
                             Spacer(modifier = Modifier.height(12.dp))
                             Button(onClick = { viewModel.loadWeather() }) {
@@ -200,6 +237,8 @@ fun HomeScreen(
                 }
             }
         }
+    }
+    }
     }
 }
 
@@ -287,7 +326,8 @@ private fun TabletLayout(
             ) {
                 Text(
                     text = stringResource(R.string.forecast_7_days),
-                    style = MaterialTheme.typography.titleMedium
+                    style = MaterialTheme.typography.titleMedium,
+                    color = skyTextColors(LocalSkyDark.current).title
                 )
                 state.daily.forEach { day ->
                     DailyForecastCard(day = day, tempUnit = state.tempUnit)
@@ -357,7 +397,8 @@ private fun PhoneLayout(
         item {
             Text(
                 text = stringResource(R.string.forecast_7_days),
-                style = MaterialTheme.typography.titleMedium
+                style = MaterialTheme.typography.titleMedium,
+                color = skyTextColors(LocalSkyDark.current).title
             )
         }
         items(state.daily) { day ->
@@ -373,6 +414,7 @@ private fun FavouriteCitiesButton(
     onClick: () -> Unit
 ) {
     IconButton(onClick = onClick) {
+        val t = skyTextColors(LocalSkyDark.current)
         BadgedBox(
             badge = {
                 if (count > 0) {
@@ -383,8 +425,8 @@ private fun FavouriteCitiesButton(
             Icon(
                 imageVector = Icons.Default.Bookmark,
                 contentDescription = stringResource(R.string.favourite_cities),
-                tint = if (expanded) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.onSurface
+                tint = if (expanded) t.title
+                else t.body
             )
         }
     }
@@ -398,13 +440,11 @@ private fun FavouriteCitiesList(
     onCityClick: (com.nimbus.weather.data.local.SettingsDataStore.FavouriteCity) -> Unit,
     onCollapse: () -> Unit
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+    GlassCard(
+        modifier = Modifier.fillMaxWidth()
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
+        val t = skyTextColors(LocalGlassDark.current)
+        Column(modifier = Modifier.padding(0.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -413,12 +453,14 @@ private fun FavouriteCitiesList(
                     text = stringResource(R.string.favourite_cities),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
+                    color = t.title,
                     modifier = Modifier.weight(1f)
                 )
                 IconButton(onClick = onCollapse) {
                     Icon(
                         imageVector = Icons.Default.ExpandLess,
-                        contentDescription = stringResource(R.string.cancel)
+                        contentDescription = stringResource(R.string.cancel),
+                        tint = t.title
                     )
                 }
             }
@@ -437,8 +479,8 @@ private fun FavouriteCitiesList(
                         text = displayName,
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
-                        color = if (isCurrent) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.onSurface,
+                        color = if (isCurrent) t.title
+                        else t.subtle,
                         modifier = Modifier.weight(1f)
                     )
                 }

@@ -36,6 +36,7 @@
     <string name="interval_2h">Každé 2 hodiny</string>
     <string name="interval_12h">Každých 12 hodin</string>
     <string name="interval_24h">Každých 24 hodin</string>
+    <string name="hourly_forecast">Hodinová předpověď</string>
     <string name="hourly_interval">Interval hodinové předpovědi</string>
     <string name="hourly_interval_1h">Každou hodinu</string>
     <string name="hourly_interval_3h">Každé 3 hodiny</string>

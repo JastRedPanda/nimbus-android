@@ -42,6 +42,7 @@
     <string name="interval_2h">Every 2 hours</string>
     <string name="interval_12h">Every 12 hours</string>
     <string name="interval_24h">Every 24 hours</string>
+    <string name="hourly_forecast">Hourly forecast</string>
     <string name="hourly_interval">Hourly forecast interval</string>
     <string name="hourly_interval_1h">Every 1 hour</string>
     <string name="hourly_interval_3h">Every 3 hours</string>
