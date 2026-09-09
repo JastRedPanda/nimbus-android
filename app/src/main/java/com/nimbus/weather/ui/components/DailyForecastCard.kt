@@ -82,8 +82,12 @@ fun DailyForecastCard(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = t.title,
-                    maxLines = 1
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false)
                 )
+
+                Spacer(modifier = Modifier.width(8.dp))
 
                 WeatherIcon(code = day.weatherCode, size = 32.dp)
 
@@ -127,7 +131,7 @@ fun DailyForecastCard(
                     icon = Icons.Default.Air,
                     iconTint = Color(0xFF81D4FA),
                     label = stringResource(R.string.wind),
-                    value = "${day.windMax.toInt()}/${day.windGusts.toInt()} ${stringResource(R.string.wind_ms)} ${windDirection(day.windDirection)}",
+                    value = "${day.windMax.toInt()} - ${day.windGusts.toInt()} ${stringResource(R.string.wind_ms)} ${windDirection(day.windDirection)}",
                     modifier = Modifier.weight(1f),
                     align = Alignment.Start
                 )
