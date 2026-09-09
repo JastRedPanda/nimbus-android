@@ -95,6 +95,7 @@ private fun TempSparkline(
     modifier: Modifier = Modifier
 ) {
     if (hourly.size < 2) return
+    val ring = skyTextColors(LocalGlassDark.current).title
     val temps = hourly.map { it.temperature.toCelsiusOrFahrenheit(tempUnit) }
     // Цельсии для цвета: порог мороза — 0°C при любой единице отображения
     val tempsC = hourly.map { it.temperature }
@@ -121,6 +122,19 @@ private fun TempSparkline(
         }
         val pts = temps.indices.map { Offset(x(it), y(temps[it])) }
         val stroke = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round)
+        val guideWidth = 1.dp.toPx()
+        val dotR = 3.dp.toPx()
+        val ringR = 4.5.dp.toPx()
+
+        // Направляющие от точек вниз к чипам — визуальная связка линии с колонками
+        pts.forEachIndexed { i, pt ->
+            drawLine(
+                color = tempLineColor(tempsC[i]).copy(alpha = 0.30f),
+                start = Offset(pt.x, pt.y),
+                end = Offset(pt.x, h),
+                strokeWidth = guideWidth
+            )
+        }
 
         // Каждый сегмент сплайна красится по средней температуре
         // его концов — переход через ноль виден по смене цвета
@@ -153,7 +167,9 @@ private fun TempSparkline(
             drawPath(path = seg, color = segColor, style = stroke)
         }
         pts.forEachIndexed { i, pt ->
-            drawCircle(tempLineColor(tempsC[i]), radius = 2.dp.toPx(), center = pt)
+            val dotColor = tempLineColor(tempsC[i])
+            drawCircle(ring, radius = ringR, center = pt)
+            drawCircle(dotColor, radius = dotR, center = pt)
         }
     }
 }
