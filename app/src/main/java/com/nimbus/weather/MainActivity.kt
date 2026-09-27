@@ -41,6 +41,7 @@ import androidx.navigation.navArgument
 import com.nimbus.weather.data.local.SettingsDataStore
 import com.nimbus.weather.service.KeepAliveService
 import com.nimbus.weather.service.NotificationHelper
+import com.nimbus.weather.service.WeatherAlarmScheduler
 import com.nimbus.weather.service.WeatherUpdateScheduler
 import com.nimbus.weather.service.WidgetUpdateManager
 import com.nimbus.weather.ui.home.HomeScreen
@@ -81,6 +82,7 @@ class MainActivity : ComponentActivity() {
             val settings = SettingsDataStore(this@MainActivity)
             val interval = settings.updateIntervalHours.first()
             WeatherUpdateScheduler.schedule(this@MainActivity, interval)
+            WeatherAlarmScheduler.schedule(this@MainActivity, interval)
             if (settings.keepAliveEnabled.first()) {
                 KeepAliveService.start(this@MainActivity)
             }

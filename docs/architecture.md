@@ -6,7 +6,7 @@
 |---|---|
 | Язык | Kotlin (jvmTarget 17) |
 | UI | Jetpack Compose + Material 3 (BOM 2024.12.01) |
-| Виджет | Glance (glance / glance-appwidget / glance-material3 1.2.0-rc01) |
+| Виджет | Классические RemoteViews + TextClock (Glance удалён — часы на нём замирали на MIUI) |
 | Архитектура | MVVM: ViewModel + Repository, ручной DI |
 | Сеть | Retrofit 2.11 + OkHttp 4.12 + kotlinx.serialization 1.7.3 |
 | Асинхронность | Coroutines + Flow |
@@ -93,9 +93,11 @@ ui/
 ├── widgetcustomize/ WidgetCustomizeScreen.kt, WidgetCustomizeViewModel.kt
 └── components/ CurrentWeatherCard.kt, DailyForecastCard.kt, HourlyForecastBar.kt (TempSparkline),
                 AqiCard.kt, WeatherIcon.kt, GlassCard.kt
-widget/         ClockTempWidget.kt (и ClockTempWidgetReceiver внутри), WidgetPalette.kt,
-                WidgetRender.kt (поток рендер-данных + fitBaseSp — адаптивный шрифт)
-service/        WeatherUpdateWorker.kt (и object WeatherUpdateScheduler внутри),
+widget/         ClockTempWidget.kt (ClockTempWidgetReceiver : AppWidgetProvider),
+                WidgetRemoteViews.kt (сборка RemoteViews: температура, шрифты, фон, форматы),
+                WidgetPalette.kt, WidgetRender.kt (fitBaseSp — адаптивный шрифт)
+service/        WeatherUpdateWorker.kt (воркер + общий performWeatherRefresh + WeatherUpdateScheduler),
+                WeatherAlarm.kt (WeatherAlarmReceiver + WeatherAlarmScheduler — точный будильник),
                 NotificationHelper.kt, WidgetUpdateManager.kt, KeepAliveService.kt
 util/           CityNameResolver.kt, CityNameTranslator.kt, LanguageHelper.kt,
                 DateTimeUtils.kt, WeatherCodeUtils.kt, TemperatureUtils.kt,
@@ -124,11 +126,6 @@ androidx.lifecycle:lifecycle-runtime-compose:2.8.7
 // Navigation
 androidx.navigation:navigation-compose:2.8.5
 
-// Glance
-androidx.glance:glance:1.2.0-rc01
-androidx.glance:glance-appwidget:1.2.0-rc01
-androidx.glance:glance-material3:1.2.0-rc01
-
 // Retrofit + OkHttp + serialization
 com.squareup.retrofit2:retrofit:2.11.0
 com.squareup.okhttp3:okhttp:4.12.0
@@ -147,7 +144,7 @@ junit 4.13.2, kotlinx-coroutines-test 1.9.0, mockk 1.13.13, turbine 1.2.0
 
 ## Подводные камни
 
-- **Glance 1.2.0-rc01**: нет `clip`, нет `Surface` в glance-material3, `background` без формы. Скругление углов — только `androidx.glance.appwidget.cornerRadius(dp)` (найдено в AAR; классы `CornerRadiusKt`/`CornerRadiusModifier`)
+- **Виджет — только RemoteViews + TextClock, не Glance**: Glance-виджет — это статичные RemoteViews, время в нём перерисовывает только наш процесс (бесконечный `delay`-цикл в `provideContent` после смерти процесса не тикает, AlarmManager-тикер на MIUI режется даже без ограничений батареи). Время/дату должен рисовать лаунчер через TextClock — тогда часы тикают всегда. Температура/фон/шрифты обновляются нашим кодом редко (см. product.md)
 - **Таймзона города — из геокодинга**: Open-Meteo отдаёт IANA-идентификатор в поле `timezone` ответа Geocoding API; валидация `DateTimeUtils.isValidTimeZoneId` (кэш `TimeZone.getAvailableIDs()`), fallback `Europe/Kiev`. GPS-определения города нет (play-services-location удалён в v1.5)
 - **versionCode — автоинкремент**: `preBuild` в app/build.gradle.kts читает `app/version.properties` (gitignored), +1 при каждой сборке; установка APK «поверх» работает. versionName меняется вручную. Сбить счётчик можно очисткой файла — тогда versionCode упадёт, и обновление «поверх» не встанет (вылечится следующим релизом)
 - **CI-сборка (`.github/workflows/android.yml`)**: на каждый push/PR в `main` — `assembleDebug` + `test`, debug APK заливается артефактом; не публикует релиз

@@ -23,30 +23,38 @@ class WeatherUpdateWorker(
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
-        return try {
-            val settings = SettingsDataStore(applicationContext)
-            val repository = WeatherRepository()
-            val home = settings.getHomeSettings()
-            repository.setTtlHours(home.updateIntervalHours * 2)
+        return performWeatherRefresh(applicationContext)
+    }
+}
 
-            val ctx = applicationContext
-            val favourites = settings.favouriteCities.first()
-            val target = favourites.firstOrNull()
-            val response = target?.let {
-                repository.getWeather(it.lat, it.lon, ctx)
-            } ?: repository.getWeather(home.lat, home.lon, ctx)
-            val responseCity = target?.name ?: home.cityName
+/**
+ * Общий путь фонового обновления погоды: и периодический WorkManager,
+ * и точный будильник [WeatherAlarmReceiver] идут сюда. Качает погоду
+ * целевого города, обновляет виджет и уведомление.
+ */
+suspend fun performWeatherRefresh(context: Context): androidx.work.ListenableWorker.Result {
+    return try {
+        val settings = SettingsDataStore(context)
+        val repository = WeatherRepository()
+        val home = settings.getHomeSettings()
+        repository.setTtlHours(home.updateIntervalHours * 2)
 
-            WidgetUpdateManager.updateAllWidgets(applicationContext, response, responseCity)
+        val favourites = settings.favouriteCities.first()
+        val target = favourites.firstOrNull()
+        val response = target?.let {
+            repository.getWeather(it.lat, it.lon, context)
+        } ?: repository.getWeather(home.lat, home.lon, context)
+        val responseCity = target?.name ?: home.cityName
 
-            if (home.notificationsEnabled) {
-                NotificationHelper.showWeatherNotification(applicationContext, response)
-            }
+        WidgetUpdateManager.updateAllWidgets(context, response, responseCity)
 
-            Result.success()
-        } catch (_: Exception) {
-            Result.retry()
+        if (home.notificationsEnabled) {
+            NotificationHelper.showWeatherNotification(context, response)
         }
+
+        androidx.work.ListenableWorker.Result.success()
+    } catch (_: Exception) {
+        androidx.work.ListenableWorker.Result.retry()
     }
 }
 

@@ -9,6 +9,7 @@ import com.nimbus.weather.data.local.SettingsDataStore.FavouriteCity
 import com.nimbus.weather.data.repository.WeatherRepository
 import com.nimbus.weather.service.KeepAliveService
 import com.nimbus.weather.service.NotificationHelper
+import com.nimbus.weather.service.WeatherAlarmScheduler
 import com.nimbus.weather.service.WeatherUpdateScheduler
 import com.nimbus.weather.service.WidgetUpdateManager
 import com.nimbus.weather.util.CityNameResolver
@@ -36,7 +37,8 @@ data class SettingsUiState(
     val showAqi: Boolean = true,
     val favouriteCities: List<FavouriteCity> = emptyList(),
     val favouriteDisplayNames: Map<String, String> = emptyMap(),
-    val keepAliveEnabled: Boolean = false
+    val keepAliveEnabled: Boolean = false,
+    val lastWeatherUpdateMillis: Long = 0L
 )
 
 class SettingsViewModel(application: Application) : AndroidViewModel(application) {
@@ -75,6 +77,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             )
         }
         settings.keepAliveEnabled.intoState { copy(keepAliveEnabled = it) }
+        settings.lastWeatherUpdateMillis.intoState { copy(lastWeatherUpdateMillis = it) }
     }
 
     private fun buildDisplayNames(cities: List<FavouriteCity>, appLanguage: String): Map<String, String> {
@@ -150,6 +153,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             settings.setUpdateIntervalHours(hours)
             WeatherUpdateScheduler.reschedule(getApplication(), hours)
+            WeatherAlarmScheduler.schedule(getApplication(), hours)
         }
     }
 
@@ -206,6 +210,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             settings.resetAll()
             WeatherUpdateScheduler.reschedule(getApplication(), SettingsDataStore.DEFAULT_UPDATE_INTERVAL_HOURS)
+            WeatherAlarmScheduler.schedule(getApplication(), SettingsDataStore.DEFAULT_UPDATE_INTERVAL_HOURS)
             restartApp()
         }
     }
