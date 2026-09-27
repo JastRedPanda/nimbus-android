@@ -69,7 +69,10 @@ private class CloudPuff(
     var s1: Float = 1f,
     var dx2: Float = 0f,
     var dy2: Float = 0f,
-    var s2: Float = 1f
+    var s2: Float = 1f,
+    var dx3: Float = 0f,
+    var dy3: Float = 0f,
+    var s3: Float = 1f
 )
 
 @Composable
@@ -95,8 +98,8 @@ fun AnimatedSky(
         }
         List(count) { Particle() }
     }
-    val cloudDark = remember(effect) { List(14) { CloudPuff() } }
-    val cloudLight = remember(effect) { List(14) { CloudPuff() } }
+    val cloudDark = remember(effect) { List(12) { CloudPuff() } }
+    val cloudLight = remember(effect) { List(12) { CloudPuff() } }
     // Молния: время следующей вспышки и её длительность, мс
     val lightning = remember(effect) { longArrayOf(0L, 0L) }
     // Точки разряда: главный канал (до 16 точек) + до 3 веток по 6 точек.
@@ -316,28 +319,57 @@ fun AnimatedSky(
                     } else {
                         0.08f + random.nextFloat() * 0.06f
                     }
-                    c.dx1 = (random.nextFloat() - 0.5f) * c.r
-                    c.dy1 = (random.nextFloat() - 0.5f) * c.r * 0.6f
-                    c.s1 = 0.55f + random.nextFloat() * 0.25f
-                    c.dx2 = (random.nextFloat() - 0.5f) * c.r
-                    c.dy2 = (random.nextFloat() - 0.5f) * c.r * 0.6f
-                    c.s2 = 0.55f + random.nextFloat() * 0.25f
+                    fun sub(): Triple<Float, Float, Float> = Triple(
+                        (random.nextFloat() - 0.5f) * c.r,
+                        (random.nextFloat() - 0.5f) * c.r * 0.6f,
+                        0.5f + random.nextFloat() * 0.3f
+                    )
+                    val a = sub()
+                    c.dx1 = a.first
+                    c.dy1 = a.second
+                    c.s1 = a.third
+                    val b = sub()
+                    c.dx2 = b.first
+                    c.dy2 = b.second
+                    c.s2 = b.third
+                    val d = sub()
+                    c.dx3 = d.first
+                    c.dy3 = d.second
+                    c.s3 = d.third
+                }
+                // Мягкий круг: бледный внешний + плотная середина,
+                // край не читается окружностью.
+                fun softCircle(center: Offset, r: Float, color: Color) {
+                    drawCircle(color, r, center)
+                    drawCircle(
+                        color.copy(alpha = (color.alpha * 1.8f).coerceAtMost(1f)),
+                        r * 0.6f,
+                        center
+                    )
                 }
                 fun drawPuff(c: CloudPuff, dark: Boolean) {
                     if (c.r == 0f) seed(c, dark)
                     c.x += c.speed
                     if (c.x - c.r * 1.6f > w) c.x = -c.r * 1.6f
                     val breathe = 1f + 0.06f * sin(nowMs / 2400f + c.phase)
-                    val alpha = c.alpha * (0.85f + 0.15f * sin(nowMs / 1700f + c.phase))
+                    var alpha = c.alpha * (0.85f + 0.15f * sin(nowMs / 1700f + c.phase))
+                    // Ночью светлые просветы почти гаснут, тёмные густеют.
+                    alpha *= if (dark) {
+                        if (isDay) 1f else 1.2f
+                    } else {
+                        if (isDay) 1f else 0.4f
+                    }
                     val color = if (dark) {
-                        Color.Black.copy(alpha = alpha)
+                        Color.Black.copy(alpha = alpha.coerceAtMost(1f))
                     } else {
                         Color.White.copy(alpha = alpha)
                     }
                     val r = c.r * breathe
-                    drawCircle(color, r, Offset(c.x, c.y))
-                    drawCircle(color, r * c.s1, Offset(c.x + c.dx1, c.y + c.dy1))
-                    drawCircle(color, r * c.s2, Offset(c.x + c.dx2, c.y + c.dy2))
+                    val center = Offset(c.x, c.y)
+                    softCircle(center, r, color)
+                    softCircle(Offset(c.x + c.dx1, c.y + c.dy1), r * c.s1, color)
+                    softCircle(Offset(c.x + c.dx2, c.y + c.dy2), r * c.s2, color)
+                    softCircle(Offset(c.x + c.dx3, c.y + c.dy3), r * c.s3, color)
                 }
                 cloudDark.forEach { drawPuff(it, dark = true) }
                 cloudLight.forEach { drawPuff(it, dark = false) }
