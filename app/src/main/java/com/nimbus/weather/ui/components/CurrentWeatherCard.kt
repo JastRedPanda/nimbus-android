@@ -115,7 +115,8 @@ fun CurrentWeatherCard(
                     icon = Icons.Default.WbSunny,
                     iconTint = Color(0xFFFFD54F),
                     label = stringResource(R.string.uv_index),
-                    value = "${current.uvIndex.toInt()} (${stringResource(current.uvIndex.uvCategory())})"
+                    value = "${current.uvIndex.toInt()} (${stringResource(current.uvIndex.uvCategory())})",
+                    align = Alignment.End
                 )
             }
 
@@ -135,7 +136,8 @@ fun CurrentWeatherCard(
                     icon = Icons.Default.Compress,
                     iconTint = Color(0xFFCE93D8),
                     label = stringResource(R.string.pressure),
-                    value = "${current.pressure.toInt()} ${stringResource(R.string.pressure_hpa)}"
+                    value = "${current.pressure.toInt()} ${stringResource(R.string.pressure_hpa)}",
+                    align = Alignment.End
                 )
             }
 
@@ -155,7 +157,8 @@ fun CurrentWeatherCard(
                     icon = Icons.Default.WbTwilight,
                     iconTint = Color(0xFFFF8A65),
                     label = stringResource(R.string.sunset),
-                    value = formatTime(sunset)
+                    value = formatTime(sunset),
+                    align = Alignment.End
                 )
             }
         }
@@ -167,10 +170,11 @@ private fun WeatherDetailItem(
     icon: ImageVector,
     iconTint: Color,
     label: String,
-    value: String
+    value: String,
+    align: Alignment.Horizontal = Alignment.Start
 ) {
     val t = skyTextColors(LocalGlassDark.current)
-    Column(horizontalAlignment = Alignment.Start) {
+    Column(horizontalAlignment = align) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
                 imageVector = icon,
