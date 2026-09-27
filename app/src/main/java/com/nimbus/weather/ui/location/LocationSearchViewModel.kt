@@ -71,7 +71,7 @@ class LocationSearchViewModel(application: Application) : AndroidViewModel(appli
     private suspend fun search(query: String) {
         _state.value = _state.value.copy(loading = true, noResults = false)
         try {
-            val results = repository.searchCities(query, LanguageHelper.resolve(_state.value.appLanguage))
+            val results = repository.searchCitiesWithFallback(query, LanguageHelper.resolve(_state.value.appLanguage))
             _state.value = _state.value.copy(
                 results = results,
                 loading = false,

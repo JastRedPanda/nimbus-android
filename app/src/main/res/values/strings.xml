@@ -90,7 +90,8 @@
 
     <!-- City search -->
     <string name="search_city">Search city…</string>
-    <string name="recent_cities_title">Selected cities</string>
+    <string name="recent_cities_title">Search history</string>
+    <string name="recent_cities_hint">Tap the star to pin cities to favourites</string>
     <string name="add_to_favourites">Add to favourites</string>
     <string name="remove_from_favourites">Remove from favourites</string>
     <string name="remove_from_history">Remove from history</string>
