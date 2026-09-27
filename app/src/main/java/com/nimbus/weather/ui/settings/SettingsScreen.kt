@@ -329,29 +329,23 @@ import com.nimbus.weather.util.TemperatureUnit
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // City search entry (current city is already listed in favourites)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(onClick = onCitySearchClick)
-                    .padding(vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = stringResource(R.string.add_city),
-                    modifier = Modifier.weight(1f),
-                    style = MaterialTheme.typography.bodyLarge
-                )
-                Icon(
-                    imageVector = Icons.Default.ChevronRight,
-                    contentDescription = null
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
             // Favourite cities
             SectionHeader(title = stringResource(R.string.favourite_cities))
+
+            OutlinedButton(
+                onClick = onCitySearchClick,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp, bottom = 4.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(stringResource(R.string.add_city))
+            }
 
             if (state.favouriteCities.isEmpty()) {
                 Text(
@@ -396,21 +390,6 @@ import com.nimbus.weather.util.TemperatureUnit
                         }
                     }
                 }
-            }
-
-            OutlinedButton(
-                onClick = onCitySearchClick,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(stringResource(R.string.add_city))
             }
 
             Spacer(modifier = Modifier.height(24.dp))

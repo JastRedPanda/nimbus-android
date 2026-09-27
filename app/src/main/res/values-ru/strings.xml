@@ -100,7 +100,7 @@
     <string name="add_city">Добавить город</string>
 
     <!-- Виджеты -->
-    <string name="widgets">Виджеты</string>
+    <string name="widgets">Виджет</string>
     <string name="widget_customize">Внешний вид</string>
     <string name="widget_preview">Предпросмотр</string>
     <string name="widget_bg_color">Цвет фона</string>
