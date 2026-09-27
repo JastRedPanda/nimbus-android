@@ -46,6 +46,7 @@
     <string name="last_weather_update_never">Not updated yet</string>
     <string name="exact_alarm_summary">Background weather updates may be delayed. Allow alarms and reminders for Nimbus.</string>
     <string name="exact_alarm_allow">Allow</string>
+    <string name="sky_animation">Animated background</string>
     <string name="hourly_forecast">Hourly forecast</string>
     <string name="hourly_interval">Hourly forecast interval</string>
     <string name="hourly_interval_1h">Every 1 hour</string>

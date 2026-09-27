@@ -38,7 +38,8 @@ data class SettingsUiState(
     val favouriteCities: List<FavouriteCity> = emptyList(),
     val favouriteDisplayNames: Map<String, String> = emptyMap(),
     val keepAliveEnabled: Boolean = false,
-    val lastWeatherUpdateMillis: Long = 0L
+    val lastWeatherUpdateMillis: Long = 0L,
+    val skyAnimationEnabled: Boolean = true
 )
 
 class SettingsViewModel(application: Application) : AndroidViewModel(application) {
@@ -78,6 +79,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         }
         settings.keepAliveEnabled.intoState { copy(keepAliveEnabled = it) }
         settings.lastWeatherUpdateMillis.intoState { copy(lastWeatherUpdateMillis = it) }
+        settings.skyAnimationEnabled.intoState { copy(skyAnimationEnabled = it) }
     }
 
     private fun buildDisplayNames(cities: List<FavouriteCity>, appLanguage: String): Map<String, String> {
@@ -146,6 +148,12 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun setThemeMode(mode: ThemeMode) {
         viewModelScope.launch {
             settings.setThemeMode(mode)
+        }
+    }
+
+    fun setSkyAnimationEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            settings.setSkyAnimationEnabled(enabled)
         }
     }
 
