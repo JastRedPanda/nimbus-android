@@ -96,7 +96,13 @@ fun LocationSearchScreen(
                             text = stringResource(R.string.recent_cities_title),
                             style = MaterialTheme.typography.titleSmall,
                             color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(vertical = 8.dp)
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+                        Text(
+                            text = stringResource(R.string.recent_cities_hint),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(bottom = 8.dp)
                         )
                     }
                     items(state.recentCities) { city ->

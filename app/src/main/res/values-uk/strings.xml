@@ -90,7 +90,8 @@
 
     <!-- Пошук міста -->
     <string name="search_city">Пошук міста…</string>
-    <string name="recent_cities_title">Вибрані міста</string>
+    <string name="recent_cities_title">Історія пошуку</string>
+    <string name="recent_cities_hint">Натисніть на зірочку, щоб закріпити місто в обраних</string>
     <string name="add_to_favourites">Додати в обране</string>
     <string name="remove_from_favourites">Видалити з обраного</string>
     <string name="remove_from_history">Видалити з історії</string>

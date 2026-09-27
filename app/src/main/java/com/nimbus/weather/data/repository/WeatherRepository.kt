@@ -9,8 +9,46 @@ import java.util.concurrent.ConcurrentHashMap
 
 class WeatherRepository {
 
-    private companion object {
+    companion object {
         const val DEFAULT_TTL_HOURS = 4
+
+        internal fun buildLanguageChain(language: String): List<String> =
+            (listOf(language, "en") + listOf("ru", "uk", "cs")).distinct()
+
+        private val CYRILLIC_TO_LATIN = mapOf(
+            'а' to "a", 'б' to "b", 'в' to "v", 'г' to "h", 'ґ' to "g",
+            'д' to "d", 'е' to "e", 'є' to "ye", 'ё' to "yo", 'ж' to "zh",
+            'з' to "z", 'и' to "y", 'і' to "i", 'ї' to "yi", 'й' to "y",
+            'к' to "k", 'л' to "l", 'м' to "m", 'н' to "n", 'о' to "o",
+            'п' to "p", 'р' to "r", 'с' to "s", 'т' to "t", 'у' to "u",
+            'ф' to "f", 'х' to "kh", 'ц' to "ts", 'ч' to "ch", 'ш' to "sh",
+            'щ' to "shch", 'ъ' to "", 'ы' to "y", 'ь' to "", 'э' to "e",
+            'ю' to "yu", 'я' to "ya"
+        )
+
+        /** Нижний регистр + транслит + только латиница: «Харків» → «kharkiv». */
+        internal fun normalizeName(s: String): String = buildString {
+            for (ch in s.lowercase()) {
+                val mapped = CYRILLIC_TO_LATIN[ch] ?: ch.toString()
+                for (c in mapped) {
+                    if (c in 'a'..'z') append(c)
+                }
+            }
+        }
+
+        internal fun isExactMatch(query: String, name: String): Boolean =
+            normalizeName(name) == normalizeName(query)
+
+        /** Точные совпадения — вверх, затем содержащие запрос, затем остальные. */
+        internal fun rankResults(query: String, results: List<GeocodingResult>): List<GeocodingResult> {
+            val q = normalizeName(query)
+            return results.sortedWith(
+                compareBy(
+                    { if (normalizeName(it.name) == q) 0 else 1 },
+                    { if (normalizeName(it.name).contains(q)) 0 else 1 }
+                )
+            )
+        }
     }
 
     private val weatherApi = ApiClient.weatherApi
@@ -74,6 +112,30 @@ class WeatherRepository {
 
     suspend fun searchCities(query: String, language: String = "ru"): List<GeocodingResult> {
         return geocodingApi.searchCities(name = query, language = language).results.orEmpty()
+    }
+
+    /**
+     * Поиск города с фолбэком по языкам: Open-Meteo ищет только по именам
+     * на указанном языке, поэтому «Харків» с language=ru даёт пусто, а
+     * «Харьков» с language=uk — мусор из однофамильцев.
+     * Порядок: язык приложения → английский → остальные наши. Если родной
+     * язык дал точное совпадение — дальше не идём. Иначе добираем цепочку,
+     * дубли по id отбрасываем, точные совпадения поднимаем вверх.
+     * Сравнение через транслит (кириллица→латиница), чтобы «Харків»
+     * совпадал с «Kharkiv».
+     */
+    suspend fun searchCitiesWithFallback(query: String, language: String): List<GeocodingResult> {
+        val merged = LinkedHashMap<Int, GeocodingResult>()
+        for (lang in buildLanguageChain(language)) {
+            val results = try {
+                geocodingApi.searchCities(name = query, language = lang).results.orEmpty()
+            } catch (_: Exception) {
+                emptyList()
+            }
+            for (r in results) merged.putIfAbsent(r.id, r)
+            if (merged.values.any { isExactMatch(query, it.name) }) break
+        }
+        return rankResults(query, merged.values.toList())
     }
 
     suspend fun translateCityName(name: String, lat: Double, lon: Double, toLang: String): String? {

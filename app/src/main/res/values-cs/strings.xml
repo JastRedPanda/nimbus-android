@@ -89,7 +89,8 @@
 
     <!-- City search -->
     <string name="search_city">Hledat město…</string>
-    <string name="recent_cities_title">Vybraná města</string>
+    <string name="recent_cities_title">Historie vyhledávání</string>
+    <string name="recent_cities_hint">Klepnutím na hvězdičku připnete město do oblíbených</string>
     <string name="add_to_favourites">Přidat k oblíbeným</string>
     <string name="remove_from_favourites">Odebrat z oblíbených</string>
     <string name="remove_from_history">Odebrat z historie</string>
