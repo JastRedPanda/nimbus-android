@@ -1,5 +1,7 @@
 package com.nimbus.weather.ui.components
 
+import androidx.compose.foundation.MarqueeAnimationMode
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -99,7 +101,9 @@ fun DailyForecastCard(
                     color = t.body,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier
+                        .weight(1f)
+                        .basicMarquee(animationMode = MarqueeAnimationMode.Immediately)
                 )
             }
 
