@@ -22,6 +22,8 @@
     <string name="reset_settings_confirm_title">Сбросить все настройки?</string>
     <string name="reset_settings_confirm_text">Город, избранные, внешний вид, единицы и интервал вернутся к значениям по умолчанию. Действие необратимо.</string>
     <string name="onboarding_welcome">Выберите город, чтобы начать.</string>
+    <string name="onboarding_current_city">Текущий город: %1$s</string>
+    <string name="onboarding_favourites">Избранное: %1$s</string>
     <string name="start">Начать</string>
     <string name="notification_channel_name">Обновления погоды</string>
     <string name="weather_update_notification_title">Сейчас %1$d°</string>
@@ -95,6 +97,7 @@
     <string name="no_results">Ничего не найдено</string>
     <string name="favourite_cities">Избранные города</string>
     <string name="no_favourite_cities">Добавляйте города звёздочкой для быстрого переключения</string>
+    <string name="add_city">Добавить город</string>
 
     <!-- Виджеты -->
     <string name="widgets">Виджеты</string>

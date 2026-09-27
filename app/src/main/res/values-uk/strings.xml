@@ -22,6 +22,8 @@
     <string name="reset_settings_confirm_title">Скинути всі налаштування?</string>
     <string name="reset_settings_confirm_text">Місто, обрані, вигляд, одиниці та інтервал повернуться до типових значень. Дію не можна скасувати.</string>
     <string name="onboarding_welcome">Оберіть місто, щоб почати.</string>
+    <string name="onboarding_current_city">Поточне місто: %1$s</string>
+    <string name="onboarding_favourites">Обрані: %1$s</string>
     <string name="start">Почати</string>
     <string name="notification_channel_name">Оновлення погоди</string>
     <string name="weather_update_notification_title">Зараз %1$d°</string>
@@ -95,6 +97,7 @@
     <string name="no_results">Нічого не знайдено</string>
     <string name="favourite_cities">Обрані міста</string>
     <string name="no_favourite_cities">Додавайте міста зірочкою для швидкого перемикання</string>
+    <string name="add_city">Додати місто</string>
 
     <!-- Віджети -->
     <string name="widgets">Віджети</string>
