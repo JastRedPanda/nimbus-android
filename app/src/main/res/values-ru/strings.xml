@@ -46,6 +46,7 @@
     <string name="last_weather_update_never">Ещё не обновлялась</string>
     <string name="exact_alarm_summary">Фоновое обновление погоды может опаздывать. Разрешите «Будильники и напоминания» для Nimbus.</string>
     <string name="exact_alarm_allow">Разрешить</string>
+    <string name="sky_animation">Анимация фона</string>
     <string name="hourly_forecast">Почасовой прогноз</string>
     <string name="hourly_interval">Интервал почасового прогноза</string>
     <string name="hourly_interval_1h">Каждый час</string>

@@ -70,9 +70,13 @@ import com.nimbus.weather.ui.components.CurrentWeatherCard
 import com.nimbus.weather.ui.components.DailyForecastCard
 import com.nimbus.weather.ui.components.GlassCard
 import com.nimbus.weather.ui.components.HourlyForecastBar
+import com.nimbus.weather.ui.theme.AnimatedSky
+import com.nimbus.weather.ui.theme.GlassRainOverlay
 import com.nimbus.weather.ui.theme.LocalGlassDark
 import com.nimbus.weather.ui.theme.LocalSkyDark
+import com.nimbus.weather.ui.theme.SkyEffect
 import com.nimbus.weather.ui.theme.SkyPalette
+import com.nimbus.weather.ui.theme.skyEffectFor
 import com.nimbus.weather.ui.theme.skyTextColors
 import com.nimbus.weather.util.isDayNow
 
@@ -103,16 +107,26 @@ fun HomeScreen(
     val weatherCode = state.current?.weatherCode ?: 0
     val skyBrush = SkyPalette.resolveSkyBrush(weatherCode, isDay)
     val skyDark = SkyPalette.isDarkSky(weatherCode, isDay)
-    val t = skyTextColors(skyDark)
-    // Тонировка стекла — от темы приложения (яркость surface),
-    // а не от неба: тёмная тема — тёмное стекло, светлая — белое.
-    val glassDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+    // Живой фон — одним тумблером в настройках, иначе статичный градиент.
+    val skyAnimated = state.skyAnimationEnabled
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(skyBrush)
     ) {
+    if (skyAnimated) {
+        AnimatedSky(weatherCode = weatherCode, isDay = isDay)
+        val effect = skyEffectFor(weatherCode = weatherCode, isDay = isDay)
+        if (effect == SkyEffect.RAIN || effect == SkyEffect.THUNDER) {
+            GlassRainOverlay()
+        }
+    }
+    val t = skyTextColors(skyDark)
+    // Тонировка стекла — от темы приложения (яркость surface),
+    // а не от неба: тёмная тема — тёмное стекло, светлая — белое.
+    val glassDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+
     CompositionLocalProvider(
         LocalSkyDark provides skyDark,
         LocalGlassDark provides glassDark

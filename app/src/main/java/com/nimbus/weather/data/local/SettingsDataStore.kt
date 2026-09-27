@@ -50,6 +50,7 @@ class SettingsDataStore(private val context: Context) {
         private val KEY_RECENT_CITIES = stringPreferencesKey("recent_cities")
         private val KEY_KEEP_ALIVE_ENABLED = booleanPreferencesKey("keep_alive_enabled")
         private val KEY_LAST_WEATHER_UPDATE = longPreferencesKey("last_weather_update_millis")
+        private val KEY_SKY_ANIMATION_ENABLED = booleanPreferencesKey("sky_animation_enabled")
 
         const val DEFAULT_CITY = "Киев"
         const val DEFAULT_LAT = 50.4501
@@ -178,6 +179,16 @@ class SettingsDataStore(private val context: Context) {
     suspend fun setLastWeatherUpdateMillis(nowMillis: Long) {
         context.dataStore.edit { prefs ->
             prefs[KEY_LAST_WEATHER_UPDATE] = nowMillis
+        }
+    }
+
+    val skyAnimationEnabled: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[KEY_SKY_ANIMATION_ENABLED] ?: true
+    }
+
+    suspend fun setSkyAnimationEnabled(enabled: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[KEY_SKY_ANIMATION_ENABLED] = enabled
         }
     }
 

@@ -181,6 +181,11 @@ import com.nimbus.weather.util.TemperatureUnit
                 checked = state.themeMode == ThemeMode.DARK,
                 onCheck = { viewModel.setThemeMode(ThemeMode.DARK) }
             )
+            SettingsToggle(
+                label = stringResource(R.string.sky_animation),
+                checked = state.skyAnimationEnabled,
+                onCheck = { viewModel.setSkyAnimationEnabled(it) }
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
 
