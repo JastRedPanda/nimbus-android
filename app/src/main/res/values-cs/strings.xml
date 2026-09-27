@@ -99,7 +99,7 @@
     <string name="add_city">Přidat město</string>
 
     <!-- Widgets -->
-    <string name="widgets">Widgety</string>
+    <string name="widgets">Widget</string>
     <string name="widget_customize">Vzhled</string>
     <string name="widget_preview">Náhled</string>
     <string name="widget_bg_color">Barva pozadí</string>

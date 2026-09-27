@@ -100,7 +100,7 @@
     <string name="add_city">Add city</string>
 
     <!-- Widgets -->
-    <string name="widgets">Widgets</string>
+    <string name="widgets">Widget</string>
     <string name="widget_customize">Appearance</string>
     <string name="widget_preview">Preview</string>
     <string name="widget_bg_color">Background color</string>
