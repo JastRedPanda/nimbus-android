@@ -85,7 +85,8 @@ data/
 ├── repository/ WeatherRepository.kt, WeatherCache.kt
 └── local/      SettingsDataStore.kt
 ui/
-├── theme/      Theme.kt, Color.kt, Type.kt, SkyBackground.kt (SkyPalette, LocalSkyDark/LocalGlassDark)
+├── theme/      Theme.kt, Color.kt, Type.kt, SkyBackground.kt (SkyPalette, LocalSkyDark/LocalGlassDark),
+│               AnimatedSky.kt (частицы + `skyEffectFor`), GlassRain.kt (мокрое стекло)
 ├── onboarding/ OnboardingScreen.kt
 ├── home/       HomeScreen.kt, HomeViewModel.kt
 ├── settings/   SettingsScreen.kt, SettingsViewModel.kt
