@@ -1,6 +1,6 @@
 # Nimbus Weather (nimbus-android)
 
-Android-приложение погоды: Open-Meteo, Compose, Glance-виджет, 4 локали (RU/UK/EN/CS).
+Android-приложение погоды: Open-Meteo, Compose, RemoteViews-виджет с TextClock, 4 локали (RU/UK/EN/CS).
 
 ## Стек
 
@@ -8,7 +8,7 @@ Android-приложение погоды: Open-Meteo, Compose, Glance-видж�
 |---|---|
 | Язык | Kotlin |
 | UI | Jetpack Compose + Material 3 |
-| Виджет | Glance (androidx.glance 1.2.0-rc01) |
+| Виджет | Классические RemoteViews + TextClock (Glance удалён — часы на нём замирали) |
 | Архитектура | MVVM (ViewModel + Repository) |
 | Сеть | Retrofit + OkHttp + kotlinx.serialization |
 | Асинхронность | Coroutines + Flow |
@@ -24,7 +24,7 @@ Android-приложение погоды: Open-Meteo, Compose, Glance-видж�
 - `data/repository` — `WeatherRepository` (погода + AQI + поиск городов), `WeatherCache` (JSON в cacheDir, TTL)
 - `data/local` — `SettingsDataStore` (Preferences + JSON-списки избранных/недавних)
 - `ui/{home,settings,location,onboarding,widgetcustomize,components,theme}` — экраны и компоненты; навигация NavHost прямо в `MainActivity`
-- `widget` — `ClockTempWidget` (Glance) + `WidgetRender` (подбор шрифта, поток рендер-данных) + `WidgetPalette` (фон/прозрачность/текст)
+- `widget` — `ClockTempWidget` (AppWidgetProvider на RemoteViews + TextClock) + `WidgetRemoteViews` (сборка RemoteViews) + `WidgetRender` (подбор шрифта `fitBaseSp`) + `WidgetPalette` (фон/прозрачность/текст)
 - `service` — `WeatherUpdateWorker` (WorkManager; `WeatherUpdateScheduler` живёт в нём же), `NotificationHelper`, `WidgetUpdateManager`, `KeepAliveService` (foreground, START_STICKY — тумблер «Перезапуск при закрытии»)
 - `util` — `CityNameResolver` (ручной словарь переводов городов), `CityNameTranslator` (сетевой перевод через геокодинг), `LanguageHelper`, `DateTimeUtils`, `WeatherCodeUtils` (WMO), `TemperatureUtils`, `WindDirection`, `Constants`, `ThemeMode`
 
@@ -47,14 +47,13 @@ CI (`.github/workflows/android.yml`) гоняет `assembleDebug test` на ка
 
 ## Подводные камни (проверено на практике)
 
-- **Glance 1.2.0-rc01**: нет `clip`, нет `Surface` в glance-material3, `background` не принимает форму. Скругление углов — только `androidx.glance.appwidget.cornerRadius(dp)`. Детали: @docs/architecture.md
+- **Виджет**: сетка 1×4 (targetCellWidth=4); время/дату рисует лаунчер через TextClock (тикают без нашего процесса); шрифт времени/даты/температуры подбирается адаптивно бинарным поиском под фактическую ширину (`WidgetRender.fitBaseSp`, 10–400sp) — фиксированных значений sp в коде нет, детали: @docs/architecture.md
 - **AQI**: отдельный Retrofit на `air-quality-api.open-meteo.com`, не на `api.open-meteo.com`
 - **Уведомления**: на Android 13+ требуется `POST_NOTIFICATIONS` в манифесте + runtime-запрос (MainActivity), иначе `showWeatherNotification` тихо выходит
 - **versionCode — автоинкремент**: `preBuild` в app/build.gradle.kts +1 к `app/version.properties` (gitignored) при каждой сборке; установка «поверх» работает. versionName меняется вручную при релизе (1.1, 1.2, …)
 - **Релиз — только тег**: `git tag v1.6 && git push origin v1.6`; workflow собирает release-APK (`-PversionName` из тега, `-PversionCode` из счёта коммитов, имя файла — `Nimbus <версия>.apk`), подписывает постоянным ключом из `DEBUG_KEYSTORE_B64` и публикует GitHub Release. Без тега ничего не публикуется
 - **Подпись НЕ менять никогда**: релизы v1.2–v1.5 подписывались разными ключами (секрет перевыставлялся) — установка «поверх» не работала. С v1.6 ключ постоянный: `nimbus-release.keystore` (пароль `android`, alias `androiddebugkey`), локальная копия рядом с проектом, резервная копия (base64) — в приватном gist https://gist.github.com/JastRedPanda/637b0f57f344a33290950c2ad2db88f6 и в секрете `DEBUG_KEYSTORE_B64`. Секрет менять запрещено; если локальная копия потеряна — восстановить из gist (пользователь знает URL) и заново залить в секрет тот же base64. После смены ключа пользователь ставит приложение начисто
 - **Явная подпись release — только так**: `signingConfigs.create("release")` в app/build.gradle.kts с явными `storeFile` (из `$HOME/.android/debug.keystore`), паролями и alias. `signingConfigs.getByName("debug")` НЕ работает в CI: AGP не подхватывает подложенный keystore и генерирует свой на каждом ране (подпись менялась от релиза к релизу даже при одном секрете). Проверка подписи: `apksigner verify --print-certs` (SHA-1 должен быть `b9cdf73d…`)
-- **Виджет**: сетка 1×4 (targetCellWidth=4); шрифт времени/даты/температуры подбирается адаптивно бинарным поиском под фактическую ширину (`WidgetRender.fitBaseSp`, 10–400sp) — фиксированных значений sp в коде нет, детали: @docs/architecture.md
 
 ## Внешняя документация (читать по задаче, лениво)
 

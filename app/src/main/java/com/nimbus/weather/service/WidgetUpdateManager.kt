@@ -1,13 +1,15 @@
 package com.nimbus.weather.service
 
+import android.appwidget.AppWidgetManager
+import android.content.ComponentName
 import android.content.Context
 import android.util.Log
-import androidx.glance.appwidget.GlanceAppWidgetManager
 import com.nimbus.weather.data.local.SettingsDataStore
 import com.nimbus.weather.data.model.WeatherResponse
 import com.nimbus.weather.data.repository.WeatherCache
 import com.nimbus.weather.data.repository.WeatherRepository
-import com.nimbus.weather.widget.ClockTempWidget
+import com.nimbus.weather.widget.ClockTempWidgetReceiver
+import com.nimbus.weather.widget.buildWidgetViews
 import kotlinx.coroutines.flow.first
 
 object WidgetUpdateManager {
@@ -37,15 +39,21 @@ object WidgetUpdateManager {
         cachedForCity = cityName
         cachedTimestamp = System.currentTimeMillis()
         runCatching { WeatherCache(context).cacheWidgetWeather(response) }
+        markWeatherUpdated(context)
         refreshAllWidgets(context)
     }
 
     suspend fun refreshAllWidgets(context: Context) {
-        val manager = GlanceAppWidgetManager(context)
-        val ids = manager.getGlanceIds(ClockTempWidget::class.java)
-        ids.forEach { id ->
-            runCatching { ClockTempWidget().update(context, id) }
-                .onFailure { Log.w("WidgetUpdateManager", "update failed for $id", it) }
+        renderWidgets(context, widgetIds(context))
+    }
+
+    suspend fun renderWidgets(context: Context, appWidgetIds: IntArray) {
+        if (appWidgetIds.isEmpty()) return
+        val appWidgetManager = AppWidgetManager.getInstance(context)
+        appWidgetIds.forEach { id ->
+            runCatching {
+                appWidgetManager.updateAppWidget(id, buildWidgetViews(context, id))
+            }.onFailure { Log.w("WidgetUpdateManager", "update failed for $id", it) }
         }
     }
 
@@ -74,10 +82,26 @@ object WidgetUpdateManager {
             cachedForCity = target.name
             cachedTimestamp = now
             WeatherCache(context).cacheWidgetWeather(response)
+            markWeatherUpdated(context)
             refreshAllWidgets(context)
         }.onFailure {
             Log.w("WidgetUpdateManager", "widget target refresh failed", it)
             refreshAllWidgets(context)
+        }
+    }
+
+    private fun widgetIds(context: Context): IntArray {
+
+        return runCatching {
+            AppWidgetManager.getInstance(context).getAppWidgetIds(
+                ComponentName(context, ClockTempWidgetReceiver::class.java)
+            )
+        }.getOrNull() ?: intArrayOf()
+    }
+
+    private suspend fun markWeatherUpdated(context: Context) {
+        runCatching {
+            SettingsDataStore(context).setLastWeatherUpdateMillis(System.currentTimeMillis())
         }
     }
 

@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.nimbus.weather.util.LanguageHelper
@@ -48,6 +49,7 @@ class SettingsDataStore(private val context: Context) {
         private val KEY_SHOW_AQI = booleanPreferencesKey("show_aqi")
         private val KEY_RECENT_CITIES = stringPreferencesKey("recent_cities")
         private val KEY_KEEP_ALIVE_ENABLED = booleanPreferencesKey("keep_alive_enabled")
+        private val KEY_LAST_WEATHER_UPDATE = longPreferencesKey("last_weather_update_millis")
 
         const val DEFAULT_CITY = "Киев"
         const val DEFAULT_LAT = 50.4501
@@ -166,6 +168,17 @@ class SettingsDataStore(private val context: Context) {
 
     val keepAliveEnabled: Flow<Boolean> = context.dataStore.data.map { prefs ->
         prefs[KEY_KEEP_ALIVE_ENABLED] ?: false
+    }
+
+    /** Миллисекунды последнего успешного скачивания погоды, 0 — ни разу. */
+    val lastWeatherUpdateMillis: Flow<Long> = context.dataStore.data.map { prefs ->
+        prefs[KEY_LAST_WEATHER_UPDATE] ?: 0L
+    }
+
+    suspend fun setLastWeatherUpdateMillis(nowMillis: Long) {
+        context.dataStore.edit { prefs ->
+            prefs[KEY_LAST_WEATHER_UPDATE] = nowMillis
+        }
     }
 
     suspend fun setOnboardingDone() {

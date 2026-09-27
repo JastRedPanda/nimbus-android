@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Время и дату рисует сам лаунчер через TextClock: тикают каждую минуту
+     даже когда процесс приложения прибит. Наш код обновляет только
+     температуру, фон, шрифты и форматы — редко, по событиям. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ImageView
+        android:id="@+id/widget_bg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="fitXY"
+        android:contentDescription="@null" />
+
+    <LinearLayout
+        android:id="@+id/widget_content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="8dp">
+
+        <TextClock
+            android:id="@+id/widget_time"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:format12Hour="HH:mm"
+            android:format24Hour="HH:mm"
+            android:gravity="start"
+            android:singleLine="true" />
+
+        <TextClock
+            android:id="@+id/widget_date"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:format12Hour="dd.MM.yyyy"
+            android:format24Hour="dd.MM.yyyy"
+            android:gravity="center"
+            android:singleLine="true" />
+
+        <TextView
+            android:id="@+id/widget_temp"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="end"
+            android:singleLine="true"
+            android:text="--°" />
+
+    </LinearLayout>
+
+</FrameLayout>

@@ -6,6 +6,7 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
 
     <application
         android:allowBackup="true"
@@ -33,6 +34,18 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/clock_temp_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".service.WeatherAlarmReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="com.nimbus.weather.action.WEATHER_ALARM" />
+            </intent-filter>
         </receiver>
 
         <receiver

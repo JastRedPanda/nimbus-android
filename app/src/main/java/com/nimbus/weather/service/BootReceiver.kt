@@ -25,6 +25,7 @@ class BootReceiver : BroadcastReceiver() {
                 val settings = SettingsDataStore(context)
                 val interval = settings.updateIntervalHours.first()
                 WeatherUpdateScheduler.schedule(context, interval)
+                WeatherAlarmScheduler.schedule(context, interval)
 
                 if (settings.keepAliveEnabled.first()) {
                     runCatching { KeepAliveService.start(context) }

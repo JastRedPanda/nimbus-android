@@ -1,55 +1,11 @@
 package com.nimbus.weather.widget
 
-import android.content.Context
 import android.text.TextPaint
-import com.nimbus.weather.data.local.SettingsDataStore
-import com.nimbus.weather.util.TemperatureUnit
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
 
 private const val MIN_FONT_SP = 10f
 private const val MAX_FONT_SP = 400f
 private const val TEMP_RATIO = 0.92f
 private const val GAP_EM = 0.55f
-
-internal data class WidgetRenderData(
-    val fontScale: Int = SettingsDataStore.DEFAULT_WIDGET_FONT_SCALE,
-    val dateFormat: String = SettingsDataStore.DEFAULT_WIDGET_DATE_FORMAT,
-    val useFeelsLike: Boolean = false,
-    val tempUnit: TemperatureUnit = TemperatureUnit.CELSIUS,
-    val palette: WidgetPalette = WidgetPalette.defaultLight
-)
-
-internal fun renderDataFlow(context: Context, settings: SettingsDataStore): Flow<WidgetRenderData> {
-    val paletteFlow = combine(
-        settings.themeMode,
-        settings.widgetBgColor,
-        settings.widgetBgAlpha,
-        settings.widgetTextColor
-    ) { theme, bg, alpha, text ->
-        resolveWidgetPalette(
-            dark = isDarkTheme(context, theme),
-            bgColorHex = bg,
-            bgAlpha = alpha,
-            textOption = text
-        )
-    }
-    return combine(
-        paletteFlow,
-        settings.widgetDateFormat,
-        settings.widgetFontScale,
-        settings.useFeelsLike,
-        settings.tempUnit
-    ) { palette, dateFormat, fontScale, useFeelsLike, tempUnit ->
-        WidgetRenderData(
-            fontScale = fontScale,
-            dateFormat = dateFormat,
-            useFeelsLike = useFeelsLike,
-            tempUnit = tempUnit,
-            palette = palette
-        )
-    }
-}
 
 /**
  * Подбирает базовый размер шрифта так, чтобы строка «время + дата + температура»
