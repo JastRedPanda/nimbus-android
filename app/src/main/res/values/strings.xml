@@ -22,6 +22,8 @@
     <string name="reset_settings_confirm_title">Reset all settings?</string>
     <string name="reset_settings_confirm_text">City, favourites, appearance, units and interval will be restored to defaults. This cannot be undone.</string>
     <string name="onboarding_welcome">Choose your city to get started.</string>
+    <string name="onboarding_current_city">Current city: %1$s</string>
+    <string name="onboarding_favourites">Favourites: %1$s</string>
     <string name="start">Start</string>
     <string name="notification_channel_name">Weather updates</string>
     <string name="weather_update_notification_title">%1$d° now</string>
@@ -95,6 +97,7 @@
     <string name="no_results">Nothing found</string>
     <string name="favourite_cities">Favourite cities</string>
     <string name="no_favourite_cities">Add cities with the star icon to switch quickly</string>
+    <string name="add_city">Add city</string>
 
     <!-- Widgets -->
     <string name="widgets">Widgets</string>

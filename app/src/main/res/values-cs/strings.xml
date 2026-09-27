@@ -22,6 +22,8 @@
     <string name="reset_settings_confirm_title">Obnovit všechna nastavení?</string>
     <string name="reset_settings_confirm_text">Město, oblíbené, vzhled, jednotky a interval se vrátí na výchozí hodnoty. Není možné vrátit.</string>
     <string name="onboarding_welcome">Vyberte své město, abyste mohli začít.</string>
+    <string name="onboarding_current_city">Aktuální město: %1$s</string>
+    <string name="onboarding_favourites">Oblíbená: %1$s</string>
     <string name="start">Spustit</string>
     <string name="notification_channel_name">Aktualizace počasí</string>
     <string name="weather_update_notification_title">Aktuálně %1$d°</string>
@@ -94,6 +96,7 @@
     <string name="no_results">Nic nenalezeno</string>
     <string name="favourite_cities">Oblíbená města</string>
     <string name="no_favourite_cities">Přidejte města hvězdičkou pro rychlé přepínání</string>
+    <string name="add_city">Přidat město</string>
 
     <!-- Widgets -->
     <string name="widgets">Widgety</string>
