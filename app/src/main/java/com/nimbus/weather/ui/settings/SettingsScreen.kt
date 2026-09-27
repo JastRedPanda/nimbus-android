@@ -329,9 +329,7 @@ import com.nimbus.weather.util.TemperatureUnit
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // City selection
-            SectionHeader(title = stringResource(R.string.select_city))
-
+            // City search entry (current city is already listed in favourites)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -339,17 +337,8 @@ import com.nimbus.weather.util.TemperatureUnit
                     .padding(vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                val langCode = if (state.appLanguage == "auto") {
-                    com.nimbus.weather.util.LanguageHelper.resolveLocale().language
-                } else {
-                    state.appLanguage
-                }
                 Text(
-                    text = com.nimbus.weather.util.CityNameResolver.displayName(
-                        state.cityName,
-                        state.cityLocalNames,
-                        langCode
-                    ),
+                    text = stringResource(R.string.add_city),
                     modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.bodyLarge
                 )

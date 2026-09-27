@@ -10,10 +10,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.withFrameNanos
+import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlin.random.Random
 
@@ -54,26 +56,61 @@ private class Particle(
 )
 
 /**
- * Клуб облака: центр + два субкруга со сдвигом — дают рваный край
- * вместо идеального круга. Тёмные и светлые кластеры рисуются отдельно.
+ * Бесшовный тайл фрактального шума (value noise, 4 октавы).
+ * Значение лежит в альфа-канале (RGB белый): удобно тонировать
+ * через SrcIn в любой цвет. Края мягкие — smoothstep [low, high].
  */
-private class CloudPuff(
-    var x: Float = 0f,
-    var y: Float = 0f,
-    var r: Float = 0f,
-    var speed: Float = 0f,
-    var phase: Float = 0f,
-    var alpha: Float = 0f,
-    var dx1: Float = 0f,
-    var dy1: Float = 0f,
-    var s1: Float = 1f,
-    var dx2: Float = 0f,
-    var dy2: Float = 0f,
-    var s2: Float = 1f,
-    var dx3: Float = 0f,
-    var dy3: Float = 0f,
-    var s3: Float = 1f
-)
+private const val NOISE_TILE_PX = 256
+
+private fun generateNoiseTile(seed: Long, low: Float, high: Float): android.graphics.Bitmap {
+    val size = NOISE_TILE_PX
+    val random = Random(seed)
+    val octaves = 4
+    val basePeriod = 8
+    // Решётки значений на октаву; индексы по модулю периода = бесшовность.
+    val grids = List(octaves) { k ->
+        val period = basePeriod * (1 shl k)
+        FloatArray(period * period) { random.nextFloat() }
+    }
+    val pixels = IntArray(size * size)
+    var ampSum = 0f
+    var amp = 0.5f
+    repeat(octaves) { ampSum += amp; amp *= 0.5f }
+    for (y in 0 until size) {
+        for (x in 0 until size) {
+            var v = 0f
+            amp = 0.5f
+            for (k in 0 until octaves) {
+                val period = basePeriod * (1 shl k)
+                val fx = x.toFloat() / size * period
+                val fy = y.toFloat() / size * period
+                val x0 = fx.toInt() % period
+                val y0 = fy.toInt() % period
+                val x1 = (x0 + 1) % period
+                val y1 = (y0 + 1) % period
+                val tx = fx - fx.toInt()
+                val ty = fy - fy.toInt()
+                val sx = tx * tx * (3f - 2f * tx)
+                val sy = ty * ty * (3f - 2f * ty)
+                val grid = grids[k]
+                val a = grid[y0 * period + x0]
+                val b = grid[y0 * period + x1]
+                val c = grid[y1 * period + x0]
+                val d = grid[y1 * period + x1]
+                v += ((a + (b - a) * sx) + ((c + (d - c) * sx) - (a + (b - a) * sx)) * sy) * amp
+                amp *= 0.5f
+            }
+            v /= ampSum
+            val t = ((v - low) / (high - low)).coerceIn(0f, 1f)
+            val s = t * t * (3f - 2f * t)
+            pixels[y * size + x] = android.graphics.Color.argb(
+                (s * 255).toInt(), 255, 255, 255
+            )
+        }
+    }
+    return android.graphics.Bitmap.createBitmap(size, size, android.graphics.Bitmap.Config.ARGB_8888)
+        .also { it.setPixels(pixels, 0, size, 0, 0, size, size) }
+}
 
 @Composable
 fun AnimatedSky(
@@ -98,8 +135,8 @@ fun AnimatedSky(
         }
         List(count) { Particle() }
     }
-    val cloudDark = remember(effect) { List(12) { CloudPuff() } }
-    val cloudLight = remember(effect) { List(12) { CloudPuff() } }
+    val cloudDark = remember(effect) { generateNoiseTile(1234567L, 0.35f, 0.70f) }
+    val cloudLight = remember(effect) { generateNoiseTile(7654321L, 0.40f, 0.75f) }
     // Молния: время следующей вспышки и её длительность, мс
     val lightning = remember(effect) { longArrayOf(0L, 0L) }
     // Точки разряда: главный канал (до 16 точек) + до 3 веток по 6 точек.
@@ -304,75 +341,56 @@ fun AnimatedSky(
                 }
             }
             SkyEffect.CLOUDS -> {
-                // Клубы: тёмные сгущения + светлые просветы со сдвигом,
-                // дрейф в одну сторону (ветер) + медленное «дыхание».
-                fun seed(c: CloudPuff, dark: Boolean) {
-                    c.r = with(density) { 60.dp.toPx() + random.nextFloat() * 100.dp.toPx() }
-                    c.x = random.nextFloat() * w
-                    c.y = random.nextFloat() * h
-                    c.speed = with(density) {
-                        (4.dp.toPx() + random.nextFloat() * 8.dp.toPx())
-                    } / 30f
-                    c.phase = random.nextFloat() * 6.28f
-                    c.alpha = if (dark) {
-                        0.10f + random.nextFloat() * 0.06f
-                    } else {
-                        0.08f + random.nextFloat() * 0.06f
+                // Клубы из фрактального шума: тёмный слой и светлый слой
+                // с разным масштабом и встречным дрейфом — перетекание.
+                // Тайлы бесшовные, сдвиг по модулю.
+                fun drawNoiseLayer(
+                    tile: android.graphics.Bitmap,
+                    tilePx: Float,
+                    speedX: Float,
+                    speedYPx: Float,
+                    color: Color
+                ) {
+                    val img = tile.asImageBitmap()
+                    val tSec = nowMs / 1000f
+                    val ox = (tSec * speedX) % tilePx
+                    val oy = (tSec * speedYPx) % tilePx
+                    var y = -oy - tilePx
+                    while (y < h) {
+                        var x = -ox - tilePx
+                        while (x < w) {
+                            drawImage(
+                                image = img,
+                                dstOffset = androidx.compose.ui.unit.IntOffset(
+                                    x.roundToInt(), y.roundToInt()
+                                ),
+                                dstSize = androidx.compose.ui.unit.IntSize(
+                                    tilePx.roundToInt(), tilePx.roundToInt()
+                                ),
+                                colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(color),
+                                blendMode = androidx.compose.ui.graphics.BlendMode.SrcIn
+                            )
+                            x += tilePx
+                        }
+                        y += tilePx
                     }
-                    fun sub(): Triple<Float, Float, Float> = Triple(
-                        (random.nextFloat() - 0.5f) * c.r,
-                        (random.nextFloat() - 0.5f) * c.r * 0.6f,
-                        0.5f + random.nextFloat() * 0.3f
-                    )
-                    val a = sub()
-                    c.dx1 = a.first
-                    c.dy1 = a.second
-                    c.s1 = a.third
-                    val b = sub()
-                    c.dx2 = b.first
-                    c.dy2 = b.second
-                    c.s2 = b.third
-                    val d = sub()
-                    c.dx3 = d.first
-                    c.dy3 = d.second
-                    c.s3 = d.third
                 }
-                // Мягкий круг: бледный внешний + плотная середина,
-                // край не читается окружностью.
-                fun softCircle(center: Offset, r: Float, color: Color) {
-                    drawCircle(color, r, center)
-                    drawCircle(
-                        color.copy(alpha = (color.alpha * 1.8f).coerceAtMost(1f)),
-                        r * 0.6f,
-                        center
-                    )
-                }
-                fun drawPuff(c: CloudPuff, dark: Boolean) {
-                    if (c.r == 0f) seed(c, dark)
-                    c.x += c.speed
-                    if (c.x - c.r * 1.6f > w) c.x = -c.r * 1.6f
-                    val breathe = 1f + 0.06f * sin(nowMs / 2400f + c.phase)
-                    var alpha = c.alpha * (0.85f + 0.15f * sin(nowMs / 1700f + c.phase))
-                    // Ночью светлые просветы почти гаснут, тёмные густеют.
-                    alpha *= if (dark) {
-                        if (isDay) 1f else 1.2f
-                    } else {
-                        if (isDay) 1f else 0.4f
-                    }
-                    val color = if (dark) {
-                        Color.Black.copy(alpha = alpha.coerceAtMost(1f))
-                    } else {
-                        Color.White.copy(alpha = alpha)
-                    }
-                    val r = c.r * breathe
-                    val center = Offset(c.x, c.y)
-                    softCircle(center, r, color)
-                    softCircle(Offset(c.x + c.dx1, c.y + c.dy1), r * c.s1, color)
-                    softCircle(Offset(c.x + c.dx2, c.y + c.dy2), r * c.s2, color)
-                    softCircle(Offset(c.x + c.dx3, c.y + c.dy3), r * c.s3, color)
-                }
-                cloudDark.forEach { drawPuff(it, dark = true) }
-                cloudLight.forEach { drawPuff(it, dark = false) }
+                val darkTilePx = with(density) { 260.dp.toPx() }
+                val lightTilePx = with(density) { 170.dp.toPx() }
+                val darkSpeed = with(density) { 9.dp.toPx() }
+                val lightSpeed = with(density) { 13.dp.toPx() }
+                val darkAlpha = if (isDay) 0.50f else 0.60f
+                val lightAlpha = if (isDay) 0.40f else 0.16f
+                drawNoiseLayer(
+                    cloudDark, darkTilePx, darkSpeed,
+                    with(density) { 2.5.dp.toPx() },
+                    Color.Black.copy(alpha = darkAlpha)
+                )
+                drawNoiseLayer(
+                    cloudLight, lightTilePx, -lightSpeed,
+                    with(density) { -3.5.dp.toPx() },
+                    Color.White.copy(alpha = lightAlpha)
+                )
             }
             SkyEffect.STARS -> {
                 particles.forEach { p ->
