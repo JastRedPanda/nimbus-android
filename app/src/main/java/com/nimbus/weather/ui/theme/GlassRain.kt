@@ -37,7 +37,7 @@ import kotlin.random.Random
 private const val FRAME_STEP_NANOS = 33_333_333L
 private const val DEW_COUNT = 150
 private const val RUNNER_COUNT = 5
-private const val TRAIL_KEEP = 0.985f
+private const val TRAIL_KEEP = 0.978f
 private const val MAX_RUNNER_DP = 8f
 
 /**
@@ -168,13 +168,13 @@ fun GlassRainOverlay(modifier: Modifier = Modifier) {
                 r.r = runnerMin + random.nextFloat() * (runnerMax - runnerMin) * 0.4f
                 r.base = with(density) { (140.dp.toPx() + random.nextFloat() * 120.dp.toPx()) } / 30f
                 r.phase = random.nextFloat() * 6.28f
-                r.swayAmp = with(density) { (6.dp.toPx() + random.nextFloat() * 10.dp.toPx()) }
+                r.swayAmp = with(density) { (10.dp.toPx() + random.nextFloat() * 12.dp.toPx()) }
             }
             val gate = 0.25f + 0.75f * abs(sin(nowMs / 1400f + r.phase))
             val prevX = r.x
             val prevY = r.y
             r.y += r.base * gate * (r.r / runnerMin)
-            r.x += r.swayAmp * sin(r.y / h * 9f + r.phase) / 30f
+            r.x += r.swayAmp * sin(r.y / h * 14f + r.phase) / 30f
             // Поглощение росы по пути: бегун растёт.
             dew.forEach { d ->
                 if (d.x >= 0f) {
@@ -186,15 +186,26 @@ fun GlassRainOverlay(modifier: Modifier = Modifier) {
                     }
                 }
             }
-            // Мазок следа в битмап.
+            // Мазок следа в битмап: где капля ползёт медленно — след шире
+            // и ярче (больше воды), где проскакивает — тоньше и бледнее.
+            // Плюс бусины-брызги вдоль следа, как на настоящем стекле.
             trailBitmap(w.toInt(), h.toInt(), trail)?.let { bmp ->
                 val canvas = android.graphics.Canvas(bmp)
+                val slow = 1f - gate
                 val p = android.graphics.Paint().apply {
-                    color = android.graphics.Color.argb(77, 255, 255, 255)
-                    strokeWidth = r.r * 0.8f
+                    color = android.graphics.Color.argb((38 + 55 * slow).toInt(), 255, 255, 255)
+                    strokeWidth = r.r * (0.45f + 0.5f * slow)
                     strokeCap = android.graphics.Paint.Cap.ROUND
                 }
                 canvas.drawLine(prevX, prevY, r.x, r.y, p)
+                if (random.nextFloat() < 0.35f) {
+                    canvas.drawCircle(
+                        r.x + (random.nextFloat() - 0.5f) * r.r * 2f,
+                        r.y + (random.nextFloat() - 0.5f) * r.r * 2f,
+                        1f + random.nextFloat() * 2f,
+                        p
+                    )
+                }
             }
             if (r.y - r.r > h) r.r = 0f
         }
