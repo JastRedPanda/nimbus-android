@@ -221,24 +221,6 @@ import com.nimbus.weather.util.TemperatureUnit
                 checked = state.updateIntervalHours == 24,
                 onCheck = { viewModel.setUpdateIntervalHours(24) }
             )
-            Text(
-                text = if (state.lastWeatherUpdateMillis > 0L) {
-                    val formatted = remember(state.lastWeatherUpdateMillis) {
-                        java.text.DateFormat
-                            .getDateTimeInstance(
-                                java.text.DateFormat.SHORT,
-                                java.text.DateFormat.SHORT
-                            )
-                            .format(java.util.Date(state.lastWeatherUpdateMillis))
-                    }
-                    stringResource(R.string.last_weather_update, formatted)
-                } else {
-                    stringResource(R.string.last_weather_update_never)
-                },
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = 4.dp, end = 4.dp, bottom = 4.dp)
-            )
             ExactAlarmWarning()
 
             Spacer(modifier = Modifier.height(16.dp))

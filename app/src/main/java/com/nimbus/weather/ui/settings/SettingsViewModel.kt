@@ -38,7 +38,6 @@ data class SettingsUiState(
     val favouriteCities: List<FavouriteCity> = emptyList(),
     val favouriteDisplayNames: Map<String, String> = emptyMap(),
     val keepAliveEnabled: Boolean = false,
-    val lastWeatherUpdateMillis: Long = 0L,
     val skyAnimationEnabled: Boolean = true
 )
 
@@ -78,7 +77,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             )
         }
         settings.keepAliveEnabled.intoState { copy(keepAliveEnabled = it) }
-        settings.lastWeatherUpdateMillis.intoState { copy(lastWeatherUpdateMillis = it) }
         settings.skyAnimationEnabled.intoState { copy(skyAnimationEnabled = it) }
     }
 
