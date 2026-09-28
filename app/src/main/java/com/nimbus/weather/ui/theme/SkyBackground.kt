@@ -85,25 +85,28 @@ object SkyPalette {
         Color(0xFF90CAF9)
     )
 
-    /** Облачный день — приглушённо-серый */
+    /** Облачный день — светло-серый (днём светлый, как положено дню) */
     private val DayOvercast = listOf(
-        Color(0xFF455A64),
         Color(0xFF607D8B),
+        Color(0xFF78909C),
+        Color(0xFF90A4AE),
+        Color(0xFFB0BEC5)
+    )
+
+    /** Дождь днём — средне-серая мгла (темнее облачности, но день) */
+    private val DayRain = listOf(
+        Color(0xFF546E7A),
+        Color(0xFF607D8B),
+        Color(0xFF78909C),
         Color(0xFF90A4AE)
     )
 
-    /** Дождь — графитово-синяя мгла */
-    private val DayRain = listOf(
-        Color(0xFF263238),
-        Color(0xFF37474F),
-        Color(0xFF546E7A)
-    )
-
-    /** Гроза (день) */
+    /** Гроза днём — светлый индиго (характер kept, но день) */
     private val DayThunder = listOf(
-        Color(0xFF1A237E),
-        Color(0xFF283593),
-        Color(0xFF3949AB)
+        Color(0xFF3949AB),
+        Color(0xFF5C6BC0),
+        Color(0xFF7986CB),
+        Color(0xFF9FA8DA)
     )
 
     /** Снег (день) — холодно-белёсый */
