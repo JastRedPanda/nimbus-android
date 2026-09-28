@@ -387,6 +387,14 @@ fun AnimatedSky(
                         with(density) { 2.5.dp.toPx() },
                         Color.Black.copy(alpha = 0.60f)
                     )
+                } else {
+                    // Днём облака — серые, слегка темнее неба (как в реальности),
+                    // а не чёрные: чёрный краситель глушит светлый фон.
+                    drawNoiseLayer(
+                        cloudDark, darkTilePx, darkSpeed,
+                        with(density) { 2.5.dp.toPx() },
+                        Color(0xFF616161).copy(alpha = 0.35f)
+                    )
                 }
                 drawNoiseLayer(
                     cloudLight, lightTilePx, -lightSpeed,
