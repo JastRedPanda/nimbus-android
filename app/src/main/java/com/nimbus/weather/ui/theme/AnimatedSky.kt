@@ -57,12 +57,21 @@ private class Particle(
 
 /**
  * Бесшовный тайл фрактального шума (value noise, 4 октавы).
- * Значение лежит в альфа-канале (RGB белый): удобно тонировать
- * через SrcIn в любой цвет. Края мягкие — smoothstep [low, high].
+ * Цвет запекается прямо в пиксели, плотность — в альфу:
+ * рисуется обычным наложением без colorFilter, нечему чудить.
+ * Края мягкие — smoothstep [low, high], итоговая альфа = s * layerAlpha.
  */
 private const val NOISE_TILE_PX = 256
 
-private fun generateNoiseTile(seed: Long, low: Float, high: Float): android.graphics.Bitmap {
+private fun generateNoiseTile(
+    seed: Long,
+    low: Float,
+    high: Float,
+    r: Int,
+    g: Int,
+    b: Int,
+    layerAlpha: Float
+): android.graphics.Bitmap {
     val size = NOISE_TILE_PX
     val random = Random(seed)
     val octaves = 4
@@ -104,7 +113,7 @@ private fun generateNoiseTile(seed: Long, low: Float, high: Float): android.grap
             val t = ((v - low) / (high - low)).coerceIn(0f, 1f)
             val s = t * t * (3f - 2f * t)
             pixels[y * size + x] = android.graphics.Color.argb(
-                (s * 255).toInt(), 255, 255, 255
+                (s * layerAlpha * 255).toInt(), r, g, b
             )
         }
     }
@@ -135,8 +144,15 @@ fun AnimatedSky(
         }
         List(count) { Particle() }
     }
-    val cloudDark = remember(effect) { generateNoiseTile(1234567L, 0.35f, 0.70f) }
-    val cloudLight = remember(effect) { generateNoiseTile(7654321L, 0.40f, 0.75f) }
+    val cloudGrayDay = remember(effect) {
+        generateNoiseTile(1234567L, 0.35f, 0.70f, 0x61, 0x61, 0x61, 0.35f)
+    }
+    val cloudBlackNight = remember(effect) {
+        generateNoiseTile(1234567L, 0.35f, 0.70f, 0, 0, 0, 0.60f)
+    }
+    val cloudWhite = remember(effect) {
+        generateNoiseTile(7654321L, 0.40f, 0.75f, 255, 255, 255, 0.45f)
+    }
     // Молния: время следующей вспышки и её длительность, мс
     val lightning = remember(effect) { longArrayOf(0L, 0L) }
     // Точки разряда: главный канал (до 16 точек) + до 3 веток по 6 точек.
@@ -341,15 +357,16 @@ fun AnimatedSky(
                 }
             }
             SkyEffect.CLOUDS -> {
-                // Клубы из фрактального шума: тёмный слой и светлый слой
-                // с разным масштабом и встречным дрейфом — перетекание.
-                // Тайлы бесшовные, сдвиг по модулю.
-                fun drawNoiseLayer(
+                // Клубы из фрактального шума: цвет запечён в пиксели,
+                // рисуются обычным наложением — без colorFilter, нечему чудить.
+                // Тёмный и светлый слои с разным масштабом и встречным
+                // дрейфом — перетекание. Тайлы бесшовные, сдвиг по модулю.
+                fun drawPlainLayer(
                     tile: android.graphics.Bitmap,
                     tilePx: Float,
                     speedX: Float,
                     speedYPx: Float,
-                    color: Color
+                    alpha: Float = 1f
                 ) {
                     val img = tile.asImageBitmap()
                     val tSec = nowMs / 1000f
@@ -367,8 +384,7 @@ fun AnimatedSky(
                                 dstSize = androidx.compose.ui.unit.IntSize(
                                     tilePx.roundToInt(), tilePx.roundToInt()
                                 ),
-                                colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(color),
-                                blendMode = androidx.compose.ui.graphics.BlendMode.SrcIn
+                                alpha = alpha
                             )
                             x += tilePx
                         }
@@ -379,28 +395,27 @@ fun AnimatedSky(
                 val lightTilePx = with(density) { 170.dp.toPx() }
                 val darkSpeed = with(density) { 9.dp.toPx() }
                 val lightSpeed = with(density) { 13.dp.toPx() }
-                // Днём тёмного слоя нет вообще: дневные облака белые,
-                // любая примесь чёрного глушит светлый градиент.
-                if (!isDay) {
-                    drawNoiseLayer(
-                        cloudDark, darkTilePx, darkSpeed,
-                        with(density) { 2.5.dp.toPx() },
-                        Color.Black.copy(alpha = 0.60f)
+                if (isDay) {
+                    // Днём: серая тень чуть темнее неба + белые просветы.
+                    drawPlainLayer(
+                        cloudGrayDay, darkTilePx, darkSpeed,
+                        with(density) { 2.5.dp.toPx() }
+                    )
+                    drawPlainLayer(
+                        cloudWhite, lightTilePx, -lightSpeed,
+                        with(density) { -3.5.dp.toPx() }
                     )
                 } else {
-                    // Днём облака — серые, слегка темнее неба (как в реальности),
-                    // а не чёрные: чёрный краситель глушит светлый фон.
-                    drawNoiseLayer(
-                        cloudDark, darkTilePx, darkSpeed,
-                        with(density) { 2.5.dp.toPx() },
-                        Color(0xFF616161).copy(alpha = 0.35f)
+                    drawPlainLayer(
+                        cloudBlackNight, darkTilePx, darkSpeed,
+                        with(density) { 2.5.dp.toPx() }
+                    )
+                    drawPlainLayer(
+                        cloudWhite, lightTilePx, -lightSpeed,
+                        with(density) { -3.5.dp.toPx() },
+                        alpha = 0.35f
                     )
                 }
-                drawNoiseLayer(
-                    cloudLight, lightTilePx, -lightSpeed,
-                    with(density) { -3.5.dp.toPx() },
-                    Color.White.copy(alpha = if (isDay) 0.45f else 0.16f)
-                )
             }
             SkyEffect.STARS -> {
                 particles.forEach { p ->
