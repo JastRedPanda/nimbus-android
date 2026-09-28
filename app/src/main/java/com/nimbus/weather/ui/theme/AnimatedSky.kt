@@ -379,19 +379,19 @@ fun AnimatedSky(
                 val lightTilePx = with(density) { 170.dp.toPx() }
                 val darkSpeed = with(density) { 9.dp.toPx() }
                 val lightSpeed = with(density) { 13.dp.toPx() }
-                // Днём облака белые: тёмным сгущениям почти нечего делать,
-                // иначе они глушат светлый градиент в ночь.
-                val darkAlpha = if (isDay) 0.10f else 0.60f
-                val lightAlpha = if (isDay) 0.45f else 0.16f
-                drawNoiseLayer(
-                    cloudDark, darkTilePx, darkSpeed,
-                    with(density) { 2.5.dp.toPx() },
-                    Color.Black.copy(alpha = darkAlpha)
-                )
+                // Днём тёмного слоя нет вообще: дневные облака белые,
+                // любая примесь чёрного глушит светлый градиент.
+                if (!isDay) {
+                    drawNoiseLayer(
+                        cloudDark, darkTilePx, darkSpeed,
+                        with(density) { 2.5.dp.toPx() },
+                        Color.Black.copy(alpha = 0.60f)
+                    )
+                }
                 drawNoiseLayer(
                     cloudLight, lightTilePx, -lightSpeed,
                     with(density) { -3.5.dp.toPx() },
-                    Color.White.copy(alpha = lightAlpha)
+                    Color.White.copy(alpha = if (isDay) 0.45f else 0.16f)
                 )
             }
             SkyEffect.STARS -> {
