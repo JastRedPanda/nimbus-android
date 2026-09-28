@@ -3,6 +3,7 @@ package com.nimbus.weather.ui.home
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,22 +17,23 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -41,12 +43,14 @@ import android.content.res.Configuration
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -71,6 +75,7 @@ import com.nimbus.weather.ui.theme.skyEffectFor
 import com.nimbus.weather.ui.theme.skyTextColors
 import com.nimbus.weather.util.formatUpdateTime
 import com.nimbus.weather.util.isDayNowByTime
+import kotlin.math.abs
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -149,10 +154,47 @@ fun HomeScreen(
             )
         }
     ) { padding ->
+        // Свайп влево/вправо по контенту открывает выбор города.
+        var cityPickerOpen by rememberSaveable { mutableStateOf(false) }
+        val density = LocalDensity.current
+        val swipeThresholdPx = remember { with(density) { 120.dp.toPx() } }
+        if (cityPickerOpen && state.favouriteCities.isNotEmpty()) {
+            CityPickerDialog(
+                cities = state.favouriteCities,
+                displayNames = state.favouriteDisplayNames,
+                currentCity = state.cityName,
+                onPick = {
+                    cityPickerOpen = false
+                    viewModel.switchToCity(it)
+                },
+                onDismiss = { cityPickerOpen = false }
+            )
+        }
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .pointerInput(swipeThresholdPx) {
+                    var acc = 0f
+                    var fired = false
+                    detectHorizontalDragGestures(
+                        onDragStart = { acc = 0f; fired = false },
+                        onDragEnd = { acc = 0f; fired = false },
+                        onDragCancel = { acc = 0f; fired = false },
+                        onHorizontalDrag = { change, amount ->
+                            change.consume()
+                            if (!fired) {
+                                acc += amount
+                                if (abs(acc) > swipeThresholdPx) {
+                                    fired = true
+                                    if (viewModel.state.value.favouriteCities.isNotEmpty()) {
+                                        cityPickerOpen = true
+                                    }
+                                }
+                            }
+                        }
+                    )
+                }
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
                 if (state.lastWeatherUpdateMillis > 0L) {
@@ -198,58 +240,7 @@ fun HomeScreen(
                         }
                     }
                     else -> {
-                        // Стабильный порядок страниц: избранные как в настройках,
-                        // текущий в конце, если его там нет. Порядок не зависит
-                        // от текущего города — иначе каждый свайп пересоздавал
-                        // бы пейджер и кольцо рвалось.
-                        val pages = remember(state.cityName, state.favouriteCities) {
-                            buildList {
-                                addAll(state.favouriteCities)
-                                if (state.cityName.isNotBlank() &&
-                                    none { it.name == state.cityName }
-                                ) {
-                                    add(FavouriteCity(state.cityName, 0.0, 0.0, ""))
-                                }
-                            }
-                        }
-
-                        if (pages.size > 1) {
-                            // Кольцевой пейджер: влево — следующий город,
-                            // вправо — предыдущий, по кругу. Ключ — состав
-                            // без порядка: свайпы пейджер не пересоздают.
-                            val namesKey = remember(pages) {
-                                pages.map { it.name }.sorted()
-                            }
-                            key(namesKey) {
-                                val size = pages.size
-                                val initialIndex =
-                                    pages.indexOfFirst { it.name == state.cityName }
-                                        .coerceAtLeast(0)
-                                val startPage =
-                                    Int.MAX_VALUE / 2 - (Int.MAX_VALUE / 2 % size) + initialIndex
-                                val pagerState = rememberPagerState(
-                                    initialPage = startPage,
-                                    pageCount = { Int.MAX_VALUE }
-                                )
-                                LaunchedEffect(pagerState) {
-                                    snapshotFlow { pagerState.settledPage }.collect { page ->
-                                        val city = pages[((page % size) + size) % size]
-                                        if (city.name != viewModel.state.value.cityName) {
-                                            viewModel.switchToCity(city)
-                                        }
-                                    }
-                                }
-
-                                HorizontalPager(
-                                    state = pagerState,
-                                    modifier = Modifier.fillMaxSize()
-                                ) {
-                                    WeatherContent(state = state)
-                                }
-                            }
-                        } else {
-                            WeatherContent(state = state)
-                        }
+                        WeatherContent(state = state)
                     }
                 }
             }
@@ -393,4 +384,49 @@ private fun PhoneLayout(
             DailyForecastCard(day = day, tempUnit = state.tempUnit)
         }
     }
+}
+
+@Composable
+private fun CityPickerDialog(
+    cities: List<FavouriteCity>,
+    displayNames: Map<String, String>,
+    currentCity: String,
+    onPick: (FavouriteCity) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.favourite_cities)) },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                cities.forEach { city ->
+                    val isCurrent = city.name == currentCity
+                    if (isCurrent) {
+                        Button(
+                            onClick = { onPick(city) },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(displayNames[city.name] ?: city.name)
+                        }
+                    } else {
+                        OutlinedButton(
+                            onClick = { onPick(city) },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(displayNames[city.name] ?: city.name)
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
+            }
+        }
+    )
 }
