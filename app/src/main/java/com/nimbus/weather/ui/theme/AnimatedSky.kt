@@ -379,8 +379,8 @@ fun AnimatedSky(
                 val lightTilePx = with(density) { 170.dp.toPx() }
                 val darkSpeed = with(density) { 9.dp.toPx() }
                 val lightSpeed = with(density) { 13.dp.toPx() }
-                val darkAlpha = if (isDay) 0.50f else 0.60f
-                val lightAlpha = if (isDay) 0.40f else 0.16f
+                val darkAlpha = if (isDay) 0.28f else 0.60f
+                val lightAlpha = if (isDay) 0.45f else 0.16f
                 drawNoiseLayer(
                     cloudDark, darkTilePx, darkSpeed,
                     with(density) { 2.5.dp.toPx() },
