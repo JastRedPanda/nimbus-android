@@ -45,7 +45,6 @@
     <string name="interval_12h">Кожні 12 годин</string>
     <string name="interval_24h">Кожні 24 години</string>
     <string name="last_weather_update">Погоду оновлено: %1$s</string>
-    <string name="last_weather_update_never">Ще не оновлювалась</string>
     <string name="exact_alarm_summary">Фонове оновлення погоди може запізнюватися. Дозвольте «Будильники й нагадування» для Nimbus.</string>
     <string name="exact_alarm_allow">Дозволити</string>
     <string name="sky_animation">Анімація фону</string>

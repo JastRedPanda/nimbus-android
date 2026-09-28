@@ -69,6 +69,7 @@ import com.nimbus.weather.ui.theme.SkyEffect
 import com.nimbus.weather.ui.theme.SkyPalette
 import com.nimbus.weather.ui.theme.skyEffectFor
 import com.nimbus.weather.ui.theme.skyTextColors
+import com.nimbus.weather.util.formatUpdateTime
 import com.nimbus.weather.util.isDayNowByTime
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -153,11 +154,25 @@ fun HomeScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            PullToRefreshBox(
-                isRefreshing = state.refreshing,
-                onRefresh = viewModel::refresh,
-                modifier = Modifier.fillMaxSize()
-            ) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                if (state.lastWeatherUpdateMillis > 0L) {
+                    val updated = remember(state.lastWeatherUpdateMillis) {
+                        formatUpdateTime(state.lastWeatherUpdateMillis)
+                    }
+                    Text(
+                        text = stringResource(R.string.last_weather_update, updated),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = t.subtle,
+                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 4.dp)
+                    )
+                }
+                PullToRefreshBox(
+                    isRefreshing = state.refreshing,
+                    onRefresh = viewModel::refresh,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                ) {
                 when {
                     state.loading -> {
                         CircularProgressIndicator(
@@ -183,25 +198,29 @@ fun HomeScreen(
                         }
                     }
                     else -> {
+                        // Стабильный порядок страниц: избранные как в настройках,
+                        // текущий в конце, если его там нет. Порядок не зависит
+                        // от текущего города — иначе каждый свайп пересоздавал
+                        // бы пейджер и кольцо рвалось.
                         val pages = remember(state.cityName, state.favouriteCities) {
                             buildList {
-                                if (state.cityName.isNotBlank()) {
+                                addAll(state.favouriteCities)
+                                if (state.cityName.isNotBlank() &&
+                                    none { it.name == state.cityName }
+                                ) {
                                     add(FavouriteCity(state.cityName, 0.0, 0.0, ""))
                                 }
-                                state.favouriteCities
-                                    .filter { it.name != state.cityName }
-                                    .forEach { add(it) }
                             }
                         }
 
                         if (pages.size > 1) {
                             // Кольцевой пейджер: влево — следующий город,
-                            // вправо — предыдущий, по кругу. Вход только
-                            // через свайп, состояние следует за страницей.
-                            val namesKey = remember(state.cityName, state.favouriteCities) {
-                                pages.map { it.name }
+                            // вправо — предыдущий, по кругу. Ключ — состав
+                            // без порядка: свайпы пейджер не пересоздают.
+                            val namesKey = remember(pages) {
+                                pages.map { it.name }.sorted()
                             }
-                            androidx.compose.runtime.                            key(namesKey) {
+                            key(namesKey) {
                                 val size = pages.size
                                 val initialIndex =
                                     pages.indexOfFirst { it.name == state.cityName }
@@ -235,6 +254,7 @@ fun HomeScreen(
                 }
             }
         }
+    }
     }
     }
     }

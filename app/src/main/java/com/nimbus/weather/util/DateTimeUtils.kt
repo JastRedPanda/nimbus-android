@@ -84,3 +84,17 @@ fun isDayNowByTime(now: LocalTime, sunriseIso: String, sunsetIso: String): Boole
         true
     }
 }
+
+/** Короткие дата+время для метки «обновлено»: 28.09.26, 09:00. */
+fun formatUpdateTime(millis: Long): String {
+    return try {
+        java.text.DateFormat
+            .getDateTimeInstance(
+                java.text.DateFormat.SHORT,
+                java.text.DateFormat.SHORT
+            )
+            .format(java.util.Date(millis))
+    } catch (_: Exception) {
+        ""
+    }
+}

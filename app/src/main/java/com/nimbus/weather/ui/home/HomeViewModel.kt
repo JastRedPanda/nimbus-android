@@ -44,7 +44,8 @@ data class HomeUiState(
     val favouriteCities: List<FavouriteCity> = emptyList(),
     val notificationsEnabled: Boolean = true,
     val hourlyIntervalHours: Int = SettingsDataStore.DEFAULT_HOURLY_INTERVAL_HOURS,
-    val skyAnimationEnabled: Boolean = true
+    val skyAnimationEnabled: Boolean = true,
+    val lastWeatherUpdateMillis: Long = 0L
 )
 
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
@@ -105,6 +106,11 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             settings.skyAnimationEnabled.collect { enabled ->
                 _state.value = _state.value.copy(skyAnimationEnabled = enabled)
+            }
+        }
+        viewModelScope.launch {
+            settings.lastWeatherUpdateMillis.collect { millis ->
+                _state.value = _state.value.copy(lastWeatherUpdateMillis = millis)
             }
         }
         loadWeather()

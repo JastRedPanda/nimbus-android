@@ -39,7 +39,6 @@
     <string name="interval_12h">Každých 12 hodin</string>
     <string name="interval_24h">Každých 24 hodin</string>
     <string name="last_weather_update">Počasí aktualizováno: %1$s</string>
-    <string name="last_weather_update_never">Zatím neaktualizováno</string>
     <string name="exact_alarm_summary">Aktualizace počasí na pozadí se může zpožďovat. Povolte aplikaci Nimbus budíky a připomenutí.</string>
     <string name="exact_alarm_allow">Povolit</string>
     <string name="sky_animation">Animované pozadí</string>

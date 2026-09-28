@@ -45,7 +45,6 @@
     <string name="interval_12h">Every 12 hours</string>
     <string name="interval_24h">Every 24 hours</string>
     <string name="last_weather_update">Last weather update: %1$s</string>
-    <string name="last_weather_update_never">Not updated yet</string>
     <string name="exact_alarm_summary">Background weather updates may be delayed. Allow alarms and reminders for Nimbus.</string>
     <string name="exact_alarm_allow">Allow</string>
     <string name="sky_animation">Animated background</string>
