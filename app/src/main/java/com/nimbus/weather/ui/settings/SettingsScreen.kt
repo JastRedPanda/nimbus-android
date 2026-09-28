@@ -420,7 +420,32 @@ import com.nimbus.weather.util.TemperatureUnit
             ) {
                 Text(stringResource(R.string.reset_settings))
             }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            AppVersionFooter()
         }
+    }
+}
+
+@Composable
+private fun AppVersionFooter() {
+    val context = LocalContext.current
+    val version = remember {
+        runCatching {
+            val pkg = context.packageManager.getPackageInfo(context.packageName, 0)
+            "Nimbus ${pkg.versionName} (${pkg.versionCode})"
+        }.getOrNull() ?: "Nimbus"
+    }
+    Box(
+        modifier = Modifier.fillMaxWidth(),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = version,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
