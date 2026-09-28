@@ -69,7 +69,7 @@ import com.nimbus.weather.ui.theme.SkyEffect
 import com.nimbus.weather.ui.theme.SkyPalette
 import com.nimbus.weather.ui.theme.skyEffectFor
 import com.nimbus.weather.ui.theme.skyTextColors
-import com.nimbus.weather.util.isDayNow
+import com.nimbus.weather.util.isDayNowByTime
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -90,9 +90,11 @@ fun HomeScreen(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    // Фон-небо под всем экраном, включая топбар
-    val isDay = state.current?.let { current ->
-        isDayNow(current.time, state.sunrise, state.sunset)
+    // Фон-небо под всем экраном, включая топбар.
+    // День/ночь — по системным часам, а не по времени замера погоды:
+    // иначе при несвежих данных утром показывается ночь.
+    val isDay = state.current?.let {
+        isDayNowByTime(java.time.LocalTime.now(), state.sunrise, state.sunset)
     } ?: false
     val weatherCode = state.current?.weatherCode ?: 0
     val skyBrush = SkyPalette.resolveSkyBrush(weatherCode, isDay)

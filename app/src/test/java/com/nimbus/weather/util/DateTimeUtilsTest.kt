@@ -1,7 +1,10 @@
 package com.nimbus.weather.util
 
 import java.time.LocalDate
+import java.time.LocalTime
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class DateTimeUtilsTest {
@@ -34,5 +37,29 @@ class DateTimeUtilsTest {
     @Test
     fun `isToday returns false for invalid date`() {
         assertEquals(false, isToday("not-a-date"))
+    }
+
+    @Test
+    fun `isDayNowByTime uses system time not observation date`() {
+        // Данные вчерашние вечерние, смотрим утром — должен быть день.
+        assertTrue(
+            isDayNowByTime(
+                LocalTime.of(7, 50),
+                "2026-09-26T06:30",
+                "2026-09-26T18:20"
+            )
+        )
+        assertFalse(
+            isDayNowByTime(
+                LocalTime.of(22, 12),
+                "2026-09-27T06:30",
+                "2026-09-27T18:20"
+            )
+        )
+    }
+
+    @Test
+    fun `isDayNowByTime defaults to day on bad input`() {
+        assertTrue(isDayNowByTime(LocalTime.NOON, "", ""))
     }
 }

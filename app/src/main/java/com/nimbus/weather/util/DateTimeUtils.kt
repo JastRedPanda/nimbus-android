@@ -68,3 +68,19 @@ fun isDayNow(nowIso: String, sunriseIso: String, sunsetIso: String): Boolean {
         true
     }
 }
+
+/**
+ * То же, но «сейчас» — системное время, а из восхода/заката берётся
+ * только время суток. Небо должно отражать момент просмотра, а не момент
+ * замера погоды: при несвежих данных (ночь не обновилась) иначе утром
+ * показывается ночь.
+ */
+fun isDayNowByTime(now: LocalTime, sunriseIso: String, sunsetIso: String): Boolean {
+    return try {
+        val sunrise = LocalTime.parse(sunriseIso.substringAfter("T").take(5))
+        val sunset = LocalTime.parse(sunsetIso.substringAfter("T").take(5))
+        !now.isBefore(sunrise) && !now.isAfter(sunset)
+    } catch (_: Exception) {
+        true
+    }
+}
