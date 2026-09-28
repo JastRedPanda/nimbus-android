@@ -85,12 +85,12 @@ object SkyPalette {
         Color(0xFF90CAF9)
     )
 
-    /** Облачный день — светло-серый (днём светлый, как положено дню) */
+    /** Облачный день — тёплый светло-серый (днём светлый, хром светлый) */
     private val DayOvercast = listOf(
-        Color(0xFF607D8B),
-        Color(0xFF78909C),
-        Color(0xFF90A4AE),
-        Color(0xFFB0BEC5)
+        Color(0xFF9E9E9E),
+        Color(0xFFBDBDBD),
+        Color(0xFFE0E0E0),
+        Color(0xFFF5F5F5)
     )
 
     /** Дождь днём — средне-серая мгла (темнее облачности, но день) */
@@ -133,13 +133,14 @@ object SkyPalette {
 
     /**
      * Тёмное ли небо: ночью — всегда, днём — всё кроме
-     * светлых палитр снега и тумана.
+     * светлых палитр облачности, снега и тумана.
      */
     fun isDarkSky(weatherCode: Int, isDay: Boolean): Boolean {
         if (!isDay) return true
         val isSnow = weatherCode in 71..77 || weatherCode in 85..86
         val isFog = weatherCode == 45 || weatherCode == 48
-        return !isSnow && !isFog
+        val isOvercast = weatherCode in 2..3
+        return !isSnow && !isFog && !isOvercast
     }
 
     /**
