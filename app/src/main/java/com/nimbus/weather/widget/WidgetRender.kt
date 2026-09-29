@@ -6,9 +6,9 @@ private const val MIN_FONT_SP = 10f
 private const val MAX_FONT_SP = 400f
 private const val SUB_RATIO = 0.52f
 /** Высота иконки погоды от базового шрифта (битмап растится под шрифт). */
-internal const val ICON_RATIO = 1.3f
+internal const val ICON_RATIO = 1.5f
 /** Высота иконки «ощущается» от базового шрифта. */
-internal const val FEELS_ICON_RATIO = 0.65f
+internal const val FEELS_ICON_RATIO = 0.42f
 private const val GAP_EM = 0.4f
 /** Отступ между «ощущается» и «макс/мин» — заметно шире пробела внутри группы. */
 private const val SUB_GAP_EM = 0.9f
