@@ -117,7 +117,8 @@ suspend fun buildWidgetViews(context: Context, appWidgetId: Int): RemoteViews {
         minMaxText = minMaxText,
         availPx = availPx,
         density = density,
-        multiplier = systemFontScale
+        multiplier = systemFontScale,
+        columnGapPx = 24f * density
     )
     val userScale = fontScaleSetting / 100f
 

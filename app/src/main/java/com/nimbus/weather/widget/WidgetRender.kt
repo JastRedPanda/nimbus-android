@@ -17,12 +17,11 @@ internal const val WIDGET_DATE_PATTERN_NUMERIC = "dd.MM"
 /**
  * Подбирает базовый размер шрифта (верхняя строка) для двухстрочного виджета.
  *
- * Верхняя строка: «температура + иконка | время» — крупно (baseSp).
- * Нижняя строка: «ощущается | макс/мин | дата» — мельче (baseSp * SUB_RATIO).
- * Отступ между ощущается и макс/мин (SUB_GAP_EM) шире обычного пробела
- * внутри «↑макс ↓мин» — как на референсе.
- * Иконка погоды масштабируется от шрифта, поэтому её ширина тоже участвует
- * в замере верхней строки.
+ * Колонки стоят группой по центру: левая — макс. из (температура + иконка,
+ * ощущается + макс/мин), правая — макс. из (время, дата), между ними
+ * фиксированный зазор columnGapPx. Верхняя строка крупно (baseSp), нижняя —
+ * мельче (baseSp * SUB_RATIO). Отступ между ощущается и макс/мин (SUB_GAP_EM)
+ * шире обычного пробела внутри «↑макс ↓мин» — как на референсе.
  *
  * Возвращает baseSp для верхней строки.
  */
@@ -34,7 +33,8 @@ internal fun fitBaseSp(
     minMaxText: String,
     availPx: Float,
     density: Float,
-    multiplier: Float
+    multiplier: Float,
+    columnGapPx: Float
 ): Float {
     val paint = TextPaint()
 
@@ -44,19 +44,14 @@ internal fun fitBaseSp(
     }
 
     fun totalWidth(sp: Float): Float {
-        val tempWidth = widthOf(tempText, 1f, sp)
-        val iconWidth = sp * ICON_RATIO * density * multiplier + sp * GAP_EM * density * multiplier
-        val timeWidth = widthOf(timeText, 1f, sp)
-        val topWidth = tempWidth + iconWidth + timeWidth + sp * GAP_EM * density * multiplier
-
-        val feelsWidth = widthOf(feelsText, SUB_RATIO, sp)
-        val minMaxWidth = widthOf(minMaxText, SUB_RATIO, sp)
+        val leftTop = widthOf(tempText, 1f, sp) +
+            sp * ICON_RATIO * density * multiplier + sp * GAP_EM * density * multiplier
         val subGap = if (minMaxText.isNotEmpty()) sp * SUB_GAP_EM * density * multiplier else 0f
-        val subWidth = feelsWidth + subGap + minMaxWidth
-        val dateWidth = widthOf(dateText, SUB_RATIO, sp)
-        val bottomWidth = subWidth + dateWidth + sp * GAP_EM * density * multiplier
-
-        return maxOf(topWidth, bottomWidth)
+        val leftBottom = widthOf(feelsText, SUB_RATIO, sp) + subGap +
+            widthOf(minMaxText, SUB_RATIO, sp)
+        val left = maxOf(leftTop, leftBottom)
+        val right = maxOf(widthOf(timeText, 1f, sp), widthOf(dateText, SUB_RATIO, sp))
+        return left + columnGapPx * multiplier + right
     }
 
     var low = MIN_FONT_SP
