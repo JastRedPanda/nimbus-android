@@ -393,7 +393,12 @@ private fun WidgetPreviewBox(
                         ),
                         contentDescription = null,
                         colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(palette.text),
-                        modifier = Modifier.size((18 * scale).dp)
+                        // Виджет ставит низ иконки на базовую линию текста
+                        // (baselineAlignBottom), а не на низ вьюхи: приподнимаем
+                        // на высоту нижнего выноса, чтобы превью совпадало.
+                        modifier = Modifier
+                            .padding(bottom = (3 * scale).dp)
+                            .size((18 * scale).dp)
                     )
                     Text(
                         text = feelsText,
