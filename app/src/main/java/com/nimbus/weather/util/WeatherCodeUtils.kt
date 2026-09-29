@@ -1,18 +1,14 @@
 package com.nimbus.weather.util
 
 import android.content.Context
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AcUnit
-import androidx.compose.material.icons.filled.Cloud
-import androidx.compose.material.icons.filled.Thunderstorm
-import androidx.compose.material.icons.filled.WaterDrop
-import androidx.compose.material.icons.filled.WbCloudy
-import androidx.compose.material.icons.filled.WbSunny
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.annotation.DrawableRes
 import com.nimbus.weather.R
 
-fun weatherIcon(code: Int): ImageVector {
-    return WEATHER_ICONS[code] ?: Icons.Default.WbSunny
+@DrawableRes
+fun weatherIcon(code: Int, isDay: Boolean = true): Int {
+    return WEATHER_ICONS[code to isDay]
+        ?: WEATHER_ICONS[code to true]
+        ?: R.drawable.ic_weather_clear_day
 }
 
 fun weatherDescriptionRes(code: Int): Int {
@@ -23,36 +19,39 @@ fun weatherDescription(context: Context, code: Int): String {
     return context.getString(weatherDescriptionRes(code))
 }
 
-private val WEATHER_ICONS: Map<Int, ImageVector> = mapOf(
-    0 to Icons.Default.WbSunny,
-    1 to Icons.Default.WbSunny,
-    2 to Icons.Default.WbCloudy,
-    3 to Icons.Default.WbCloudy,
-    45 to Icons.Default.Cloud,
-    48 to Icons.Default.Cloud,
-    51 to Icons.Default.WaterDrop,
-    53 to Icons.Default.WaterDrop,
-    55 to Icons.Default.WaterDrop,
-    56 to Icons.Default.WaterDrop,
-    57 to Icons.Default.WaterDrop,
-    61 to Icons.Default.WaterDrop,
-    63 to Icons.Default.WaterDrop,
-    65 to Icons.Default.WaterDrop,
-    66 to Icons.Default.WaterDrop,
-    67 to Icons.Default.WaterDrop,
-    71 to Icons.Default.AcUnit,
-    73 to Icons.Default.AcUnit,
-    75 to Icons.Default.AcUnit,
-    77 to Icons.Default.AcUnit,
-    80 to Icons.Default.WaterDrop,
-    81 to Icons.Default.WaterDrop,
-    82 to Icons.Default.WaterDrop,
-    85 to Icons.Default.AcUnit,
-    86 to Icons.Default.AcUnit,
-    95 to Icons.Default.Thunderstorm,
-    96 to Icons.Default.Thunderstorm,
-    99 to Icons.Default.Thunderstorm
-)
+private val WEATHER_ICONS: Map<Pair<Int, Boolean>, Int> = buildMap {
+    fun dayNight(code: Int, day: Int, night: Int) {
+        put(code to true, day)
+        put(code to false, night)
+    }
+    dayNight(0, R.drawable.ic_weather_clear_day, R.drawable.ic_weather_clear_night)
+    dayNight(1, R.drawable.ic_weather_partly_day, R.drawable.ic_weather_partly_night)
+    dayNight(2, R.drawable.ic_weather_partly_day, R.drawable.ic_weather_partly_night)
+    for (code in listOf(3)) {
+        put(code to true, R.drawable.ic_weather_overcast)
+        put(code to false, R.drawable.ic_weather_overcast)
+    }
+    for (code in listOf(45, 48)) {
+        put(code to true, R.drawable.ic_weather_fog)
+        put(code to false, R.drawable.ic_weather_fog)
+    }
+    for (code in listOf(51, 53, 55, 61, 63, 65, 80, 81, 82)) {
+        put(code to true, R.drawable.ic_weather_rain)
+        put(code to false, R.drawable.ic_weather_rain)
+    }
+    for (code in listOf(56, 57, 66, 67)) {
+        put(code to true, R.drawable.ic_weather_sleet)
+        put(code to false, R.drawable.ic_weather_sleet)
+    }
+    for (code in listOf(71, 73, 75, 77, 85, 86)) {
+        put(code to true, R.drawable.ic_weather_snow)
+        put(code to false, R.drawable.ic_weather_snow)
+    }
+    for (code in listOf(95, 96, 99)) {
+        put(code to true, R.drawable.ic_weather_thunderstorm)
+        put(code to false, R.drawable.ic_weather_thunderstorm)
+    }
+}
 
 private val WEATHER_DESCRIPTIONS: Map<Int, Int> = mapOf(
     0 to R.string.wmo_0,

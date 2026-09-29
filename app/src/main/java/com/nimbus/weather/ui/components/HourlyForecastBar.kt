@@ -36,6 +36,7 @@ import com.nimbus.weather.ui.theme.LocalGlassDark
 import com.nimbus.weather.ui.theme.skyTextColors
 import com.nimbus.weather.util.TemperatureUnit
 import com.nimbus.weather.util.displayString
+import com.nimbus.weather.util.isDayNow
 import com.nimbus.weather.util.formatHour
 import com.nimbus.weather.util.toCelsiusOrFahrenheit
 
@@ -59,6 +60,8 @@ private val HourlyChipGap = 8.dp
 fun HourlyForecastBar(
     hourly: List<HourlyForecastData>,
     tempUnit: TemperatureUnit = TemperatureUnit.CELSIUS,
+    sunrise: String = "",
+    sunset: String = "",
     modifier: Modifier = Modifier
 ) {
     GlassCard(modifier = modifier) {
@@ -79,7 +82,7 @@ fun HourlyForecastBar(
                     Spacer(modifier = Modifier.height(4.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(HourlyChipGap)) {
                         hourly.forEach { h ->
-                            HourlyColumn(h, tempUnit)
+                            HourlyColumn(h, tempUnit, isDayNow(h.time, sunrise, sunset))
                         }
                     }
                 }
@@ -192,7 +195,8 @@ private fun tempLineColor(celsius: Double): Color {
 @Composable
 private fun HourlyColumn(
     h: HourlyForecastData,
-    tempUnit: TemperatureUnit
+    tempUnit: TemperatureUnit,
+    isDay: Boolean = true
 ) {
     val isDark = LocalGlassDark.current
     val t = skyTextColors(isDark)
@@ -217,7 +221,7 @@ private fun HourlyColumn(
             style = MaterialTheme.typography.labelSmall,
             color = t.subtle
         )
-        WeatherIcon(code = h.weatherCode, size = 24.dp)
+        WeatherIcon(code = h.weatherCode, isDay = isDay, size = 24.dp)
         Text(
             text = "${h.temperature.toCelsiusOrFahrenheit(tempUnit).toInt()}${tempUnit.displayString()}",
             style = MaterialTheme.typography.bodyMedium,

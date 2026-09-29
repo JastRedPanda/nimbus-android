@@ -9,12 +9,14 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.nimbus.weather.util.weatherIcon
@@ -27,14 +29,17 @@ fun weatherCodePulse(code: Int): Boolean = when (code) {
 @Composable
 fun WeatherIcon(
     code: Int,
+    isDay: Boolean = true,
     modifier: Modifier = Modifier,
     size: Dp = 48.dp
 ) {
     AnimatedContent(
-        targetState = code,
+        targetState = code to isDay,
         transitionSpec = { fadeIn(tween(250)) togetherWith fadeOut(tween(250)) },
         label = "weather_icon"
-    ) { targetCode ->
+    ) { (targetCode, targetDay) ->
+        // Цветные векторы рисуются как есть, без tint.
+        val iconModifier = modifier.size(size)
         if (weatherCodePulse(targetCode)) {
             val transition = rememberInfiniteTransition(label = "weather_pulse")
             val scale by transition.animateFloat(
@@ -43,21 +48,21 @@ fun WeatherIcon(
                 animationSpec = infiniteRepeatable(tween(900), RepeatMode.Reverse),
                 label = "scale"
             )
-            Icon(
-                imageVector = weatherIcon(targetCode),
+            Image(
+                painter = painterResource(weatherIcon(targetCode, targetDay)),
                 contentDescription = null,
-                modifier = modifier
-                    .size(size)
-                    .graphicsLayer {
-                        scaleX = scale
-                        scaleY = scale
-                    }
+                colorFilter = null,
+                modifier = iconModifier.graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                }
             )
         } else {
-            Icon(
-                imageVector = weatherIcon(targetCode),
+            Image(
+                painter = painterResource(weatherIcon(targetCode, targetDay)),
                 contentDescription = null,
-                modifier = modifier.size(size)
+                colorFilter = null,
+                modifier = iconModifier
             )
         }
     }
