@@ -28,7 +28,6 @@ class SettingsDataStore(private val context: Context) {
 
     companion object {
         private val KEY_ONBOARDING_DONE = booleanPreferencesKey("onboarding_done")
-        private val KEY_USE_FEELS_LIKE = booleanPreferencesKey("use_feels_like")
         private val KEY_TEMP_UNIT = stringPreferencesKey("temp_unit")
         private val KEY_THEME_MODE = stringPreferencesKey("theme_mode")
         private val KEY_NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
@@ -101,10 +100,6 @@ class SettingsDataStore(private val context: Context) {
 
     val notificationsEnabled: Flow<Boolean> = context.dataStore.data.map { prefs ->
         prefs[KEY_NOTIFICATIONS_ENABLED] ?: true
-    }
-
-    val useFeelsLike: Flow<Boolean> = context.dataStore.data.map { prefs ->
-        prefs[KEY_USE_FEELS_LIKE] ?: false
     }
 
     val tempUnit: Flow<TemperatureUnit> = context.dataStore.data.map { prefs ->
@@ -279,12 +274,6 @@ class SettingsDataStore(private val context: Context) {
         }
     }
 
-    suspend fun setUseFeelsLike(value: Boolean) {
-        context.dataStore.edit { prefs ->
-            prefs[KEY_USE_FEELS_LIKE] = value
-        }
-    }
-
     suspend fun setTempUnit(unit: TemperatureUnit) {
         context.dataStore.edit { prefs ->
             prefs[KEY_TEMP_UNIT] = unit.name
@@ -354,7 +343,6 @@ class SettingsDataStore(private val context: Context) {
         val localNames: Map<String, String> = emptyMap(),
         val updateIntervalHours: Int = DEFAULT_UPDATE_INTERVAL_HOURS,
         val tempUnit: TemperatureUnit = TemperatureUnit.CELSIUS,
-        val useFeelsLike: Boolean = false,
         val hourlyIntervalHours: Int = DEFAULT_HOURLY_INTERVAL_HOURS,
         val notificationsEnabled: Boolean = true,
         val appLanguage: String = LanguageHelper.AUTO,
@@ -371,7 +359,6 @@ class SettingsDataStore(private val context: Context) {
             localNames = decode(prefs[KEY_CITY_LOCAL_NAMES], emptyMap()),
             updateIntervalHours = prefs[KEY_UPDATE_INTERVAL_HOURS] ?: DEFAULT_UPDATE_INTERVAL_HOURS,
             tempUnit = decode(prefs[KEY_TEMP_UNIT], TemperatureUnit.CELSIUS),
-            useFeelsLike = prefs[KEY_USE_FEELS_LIKE] ?: false,
             hourlyIntervalHours = prefs[KEY_HOURLY_INTERVAL_HOURS] ?: DEFAULT_HOURLY_INTERVAL_HOURS,
             notificationsEnabled = prefs[KEY_NOTIFICATIONS_ENABLED] ?: true,
             appLanguage = prefs[KEY_APP_LANGUAGE] ?: LanguageHelper.AUTO,

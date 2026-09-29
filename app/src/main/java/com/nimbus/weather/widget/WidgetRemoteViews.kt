@@ -9,7 +9,6 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.util.TypedValue
-import android.view.View
 import android.widget.RemoteViews
 import androidx.compose.ui.graphics.toArgb
 import com.nimbus.weather.MainActivity
@@ -17,25 +16,30 @@ import com.nimbus.weather.R
 import com.nimbus.weather.data.local.SettingsDataStore
 import com.nimbus.weather.data.repository.WeatherCache
 import com.nimbus.weather.service.WidgetUpdateManager
-import com.nimbus.weather.util.displayString
+import com.nimbus.weather.util.isDayNowByTime
 import com.nimbus.weather.util.toCelsiusOrFahrenheit
+import com.nimbus.weather.util.weatherIcon
 import kotlinx.coroutines.flow.first
 import java.text.SimpleDateFormat
+import java.time.LocalTime
 import java.util.Date
 import java.util.Locale
 
 private const val FALLBACK_WIDTH_DP = 250
-private const val FALLBACK_HEIGHT_DP = 40
-private const val CORNER_RADIUS_DP = 16
-private const val TEMP_RATIO = 0.92f
+private const val FALLBACK_HEIGHT_DP = 110
+private const val CORNER_RADIUS_DP = 24
+private const val SUB_RATIO = 0.52f
 private const val TIME_PATTERN = "HH:mm"
-private const val DATE_PATTERN_TEXT = "d MMMM yyyy"
-private const val DATE_PATTERN_NUMERIC = "dd.MM.yyyy"
+private const val DATE_PATTERN_TEXT = "EEE, d MMM"
+private const val DATE_PATTERN_NUMERIC = "dd.MM"
 
 /**
- * Собирает RemoteViews виджета. Время и дату рисует сам лаунчер через
- * TextClock (тикают без нашего процесса), здесь задаются только текст
- * температуры, шрифты, цвета, фон и форматы.
+ * Собирает RemoteViews двухстрочного виджета по референсу:
+ * верх — текущая температура + иконка погоды | время,
+ * низ — ощущается + макс/мин | дата.
+ * Время и дату рисует сам лаунчер через TextClock (тикают без нашего
+ * процесса), здесь задаются только тексты погоды, иконка, шрифты,
+ * цвета, фон и форматы даты.
  */
 suspend fun buildWidgetViews(context: Context, appWidgetId: Int): RemoteViews {
     val settings = SettingsDataStore(context)
@@ -48,7 +52,6 @@ suspend fun buildWidgetViews(context: Context, appWidgetId: Int): RemoteViews {
     )
     val dateFormat = settings.widgetDateFormat.first()
     val fontScaleSetting = settings.widgetFontScale.first()
-    val useFeelsLike = settings.useFeelsLike.first()
     val tempUnit = settings.tempUnit.first()
 
     val weather = WidgetUpdateManager.getCachedWeather()
@@ -76,17 +79,37 @@ suspend fun buildWidgetViews(context: Context, appWidgetId: Int): RemoteViews {
     }.getOrNull() ?: Locale.getDefault()
     val datePattern = if (dateFormat == "text") DATE_PATTERN_TEXT else DATE_PATTERN_NUMERIC
     val dateText = SimpleDateFormat(datePattern, systemLocale).format(Date(now))
-    val tempText = weather?.current?.let { current ->
-        val t = if (useFeelsLike) current.apparentTemperature else current.temperature
-        "${t.toCelsiusOrFahrenheit(tempUnit).toInt()}${tempUnit.displayString()}"
-    } ?: "--°"
 
-    val availPx = (widthDp * density - 16f * density).coerceAtLeast(10f)
+    val current = weather?.current
+    val tempText = current?.let {
+        "${it.temperature.toCelsiusOrFahrenheit(tempUnit).toInt()}°"
+    } ?: "--°"
+    val subText = current?.let {
+        val feels = it.apparentTemperature.toCelsiusOrFahrenheit(tempUnit).toInt()
+        val max = weather.daily?.temperatureMax?.firstOrNull()
+            ?.toCelsiusOrFahrenheit(tempUnit)?.toInt()
+        val min = weather.daily?.temperatureMin?.firstOrNull()
+            ?.toCelsiusOrFahrenheit(tempUnit)?.toInt()
+        buildString {
+            append("${feels}°")
+            if (max != null) append(" ↑${max}°")
+            if (min != null) append(" ↓${min}°")
+        }
+    } ?: ""
+
+    val weatherCode = current?.weatherCode
+    val sunrise = weather?.daily?.sunrise?.firstOrNull() ?: ""
+    val sunset = weather?.daily?.sunset?.firstOrNull() ?: ""
+    val isDay = runCatching { isDayNowByTime(LocalTime.now(), sunrise, sunset) }.getOrDefault(true)
+    val iconRes = weatherCode?.let { weatherIcon(it, isDay) }
+
+    val availPx = (widthDp * density - 24f * density).coerceAtLeast(10f)
     val multiplier = systemFontScale * (100f / fontScaleSetting)
-    val (baseSp, showDate) = fitBaseSp(
+    val baseSp = fitBaseSp(
         timeText = timeText,
         dateText = dateText,
         tempText = tempText,
+        subText = subText,
         availPx = availPx,
         density = density,
         multiplier = multiplier
@@ -104,17 +127,30 @@ suspend fun buildWidgetViews(context: Context, appWidgetId: Int): RemoteViews {
         R.id.widget_time, TypedValue.COMPLEX_UNIT_PX, baseSp * density * multiplier
     )
     views.setTextViewTextSize(
-        R.id.widget_date, TypedValue.COMPLEX_UNIT_PX, baseSp * density * multiplier
+        R.id.widget_temp, TypedValue.COMPLEX_UNIT_PX, baseSp * density * multiplier
     )
     views.setTextViewTextSize(
-        R.id.widget_temp, TypedValue.COMPLEX_UNIT_PX, baseSp * TEMP_RATIO * density * multiplier
+        R.id.widget_date, TypedValue.COMPLEX_UNIT_PX, baseSp * SUB_RATIO * density * multiplier
+    )
+    views.setTextViewTextSize(
+        R.id.widget_sub, TypedValue.COMPLEX_UNIT_PX, baseSp * SUB_RATIO * density * multiplier
     )
     views.setTextColor(R.id.widget_time, textArgb)
     views.setTextColor(R.id.widget_date, textArgb)
     views.setTextColor(R.id.widget_temp, textArgb)
+    views.setTextColor(R.id.widget_sub, textArgb)
 
-    views.setViewVisibility(R.id.widget_date, if (showDate) View.VISIBLE else View.GONE)
     views.setTextViewText(R.id.widget_temp, tempText)
+    views.setTextViewText(R.id.widget_sub, subText)
+    // Иконка «человечек с градусником» белая в векторе — красим под цвет текста.
+    views.setImageViewResource(R.id.widget_feels_icon, R.drawable.ic_widget_feels_like)
+    views.setInt(R.id.widget_feels_icon, "setColorFilter", textArgb)
+    if (iconRes != null) {
+        views.setImageViewResource(R.id.widget_icon, iconRes)
+    }
+
+    // Размер иконки фиксирован в layout (34dp): RemoteViews позволяет менять его
+    // только с API 31, а minSdk — 26, поэтому адаптив под шрифт не делаем.
 
     views.setImageViewBitmap(R.id.widget_bg, roundedBackground(widthDp, heightDp, density, palette))
 

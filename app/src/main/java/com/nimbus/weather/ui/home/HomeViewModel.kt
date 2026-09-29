@@ -33,7 +33,6 @@ data class HomeUiState(
     val sunrise: String = "",
     val sunset: String = "",
     val tempUnit: TemperatureUnit = TemperatureUnit.CELSIUS,
-    val useFeelsLike: Boolean = false,
     val showAqi: Boolean = true,
     val fromCache: Boolean = false,
     val appLanguage: String = "auto",
@@ -85,11 +84,6 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             settings.tempUnit.collect { unit ->
                 _state.value = _state.value.copy(tempUnit = unit)
-            }
-        }
-        viewModelScope.launch {
-            settings.useFeelsLike.collect { feels ->
-                _state.value = _state.value.copy(useFeelsLike = feels)
             }
         }
         viewModelScope.launch {

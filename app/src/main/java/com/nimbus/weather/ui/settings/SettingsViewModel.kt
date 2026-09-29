@@ -25,7 +25,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 data class SettingsUiState(
-    val useFeelsLike: Boolean = false,
     val tempUnit: TemperatureUnit = TemperatureUnit.CELSIUS,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val cityName: String = "",
@@ -55,7 +54,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     }
 
     init {
-        settings.useFeelsLike.intoState { copy(useFeelsLike = it) }
         settings.tempUnit.intoState { copy(tempUnit = it) }
         settings.themeMode.intoState { copy(themeMode = it) }
         settings.cityName.intoState { copy(cityName = it) }
@@ -84,12 +82,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         val lang = LanguageHelper.resolve(appLanguage)
         return cities.associate { city ->
             city.name to CityNameResolver.displayName(city.name, city.localNames, lang)
-        }
-    }
-
-    fun setUseFeelsLike(value: Boolean) {
-        viewModelScope.launch {
-            settings.setUseFeelsLike(value)
         }
     }
 

@@ -307,59 +307,109 @@ private fun WidgetPreviewBox(
     fontScale: Int
 ) {
     val weather = remember { WidgetUpdateManager.getCachedWeather() }
-    val tempText = if (weather?.current != null) {
-        "${weather.current.temperature.toCelsiusOrFahrenheit(com.nimbus.weather.util.TemperatureUnit.CELSIUS).toInt()}°C"
-    } else "--°C"
+    val current = weather?.current
+    val tempText = if (current != null) {
+        "${current.temperature.toCelsiusOrFahrenheit(com.nimbus.weather.util.TemperatureUnit.CELSIUS).toInt()}°"
+    } else "24°"
+    val subText = if (current != null) {
+        val feels = current.apparentTemperature
+            .toCelsiusOrFahrenheit(com.nimbus.weather.util.TemperatureUnit.CELSIUS).toInt()
+        val max = weather.daily?.temperatureMax?.firstOrNull()
+            ?.toCelsiusOrFahrenheit(com.nimbus.weather.util.TemperatureUnit.CELSIUS)?.toInt()
+        val min = weather.daily?.temperatureMin?.firstOrNull()
+            ?.toCelsiusOrFahrenheit(com.nimbus.weather.util.TemperatureUnit.CELSIUS)?.toInt()
+        buildString {
+            append("${feels}°")
+            if (max != null) append(" ↑${max}°")
+            if (min != null) append(" ↓${min}°")
+        }
+    } else "23° ↑28° ↓16°"
     val dateText = if (dateFormat == "text") {
-        java.text.SimpleDateFormat("d MMMM yyyy", java.util.Locale.getDefault())
+        java.text.SimpleDateFormat("EEE, d MMM", java.util.Locale.getDefault())
             .format(java.util.Date())
     } else {
-        java.text.SimpleDateFormat("dd.MM.yyyy", java.util.Locale.getDefault())
+        java.text.SimpleDateFormat("dd.MM", java.util.Locale.getDefault())
             .format(java.util.Date())
     }
     val scale = fontScale / 100f
+    val iconRes = current?.let {
+        com.nimbus.weather.util.weatherIcon(it.weatherCode, true)
+    } ?: com.nimbus.weather.R.drawable.ic_weather_partly_day
 
     Surface(
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(24.dp),
         color = Color.Transparent,
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
+                .clip(RoundedCornerShape(24.dp))
                 .background(palette.background)
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "00:00",
-                color = palette.text,
-                style = MaterialTheme.typography.headlineMedium.copy(
-                    fontSize = (28 * scale).sp
-                ),
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.weight(1f)
-            )
-            Text(
-                text = dateText,
-                color = palette.text,
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontSize = (14 * scale).sp
-                ),
-                fontWeight = FontWeight.Medium,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
-            )
-            Text(
-                text = tempText,
-                color = palette.text,
-                style = MaterialTheme.typography.displaySmall.copy(
-                    fontSize = (30 * scale).sp
-                ),
-                fontWeight = FontWeight.Bold,
-                textAlign = androidx.compose.ui.text.style.TextAlign.End,
-                modifier = Modifier.weight(1f)
-            )
+            Column(modifier = Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = tempText,
+                        color = palette.text,
+                        style = MaterialTheme.typography.displaySmall.copy(
+                            fontSize = (30 * scale).sp
+                        ),
+                        fontWeight = FontWeight.Bold
+                    )
+                    androidx.compose.foundation.Image(
+                        painter = androidx.compose.ui.res.painterResource(iconRes),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .padding(start = 6.dp)
+                            .size((34 * scale).dp)
+                    )
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    androidx.compose.foundation.Image(
+                        painter = androidx.compose.ui.res.painterResource(
+                            com.nimbus.weather.R.drawable.ic_widget_feels_like
+                        ),
+                        contentDescription = null,
+                        colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(palette.text),
+                        modifier = Modifier.size((16 * scale).dp)
+                    )
+                    Text(
+                        text = subText,
+                        color = palette.text,
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontSize = (15 * scale).sp
+                        ),
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.padding(start = 4.dp)
+                    )
+                }
+            }
+            Column(
+                modifier = Modifier.weight(1f),
+                horizontalAlignment = Alignment.End
+            ) {
+                Text(
+                    text = "10:35",
+                    color = palette.text,
+                    style = MaterialTheme.typography.displaySmall.copy(
+                        fontSize = (30 * scale).sp
+                    ),
+                    fontWeight = FontWeight.Bold,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.End
+                )
+                Text(
+                    text = dateText,
+                    color = palette.text,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontSize = (15 * scale).sp
+                    ),
+                    fontWeight = FontWeight.Medium,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.End
+                )
+            }
         }
     }
 }

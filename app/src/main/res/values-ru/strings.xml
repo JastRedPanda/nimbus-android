@@ -69,9 +69,6 @@
 
     <!-- Настройки -->
     <string name="settings">Настройки</string>
-    <string name="widget_temp_mode">Режим температуры в виджетах</string>
-    <string name="actual_temp">Фактическая</string>
-    <string name="feels_like_temp">По ощущению</string>
     <string name="select_city">Выбрать город</string>
     <string name="theme_mode">Тема оформления</string>
     <string name="theme_system">Системная</string>

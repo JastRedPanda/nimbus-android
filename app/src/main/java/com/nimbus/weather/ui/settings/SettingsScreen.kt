@@ -134,22 +134,6 @@ import com.nimbus.weather.util.TemperatureUnit
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
-            // Widget temperature mode
-            SectionHeader(title = stringResource(R.string.widget_temp_mode))
-
-            SettingsToggle(
-                label = stringResource(R.string.actual_temp),
-                checked = !state.useFeelsLike,
-                onCheck = { viewModel.setUseFeelsLike(false) }
-            )
-            SettingsToggle(
-                label = stringResource(R.string.feels_like_temp),
-                checked = state.useFeelsLike,
-                onCheck = { viewModel.setUseFeelsLike(true) }
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
             // Temperature units
             SectionHeader(title = stringResource(R.string.units_temperature))
 
