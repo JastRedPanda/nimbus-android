@@ -221,7 +221,7 @@ private fun HourlyColumn(
             style = MaterialTheme.typography.labelSmall,
             color = t.subtle
         )
-        WeatherIcon(code = h.weatherCode, isDay = isDay, size = 24.dp)
+        WeatherIcon(code = h.weatherCode, isDay = isDay, size = 32.dp)
         Text(
             text = "${h.temperature.toCelsiusOrFahrenheit(tempUnit).toInt()}${tempUnit.displayString()}",
             style = MaterialTheme.typography.bodyMedium,
