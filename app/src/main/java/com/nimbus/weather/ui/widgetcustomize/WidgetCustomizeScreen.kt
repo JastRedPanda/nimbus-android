@@ -7,7 +7,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -20,7 +22,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.BrightnessAuto
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -32,12 +36,15 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -62,12 +69,28 @@ private val BG_PALETTE = listOf(
     "#FFFFFF",
     "#000000",
     "#1976D2",
-    "#388E3C",
     "#F57C00",
     "#7B1FA2",
-    "#C2185B",
     "#455A64"
 )
+
+/** Сетка диалога своего цвета: 12 тонов × 5 рядов насыщенности/яркости. */
+private val PICKER_HUES = (0 until 12).map { it * 30f }
+private val PICKER_ROWS = listOf(
+    1.00f to 1.00f,
+    0.75f to 1.00f,
+    0.50f to 1.00f,
+    0.38f to 0.88f,
+    0.28f to 0.68f
+)
+private val PICKER_GRAYS = listOf(1.00f, 0.85f, 0.70f, 0.55f, 0.40f, 0.25f, 0.10f)
+
+private fun Color.toHex(): String =
+    "#%02X%02X%02X".format(
+        (red * 255).toInt().coerceIn(0, 255),
+        (green * 255).toInt().coerceIn(0, 255),
+        (blue * 255).toInt().coerceIn(0, 255)
+    )
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -94,6 +117,23 @@ fun WidgetCustomizeScreen(
             com.nimbus.weather.widget.WIDGET_DATE_PATTERN_TEXT,
             java.util.Locale.getDefault()
         ).format(today)
+    }
+
+    var showPicker by remember { mutableStateOf(false) }
+    // Свой цвет — выбранный hex, которого нет в готовой палитре.
+    val customHex = state.bgColorHex?.takeIf { hex ->
+        BG_PALETTE.none { it.equals(hex, ignoreCase = true) }
+    }
+
+    if (showPicker) {
+        CustomColorDialog(
+            initialHex = customHex,
+            onDismiss = { showPicker = false },
+            onApply = { hex ->
+                showPicker = false
+                viewModel.onBgColorSelected(hex)
+            }
+        )
     }
 
     Scaffold(
@@ -145,6 +185,32 @@ fun WidgetCustomizeScreen(
                         color = hex,
                         selected = state.bgColorHex == hex,
                         onClick = { viewModel.onBgColorSelected(hex) }
+                    )
+                }
+                if (customHex != null) {
+                    ColorDot(
+                        color = customHex,
+                        selected = true,
+                        onClick = { showPicker = true }
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .border(
+                            1.dp,
+                            MaterialTheme.colorScheme.outlineVariant,
+                            CircleShape
+                        )
+                        .clickable(onClick = { showPicker = true }),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Add,
+                        contentDescription = stringResource(R.string.widget_custom_color),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
                     )
                 }
             }
@@ -309,6 +375,114 @@ private fun TextOptionChip(
         selected = selected,
         onClick = onClick,
         label = { Text(label) }
+    )
+}
+
+/**
+ * Диалог своего цвета фона: сетка тонов (12 оттенков × 5 рядов) + ряд серого.
+ * Выбранный hex пишется в ту же настройку, что и готовая палитра, — виджет
+ * и превью подхватывают его без дополнительного кода.
+ */
+@Composable
+private fun CustomColorDialog(
+    initialHex: String?,
+    onDismiss: () -> Unit,
+    onApply: (String) -> Unit
+) {
+    var selected by remember(initialHex) {
+        mutableStateOf(
+            initialHex?.let { parseHexColor(it) } ?: Color.hsv(210f, 0.65f, 0.85f)
+        )
+    }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.widget_custom_color)) },
+        text = {
+            Column {
+                PICKER_ROWS.forEach { (saturation, value) ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        PICKER_HUES.forEach { hue ->
+                            PickerCell(
+                                color = Color.hsv(hue, saturation, value),
+                                selectedColor = selected,
+                                onClick = { selected = it }
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    PICKER_GRAYS.forEach { gray ->
+                        PickerCell(
+                            color = Color.hsv(0f, 0f, gray),
+                            selectedColor = selected,
+                            onClick = { selected = it }
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(selected)
+                            .border(
+                                1.dp,
+                                MaterialTheme.colorScheme.outlineVariant,
+                                RoundedCornerShape(8.dp)
+                            )
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = selected.toHex(),
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onApply(selected.toHex()) }) {
+                Text(stringResource(R.string.widget_custom_apply))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
+            }
+        }
+    )
+}
+
+@Composable
+private fun RowScope.PickerCell(
+    color: Color,
+    selectedColor: Color,
+    onClick: (Color) -> Unit
+) {
+    val selected = color == selectedColor
+    Box(
+        modifier = Modifier
+            .weight(1f)
+            .aspectRatio(1f)
+            .clip(CircleShape)
+            .background(color)
+            .border(
+                width = if (selected) 2.dp else 0.5.dp,
+                color = if (selected) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    Color.White.copy(alpha = 0.25f)
+                },
+                shape = CircleShape
+            )
+            .clickable(onClick = { onClick(color) })
     )
 }
 

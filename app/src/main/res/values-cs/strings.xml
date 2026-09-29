@@ -108,6 +108,8 @@
     <string name="widget_reset">Resetovat vzhled</string>
     <string name="widget_date_format">Formát data</string>
     <string name="widget_font_size">Velikost písma</string>
+    <string name="widget_custom_color">Vlastní barva</string>
+    <string name="widget_custom_apply">Hotovo</string>
 
     <!-- WMO weather codes -->
     <string name="wmo_0">Jasno</string>

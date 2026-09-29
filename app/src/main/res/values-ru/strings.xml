@@ -109,6 +109,8 @@
     <string name="widget_reset">Сбросить внешний вид</string>
     <string name="widget_date_format">Формат даты</string>
     <string name="widget_font_size">Размер шрифта</string>
+    <string name="widget_custom_color">Свой цвет</string>
+    <string name="widget_custom_apply">Готово</string>
 
     <!-- WMO коды погоды -->
     <string name="wmo_0">Ясно</string>
