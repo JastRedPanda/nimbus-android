@@ -56,70 +56,63 @@ private class Particle(
 )
 
 /**
- * Бесшовный тайл фрактального шума (value noise, 4 октавы).
- * Цвет запекается прямо в пиксели, плотность — в альфу:
- * рисуется обычным наложением без colorFilter, нечему чудить.
- * Края мягкие — smoothstep [low, high], итоговая альфа = s * layerAlpha.
+ * Мягкий спрайт клуба 64×64: value noise с радиальной маской —
+ * края гарантированно прозрачные, штампы не дают швов и пузырей.
+ * Цвет запекается параметрами, плотность — в альфе.
  */
-private const val NOISE_TILE_PX = 256
+private const val PUFF_SPRITE_PX = 64
 
-private fun generateNoiseTile(
+private fun generatePuffSprite(
     seed: Long,
-    low: Float,
-    high: Float,
     r: Int,
     g: Int,
-    b: Int,
-    layerAlpha: Float
+    b: Int
 ): android.graphics.Bitmap {
-    val size = NOISE_TILE_PX
+    val size = PUFF_SPRITE_PX
     val random = Random(seed)
-    val octaves = 4
-    val basePeriod = 8
-    // Решётки значений на октаву; индексы по модулю периода = бесшовность.
-    val grids = List(octaves) { k ->
-        val period = basePeriod * (1 shl k)
-        FloatArray(period * period) { random.nextFloat() }
-    }
+    val period = 4
+    val grid = FloatArray(period * period) { random.nextFloat() }
     val pixels = IntArray(size * size)
-    var ampSum = 0f
-    var amp = 0.5f
-    repeat(octaves) { ampSum += amp; amp *= 0.5f }
     for (y in 0 until size) {
         for (x in 0 until size) {
-            var v = 0f
-            amp = 0.5f
-            for (k in 0 until octaves) {
-                val period = basePeriod * (1 shl k)
-                val fx = x.toFloat() / size * period
-                val fy = y.toFloat() / size * period
-                val x0 = fx.toInt() % period
-                val y0 = fy.toInt() % period
-                val x1 = (x0 + 1) % period
-                val y1 = (y0 + 1) % period
-                val tx = fx - fx.toInt()
-                val ty = fy - fy.toInt()
-                val sx = tx * tx * (3f - 2f * tx)
-                val sy = ty * ty * (3f - 2f * ty)
-                val grid = grids[k]
-                val a = grid[y0 * period + x0]
-                val b = grid[y0 * period + x1]
-                val c = grid[y1 * period + x0]
-                val d = grid[y1 * period + x1]
-                v += ((a + (b - a) * sx) + ((c + (d - c) * sx) - (a + (b - a) * sx)) * sy) * amp
-                amp *= 0.5f
-            }
-            v /= ampSum
-            val t = ((v - low) / (high - low)).coerceIn(0f, 1f)
-            val s = t * t * (3f - 2f * t)
+            val fx = x.toFloat() / size * period
+            val fy = y.toFloat() / size * period
+            val x0 = fx.toInt() % period
+            val y0 = fy.toInt() % period
+            val x1 = (x0 + 1) % period
+            val y1 = (y0 + 1) % period
+            val tx = fx - fx.toInt()
+            val ty = fy - fy.toInt()
+            val sx = tx * tx * (3f - 2f * tx)
+            val sy = ty * ty * (3f - 2f * ty)
+            val a = grid[y0 * period + x0]
+            val bb = grid[y0 * period + x1]
+            val c = grid[y1 * period + x0]
+            val d = grid[y1 * period + x1]
+            val v = (a + (bb - a) * sx) + ((c + (d - c) * sx) - (a + (bb - a) * sx)) * sy
+            val nx = (x + 0.5f) / size - 0.5f
+            val ny = (y + 0.5f) / size - 0.5f
+            val dist = kotlin.math.sqrt(nx * nx + ny * ny) * 2f
+            val mask = (1f - dist.coerceIn(0f, 1f)).let { it * it * (3f - 2f * it) }
+            val t = ((v - 0.3f) / 0.4f).coerceIn(0f, 1f)
+            val s = t * t * (3f - 2f * t) * mask
             pixels[y * size + x] = android.graphics.Color.argb(
-                (s * layerAlpha * 255).toInt(), r, g, b
+                (s * 255).toInt(), r, g, b
             )
         }
     }
     return android.graphics.Bitmap.createBitmap(size, size, android.graphics.Bitmap.Config.ARGB_8888)
         .also { it.setPixels(pixels, 0, size, 0, 0, size, size) }
 }
+
+private class PuffStamp(
+    var x: Float = 0f,
+    var y: Float = 0f,
+    var scale: Float = 0f,
+    var speed: Float = 0f,
+    var phase: Float = 0f,
+    var alpha: Float = 0f
+)
 
 @Composable
 fun AnimatedSky(
@@ -144,15 +137,12 @@ fun AnimatedSky(
         }
         List(count) { Particle() }
     }
-    val cloudGrayDay = remember(effect) {
-        generateNoiseTile(1234567L, 0.35f, 0.70f, 0x61, 0x61, 0x61, 0.35f)
-    }
-    val cloudBlackNight = remember(effect) {
-        generateNoiseTile(1234567L, 0.35f, 0.70f, 0, 0, 0, 0.60f)
-    }
-    val cloudWhite = remember(effect) {
-        generateNoiseTile(7654321L, 0.40f, 0.75f, 255, 255, 255, 0.45f)
-    }
+    // Спрайты клубов: серая тень дня, чёрная тень ночи, белая просветка.
+    val spriteGray = remember(effect) { generatePuffSprite(1234567L, 0x61, 0x61, 0x61) }
+    val spriteBlack = remember(effect) { generatePuffSprite(1234567L, 0, 0, 0) }
+    val spriteWhite = remember(effect) { generatePuffSprite(7654321L, 255, 255, 255) }
+    val stampsDark = remember(effect) { List(16) { PuffStamp() } }
+    val stampsLight = remember(effect) { List(16) { PuffStamp() } }
     // Молния: время следующей вспышки и её длительность, мс
     val lightning = remember(effect) { longArrayOf(0L, 0L) }
     // Точки разряда: главный канал (до 16 точек) + до 3 веток по 6 точек.
@@ -357,64 +347,53 @@ fun AnimatedSky(
                 }
             }
             SkyEffect.CLOUDS -> {
-                // Клубы из фрактального шума: цвет запечён в пиксели,
-                // рисуются обычным наложением — без colorFilter, нечему чудить.
-                // Тёмный и светлый слои с разным масштабом и встречным
-                // дрейфом — перетекание. Тайлы бесшовные, сдвиг по модулю.
-                fun drawPlainLayer(
-                    tile: android.graphics.Bitmap,
-                    tilePx: Float,
-                    speedX: Float,
-                    speedYPx: Float,
-                    alpha: Float = 1f
-                ) {
-                    val img = tile.asImageBitmap()
-                    val tSec = nowMs / 1000f
-                    val ox = (tSec * speedX) % tilePx
-                    val oy = (tSec * speedYPx) % tilePx
-                    var y = -oy - tilePx
-                    while (y < h) {
-                        var x = -ox - tilePx
-                        while (x < w) {
-                            drawImage(
-                                image = img,
-                                dstOffset = androidx.compose.ui.unit.IntOffset(
-                                    x.roundToInt(), y.roundToInt()
-                                ),
-                                dstSize = androidx.compose.ui.unit.IntSize(
-                                    tilePx.roundToInt(), tilePx.roundToInt()
-                                ),
-                                alpha = alpha
-                            )
-                            x += tilePx
-                        }
-                        y += tilePx
+                // Клубы — штампы из мягкого спрайта: цельные объекты,
+                // швам неоткуда взяться. Тёмные и светлые со встречным
+                // дрейфом — перетекание. Днём тень серая, ночью чёрная.
+                fun seed(s: PuffStamp, dark: Boolean) {
+                    s.scale = with(density) { 150.dp.toPx() + random.nextFloat() * 250.dp.toPx() }
+                    s.x = random.nextFloat() * w - s.scale * 0.25f
+                    s.y = random.nextFloat() * h - s.scale * 0.25f
+                    s.speed = with(density) {
+                        (6.dp.toPx() + random.nextFloat() * 6.dp.toPx())
+                    } / 30f * if (dark) 1f else -1f
+                    s.phase = random.nextFloat() * 6.28f
+                    s.alpha = if (dark) {
+                        0.30f + random.nextFloat() * 0.15f
+                    } else {
+                        0.35f + random.nextFloat() * 0.15f
                     }
                 }
-                val darkTilePx = with(density) { 260.dp.toPx() }
-                val lightTilePx = with(density) { 170.dp.toPx() }
-                val darkSpeed = with(density) { 9.dp.toPx() }
-                val lightSpeed = with(density) { 13.dp.toPx() }
+                fun drawStamps(
+                    stamps: List<PuffStamp>,
+                    sprite: android.graphics.Bitmap,
+                    dark: Boolean
+                ) {
+                    val img = sprite.asImageBitmap()
+                    stamps.forEach { s ->
+                        if (s.scale == 0f) seed(s, dark)
+                        s.x += s.speed
+                        val m = s.scale * 0.5f
+                        if (s.speed > 0f && s.x - m > w) s.x = -m
+                        if (s.speed < 0f && s.x + m < 0f) s.x = w + m
+                        val breathe = 0.85f + 0.15f * sin(nowMs / 1700f + s.phase)
+                        val px = s.scale.roundToInt().coerceAtLeast(1)
+                        drawImage(
+                            image = img,
+                            dstOffset = androidx.compose.ui.unit.IntOffset(
+                                (s.x - m).roundToInt(), (s.y - m).roundToInt()
+                            ),
+                            dstSize = androidx.compose.ui.unit.IntSize(px, px),
+                            alpha = (s.alpha * breathe).coerceIn(0f, 1f)
+                        )
+                    }
+                }
                 if (isDay) {
-                    // Днём: серая тень чуть темнее неба + белые просветы.
-                    drawPlainLayer(
-                        cloudGrayDay, darkTilePx, darkSpeed,
-                        with(density) { 2.5.dp.toPx() }
-                    )
-                    drawPlainLayer(
-                        cloudWhite, lightTilePx, -lightSpeed,
-                        with(density) { -3.5.dp.toPx() }
-                    )
+                    drawStamps(stampsDark, spriteGray, dark = true)
+                    drawStamps(stampsLight, spriteWhite, dark = false)
                 } else {
-                    drawPlainLayer(
-                        cloudBlackNight, darkTilePx, darkSpeed,
-                        with(density) { 2.5.dp.toPx() }
-                    )
-                    drawPlainLayer(
-                        cloudWhite, lightTilePx, -lightSpeed,
-                        with(density) { -3.5.dp.toPx() },
-                        alpha = 0.35f
-                    )
+                    drawStamps(stampsDark, spriteBlack, dark = true)
+                    drawStamps(stampsLight, spriteWhite, dark = false)
                 }
             }
             SkyEffect.STARS -> {
