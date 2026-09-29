@@ -157,15 +157,31 @@ suspend fun buildWidgetViews(context: Context, appWidgetId: Int): RemoteViews {
     views.setViewVisibility(
         R.id.widget_minmax, if (minMaxText.isNotEmpty()) View.VISIBLE else View.GONE
     )
+    // Иконки растим в битмапы под размер шрифта: RemoteViews ниже API 31
+    // не умеет менять размер вьюхи, а битмап задаёт его сам.
+    val iconPx = (baseSp * ICON_RATIO * density * systemFontScale * userScale)
+        .toInt().coerceIn(1, 512)
+    val feelsPx = (baseSp * FEELS_ICON_RATIO * density * systemFontScale * userScale)
+        .toInt().coerceIn(1, 512)
     // Иконка «человечек с градусником» белая в векторе — красим под цвет текста.
-    views.setImageViewResource(R.id.widget_feels_icon, R.drawable.ic_widget_feels_like)
-    views.setInt(R.id.widget_feels_icon, "setColorFilter", textArgb)
-    if (iconRes != null) {
-        views.setImageViewResource(R.id.widget_icon, iconRes)
+    runCatching {
+        views.setImageViewBitmap(
+            R.id.widget_feels_icon,
+            rasterIcon(context, R.drawable.ic_widget_feels_like, feelsPx, textArgb)
+        )
+    }.onFailure {
+        views.setImageViewResource(R.id.widget_feels_icon, R.drawable.ic_widget_feels_like)
+        views.setInt(R.id.widget_feels_icon, "setColorFilter", textArgb)
     }
-
-    // Размер иконки фиксирован в layout (34dp): RemoteViews позволяет менять его
-    // только с API 31, а minSdk — 26, поэтому адаптив под шрифт не делаем.
+    if (iconRes != null) {
+        runCatching {
+            views.setImageViewBitmap(
+                R.id.widget_icon, rasterIcon(context, iconRes, iconPx, tintArgb = null)
+            )
+        }.onFailure {
+            views.setImageViewResource(R.id.widget_icon, iconRes)
+        }
+    }
 
     views.setImageViewBitmap(R.id.widget_bg, roundedBackground(widthDp, heightDp, density, palette))
 
@@ -177,6 +193,24 @@ suspend fun buildWidgetViews(context: Context, appWidgetId: Int): RemoteViews {
     views.setOnClickPendingIntent(R.id.widget_root, tapIntent)
 
     return views
+}
+
+private fun rasterIcon(
+    context: Context,
+    resId: Int,
+    sizePx: Int,
+    tintArgb: Int?
+): Bitmap {
+    val drawable = context.getDrawable(resId)
+        ?: throw IllegalStateException("missing drawable $resId")
+    val bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(bitmap)
+    drawable.setBounds(0, 0, sizePx, sizePx)
+    if (tintArgb != null) {
+        drawable.setColorFilter(tintArgb, android.graphics.PorterDuff.Mode.SRC_IN)
+    }
+    drawable.draw(canvas)
+    return bitmap
 }
 
 private fun roundedBackground(

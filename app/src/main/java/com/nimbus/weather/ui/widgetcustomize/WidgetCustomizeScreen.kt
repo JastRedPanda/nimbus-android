@@ -582,7 +582,7 @@ private fun WidgetPreviewBox(
                         contentDescription = null,
                         modifier = Modifier
                             .padding(start = 6.dp)
-                            .size((34 * scale).dp)
+                            .size((39 * scale).dp)
                     )
                 }
                 Row(verticalAlignment = Alignment.Bottom) {
@@ -597,7 +597,7 @@ private fun WidgetPreviewBox(
                         // на высоту нижнего выноса, чтобы превью совпадало.
                         modifier = Modifier
                             .padding(bottom = (3 * scale).dp)
-                            .size((18 * scale).dp)
+                            .size((19 * scale).dp)
                     )
                     Text(
                         text = feelsText,
