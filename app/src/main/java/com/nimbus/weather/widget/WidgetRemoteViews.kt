@@ -9,6 +9,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.util.TypedValue
+import android.view.View
 import android.widget.RemoteViews
 import androidx.compose.ui.graphics.toArgb
 import com.nimbus.weather.MainActivity
@@ -82,16 +83,20 @@ suspend fun buildWidgetViews(context: Context, appWidgetId: Int): RemoteViews {
     val tempText = current?.let {
         "${it.temperature.toCelsiusOrFahrenheit(tempUnit).toInt()}°"
     } ?: "--°"
-    val subText = current?.let {
-        val feels = it.apparentTemperature.toCelsiusOrFahrenheit(tempUnit).toInt()
+    val feelsText = current?.let {
+        "${it.apparentTemperature.toCelsiusOrFahrenheit(tempUnit).toInt()}°"
+    } ?: ""
+    val minMaxText = current?.let {
         val max = weather.daily?.temperatureMax?.firstOrNull()
             ?.toCelsiusOrFahrenheit(tempUnit)?.toInt()
         val min = weather.daily?.temperatureMin?.firstOrNull()
             ?.toCelsiusOrFahrenheit(tempUnit)?.toInt()
         buildString {
-            append("${feels}°")
-            if (max != null) append(" ↑${max}°")
-            if (min != null) append(" ↓${min}°")
+            if (max != null) append("↑${max}°")
+            if (min != null) {
+                if (isNotEmpty()) append(" ")
+                append("↓${min}°")
+            }
         }
     } ?: ""
 
@@ -108,7 +113,8 @@ suspend fun buildWidgetViews(context: Context, appWidgetId: Int): RemoteViews {
         timeText = timeText,
         dateText = dateText,
         tempText = tempText,
-        subText = subText,
+        feelsText = feelsText,
+        minMaxText = minMaxText,
         availPx = availPx,
         density = density,
         multiplier = systemFontScale
@@ -135,13 +141,21 @@ suspend fun buildWidgetViews(context: Context, appWidgetId: Int): RemoteViews {
     views.setTextViewTextSize(
         R.id.widget_sub, TypedValue.COMPLEX_UNIT_PX, baseSp * SUB_RATIO * density * systemFontScale * userScale
     )
+    views.setTextViewTextSize(
+        R.id.widget_minmax, TypedValue.COMPLEX_UNIT_PX, baseSp * SUB_RATIO * density * systemFontScale * userScale
+    )
     views.setTextColor(R.id.widget_time, textArgb)
     views.setTextColor(R.id.widget_date, textArgb)
     views.setTextColor(R.id.widget_temp, textArgb)
     views.setTextColor(R.id.widget_sub, textArgb)
+    views.setTextColor(R.id.widget_minmax, textArgb)
 
     views.setTextViewText(R.id.widget_temp, tempText)
-    views.setTextViewText(R.id.widget_sub, subText)
+    views.setTextViewText(R.id.widget_sub, feelsText)
+    views.setTextViewText(R.id.widget_minmax, minMaxText)
+    views.setViewVisibility(
+        R.id.widget_minmax, if (minMaxText.isNotEmpty()) View.VISIBLE else View.GONE
+    )
     // Иконка «человечек с градусником» белая в векторе — красим под цвет текста.
     views.setImageViewResource(R.id.widget_feels_icon, R.drawable.ic_widget_feels_like)
     views.setInt(R.id.widget_feels_icon, "setColorFilter", textArgb)

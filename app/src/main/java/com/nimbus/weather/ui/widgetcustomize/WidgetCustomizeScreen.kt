@@ -324,19 +324,22 @@ private fun WidgetPreviewBox(
     val tempText = if (current != null) {
         "${current.temperature.toCelsiusOrFahrenheit(com.nimbus.weather.util.TemperatureUnit.CELSIUS).toInt()}°"
     } else "24°"
-    val subText = if (current != null) {
-        val feels = current.apparentTemperature
-            .toCelsiusOrFahrenheit(com.nimbus.weather.util.TemperatureUnit.CELSIUS).toInt()
+    val feelsText = if (current != null) {
+        "${current.apparentTemperature.toCelsiusOrFahrenheit(com.nimbus.weather.util.TemperatureUnit.CELSIUS).toInt()}°"
+    } else "23°"
+    val minMaxText = if (current != null) {
         val max = weather.daily?.temperatureMax?.firstOrNull()
             ?.toCelsiusOrFahrenheit(com.nimbus.weather.util.TemperatureUnit.CELSIUS)?.toInt()
         val min = weather.daily?.temperatureMin?.firstOrNull()
             ?.toCelsiusOrFahrenheit(com.nimbus.weather.util.TemperatureUnit.CELSIUS)?.toInt()
         buildString {
-            append("${feels}°")
-            if (max != null) append(" ↑${max}°")
-            if (min != null) append(" ↓${min}°")
+            if (max != null) append("↑${max}°")
+            if (min != null) {
+                if (isNotEmpty()) append(" ")
+                append("↓${min}°")
+            }
         }
-    } else "23° ↑28° ↓16°"
+    } else "↑28° ↓16°"
     val datePattern = if (dateFormat == "text") {
         com.nimbus.weather.widget.WIDGET_DATE_PATTERN_TEXT
     } else {
@@ -393,7 +396,7 @@ private fun WidgetPreviewBox(
                         modifier = Modifier.size((18 * scale).dp)
                     )
                     Text(
-                        text = subText,
+                        text = feelsText,
                         color = palette.text,
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontSize = (15 * scale).sp
@@ -401,6 +404,16 @@ private fun WidgetPreviewBox(
                         fontWeight = FontWeight.Medium,
                         maxLines = 1,
                         modifier = Modifier.padding(start = 4.dp)
+                    )
+                    Text(
+                        text = minMaxText,
+                        color = palette.text,
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontSize = (15 * scale).sp
+                        ),
+                        fontWeight = FontWeight.Medium,
+                        maxLines = 1,
+                        modifier = Modifier.padding(start = 8.dp)
                     )
                 }
             }
