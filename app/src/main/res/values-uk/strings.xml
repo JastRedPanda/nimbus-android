@@ -69,9 +69,6 @@
 
     <!-- Налаштування -->
     <string name="settings">Налаштування</string>
-    <string name="widget_temp_mode">Режим температури в віджетах</string>
-    <string name="actual_temp">Фактична</string>
-    <string name="feels_like_temp">По відчуттю</string>
     <string name="select_city">Вибрати місто</string>
     <string name="theme_mode">Тема оформлення</string>
     <string name="theme_system">Системна</string>

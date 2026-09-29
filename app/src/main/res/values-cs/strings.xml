@@ -68,9 +68,6 @@
     <string name="language_ru">Русский</string>
     <string name="language_uk">Українська</string>
     <string name="language_cs">Čeština</string>
-    <string name="widget_temp_mode">Režim teploty widgetu</string>
-    <string name="actual_temp">Skutečná</string>
-    <string name="feels_like_temp">Pocitová</string>
     <string name="select_city">Vybrat město</string>
     <string name="theme_mode">Vzhled</string>
     <string name="theme_system">Systémový</string>
