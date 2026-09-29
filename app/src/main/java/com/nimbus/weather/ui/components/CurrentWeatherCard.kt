@@ -48,6 +48,7 @@ fun CurrentWeatherCard(
     sunrise: String,
     sunset: String,
     tempUnit: TemperatureUnit = TemperatureUnit.CELSIUS,
+    isDay: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     GlassCard(modifier = modifier) {
@@ -64,6 +65,7 @@ fun CurrentWeatherCard(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 WeatherIcon(
                     code = current.weatherCode,
+                    isDay = isDay,
                     size = 64.dp
                 )
                 Spacer(modifier = Modifier.width(12.dp))

@@ -60,4 +60,23 @@ class WeatherCodeUtilsTest {
     fun `unknown code defaults to clear`() {
         assertEquals(R.string.wmo_0, weatherDescriptionRes(999))
     }
+
+    @Test
+    fun `icons follow day and night`() {
+        assertEquals(R.drawable.ic_weather_clear_day, weatherIcon(0, isDay = true))
+        assertEquals(R.drawable.ic_weather_clear_night, weatherIcon(0, isDay = false))
+        assertEquals(R.drawable.ic_weather_partly_day, weatherIcon(2, isDay = true))
+        assertEquals(R.drawable.ic_weather_partly_night, weatherIcon(2, isDay = false))
+    }
+
+    @Test
+    fun `icons cover all groups`() {
+        assertEquals(R.drawable.ic_weather_overcast, weatherIcon(3))
+        assertEquals(R.drawable.ic_weather_fog, weatherIcon(45))
+        assertEquals(R.drawable.ic_weather_rain, weatherIcon(61))
+        assertEquals(R.drawable.ic_weather_sleet, weatherIcon(66))
+        assertEquals(R.drawable.ic_weather_snow, weatherIcon(71))
+        assertEquals(R.drawable.ic_weather_thunderstorm, weatherIcon(95))
+        assertEquals(R.drawable.ic_weather_clear_day, weatherIcon(999))
+    }
 }

@@ -240,7 +240,7 @@ fun HomeScreen(
                         }
                     }
                     else -> {
-                        WeatherContent(state = state)
+                                    WeatherContent(state = state, isDay = isDay)
                     }
                 }
             }
@@ -253,7 +253,8 @@ fun HomeScreen(
 
 @Composable
 private fun WeatherContent(
-    state: HomeUiState
+    state: HomeUiState,
+    isDay: Boolean
 ) {
     val aqi = state.aqi
 
@@ -263,9 +264,9 @@ private fun WeatherContent(
             val isTablet = config.screenWidthDp >= 600
 
             if (isTablet) {
-                TabletLayout(state, current, aqi)
+                TabletLayout(state, current, aqi, isDay)
             } else {
-                PhoneLayout(state, current, aqi)
+                PhoneLayout(state, current, aqi, isDay)
             }
         }
     }
@@ -275,7 +276,8 @@ private fun WeatherContent(
 private fun TabletLayout(
     state: HomeUiState,
     current: com.nimbus.weather.data.model.CurrentWeather,
-    aqi: com.nimbus.weather.data.model.AirQualityCurrent?
+    aqi: com.nimbus.weather.data.model.AirQualityCurrent?,
+    isDay: Boolean
 ) {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Row(
@@ -294,12 +296,15 @@ private fun TabletLayout(
                     sunrise = state.sunrise,
                     sunset = state.sunset,
                     tempUnit = state.tempUnit,
+                    isDay = isDay,
                     modifier = Modifier.fillMaxWidth()
                 )
                 if (state.hourly.isNotEmpty()) {
                     HourlyForecastBar(
                         hourly = state.hourly,
                         tempUnit = state.tempUnit,
+                        sunrise = state.sunrise,
+                        sunset = state.sunset,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -334,7 +339,8 @@ private fun TabletLayout(
 private fun PhoneLayout(
     state: HomeUiState,
     current: com.nimbus.weather.data.model.CurrentWeather,
-    aqi: com.nimbus.weather.data.model.AirQualityCurrent?
+    aqi: com.nimbus.weather.data.model.AirQualityCurrent?,
+    isDay: Boolean
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -356,6 +362,7 @@ private fun PhoneLayout(
                 sunrise = state.sunrise,
                 sunset = state.sunset,
                 tempUnit = state.tempUnit,
+                isDay = isDay,
                 modifier = Modifier.fillMaxWidth()
             )
         }
@@ -364,6 +371,8 @@ private fun PhoneLayout(
                 HourlyForecastBar(
                     hourly = state.hourly,
                     tempUnit = state.tempUnit,
+                    sunrise = state.sunrise,
+                    sunset = state.sunset,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
