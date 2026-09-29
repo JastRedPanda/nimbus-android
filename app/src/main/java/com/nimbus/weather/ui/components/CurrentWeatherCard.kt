@@ -66,7 +66,7 @@ fun CurrentWeatherCard(
                 WeatherIcon(
                     code = current.weatherCode,
                     isDay = isDay,
-                    size = 88.dp
+                    size = 112.dp
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 val animatedTemp by animateIntAsState(

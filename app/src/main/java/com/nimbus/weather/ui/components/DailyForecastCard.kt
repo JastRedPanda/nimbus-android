@@ -91,7 +91,7 @@ fun DailyForecastCard(
 
                 Spacer(modifier = Modifier.width(8.dp))
 
-                WeatherIcon(code = day.weatherCode, size = 44.dp)
+                WeatherIcon(code = day.weatherCode, size = 56.dp)
 
                 Spacer(modifier = Modifier.width(8.dp))
 
