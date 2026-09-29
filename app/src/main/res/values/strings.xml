@@ -109,6 +109,8 @@
     <string name="widget_reset">Reset appearance</string>
     <string name="widget_date_format">Date format</string>
     <string name="widget_font_size">Font size</string>
+    <string name="widget_custom_color">Custom color</string>
+    <string name="widget_custom_apply">Done</string>
 
     <!-- WMO weather codes -->
     <string name="wmo_0">Clear sky</string>
