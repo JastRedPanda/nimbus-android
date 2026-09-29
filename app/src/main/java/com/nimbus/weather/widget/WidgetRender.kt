@@ -5,7 +5,10 @@ import android.text.TextPaint
 private const val MIN_FONT_SP = 10f
 private const val MAX_FONT_SP = 400f
 private const val SUB_RATIO = 0.52f
-private const val ICON_RATIO = 1.1f
+/** Высота иконки погоды от базового шрифта (битмап растится под шрифт). */
+internal const val ICON_RATIO = 1.3f
+/** Высота иконки «ощущается» от базового шрифта. */
+internal const val FEELS_ICON_RATIO = 0.65f
 private const val GAP_EM = 0.4f
 /** Отступ между «ощущается» и «макс/мин» — заметно шире пробела внутри группы. */
 private const val SUB_GAP_EM = 0.9f
@@ -47,7 +50,8 @@ internal fun fitBaseSp(
         val leftTop = widthOf(tempText, 1f, sp) +
             sp * ICON_RATIO * density * multiplier + sp * GAP_EM * density * multiplier
         val subGap = if (minMaxText.isNotEmpty()) sp * SUB_GAP_EM * density * multiplier else 0f
-        val leftBottom = widthOf(feelsText, SUB_RATIO, sp) + subGap +
+        val leftBottom = sp * FEELS_ICON_RATIO * density * multiplier +
+            widthOf(feelsText, SUB_RATIO, sp) + subGap +
             widthOf(minMaxText, SUB_RATIO, sp)
         val left = maxOf(leftTop, leftBottom)
         val right = maxOf(widthOf(timeText, 1f, sp), widthOf(dateText, SUB_RATIO, sp))
