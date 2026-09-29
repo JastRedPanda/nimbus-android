@@ -111,6 +111,7 @@
     <string name="widget_font_size">Розмір шрифту</string>
     <string name="widget_custom_color">Свій колір</string>
     <string name="widget_custom_apply">Готово</string>
+    <string name="widget_custom_hex">HEX-код</string>
 
     <!-- WMO коди погоди -->
     <string name="wmo_0">Ясно</string>

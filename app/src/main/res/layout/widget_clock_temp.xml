@@ -17,18 +17,19 @@
         android:scaleType="fitXY"
         android:contentDescription="@null" />
 
+    <!-- Колонки стоят группой по центру с фиксированным зазором 24dp,
+         а не разъезжаются к краям на широких виджетах. -->
     <LinearLayout
         android:id="@+id/widget_content"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:gravity="center_vertical"
+        android:gravity="center"
         android:orientation="horizontal"
         android:padding="12dp">
 
         <LinearLayout
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
             android:gravity="start|center_vertical"
             android:orientation="vertical">
 
@@ -96,9 +97,9 @@
         </LinearLayout>
 
         <LinearLayout
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
+            android:layout_marginStart="24dp"
             android:gravity="end|center_vertical"
             android:orientation="vertical">
 

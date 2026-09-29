@@ -32,6 +32,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
@@ -52,6 +53,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -394,6 +397,11 @@ private fun CustomColorDialog(
             initialHex?.let { parseHexColor(it) } ?: Color.hsv(210f, 0.65f, 0.85f)
         )
     }
+    var hexText by remember(initialHex) { mutableStateOf(selected.toHex()) }
+    fun pick(color: Color) {
+        selected = color
+        hexText = color.toHex()
+    }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.widget_custom_color)) },
@@ -408,7 +416,7 @@ private fun CustomColorDialog(
                             PickerCell(
                                 color = Color.hsv(hue, saturation, value),
                                 selectedColor = selected,
-                                onClick = { selected = it }
+                                onClick = { pick(it) }
                             )
                         }
                     }
@@ -422,7 +430,7 @@ private fun CustomColorDialog(
                         PickerCell(
                             color = Color.hsv(0f, 0f, gray),
                             selectedColor = selected,
-                            onClick = { selected = it }
+                            onClick = { pick(it) }
                         )
                     }
                 }
@@ -440,9 +448,23 @@ private fun CustomColorDialog(
                             )
                     )
                     Spacer(modifier = Modifier.width(12.dp))
-                    Text(
-                        text = selected.toHex(),
-                        style = MaterialTheme.typography.titleMedium
+                    OutlinedTextField(
+                        value = hexText,
+                        onValueChange = { input ->
+                            val digits = input.uppercase().filter {
+                                it in '0'..'9' || it in 'A'..'F'
+                            }.take(6)
+                            hexText = "#$digits"
+                            if (digits.length == 6) {
+                                parseHexColor("#$digits")?.let { selected = it }
+                            }
+                        },
+                        label = { Text(stringResource(R.string.widget_custom_hex)) },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Ascii
+                        ),
+                        modifier = Modifier.weight(1f)
                     )
                 }
             }
@@ -539,9 +561,12 @@ private fun WidgetPreviewBox(
                 .clip(RoundedCornerShape(24.dp))
                 .background(palette.background)
                 .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(
+                24.dp, Alignment.CenterHorizontally
+            )
         ) {
-            Column(modifier = Modifier.weight(1f)) {
+            Column {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = tempText,
@@ -597,7 +622,6 @@ private fun WidgetPreviewBox(
                 }
             }
             Column(
-                modifier = Modifier.weight(1f),
                 horizontalAlignment = Alignment.End
             ) {
                 Text(
