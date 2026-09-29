@@ -30,8 +30,6 @@ private const val FALLBACK_HEIGHT_DP = 110
 private const val CORNER_RADIUS_DP = 24
 private const val SUB_RATIO = 0.52f
 private const val TIME_PATTERN = "HH:mm"
-private const val DATE_PATTERN_TEXT = "EEE, d MMM"
-private const val DATE_PATTERN_NUMERIC = "dd.MM"
 
 /**
  * Собирает RemoteViews двухстрочного виджета по референсу:
@@ -77,7 +75,7 @@ suspend fun buildWidgetViews(context: Context, appWidgetId: Int): RemoteViews {
     val systemLocale = runCatching {
         Resources.getSystem().configuration.locales.get(0)
     }.getOrNull() ?: Locale.getDefault()
-    val datePattern = if (dateFormat == "text") DATE_PATTERN_TEXT else DATE_PATTERN_NUMERIC
+    val datePattern = if (dateFormat == "text") WIDGET_DATE_PATTERN_TEXT else WIDGET_DATE_PATTERN_NUMERIC
     val dateText = SimpleDateFormat(datePattern, systemLocale).format(Date(now))
 
     val current = weather?.current
@@ -104,7 +102,8 @@ suspend fun buildWidgetViews(context: Context, appWidgetId: Int): RemoteViews {
     val iconRes = weatherCode?.let { weatherIcon(it, isDay) }
 
     val availPx = (widthDp * density - 24f * density).coerceAtLeast(10f)
-    val multiplier = systemFontScale * (100f / fontScaleSetting)
+    // Фит меряем только с системным масштабом: пользовательский применяется
+    // после (иначе замер и итог взаимно гасятся и настройка ни на что не влияет).
     val baseSp = fitBaseSp(
         timeText = timeText,
         dateText = dateText,
@@ -112,8 +111,9 @@ suspend fun buildWidgetViews(context: Context, appWidgetId: Int): RemoteViews {
         subText = subText,
         availPx = availPx,
         density = density,
-        multiplier = multiplier
+        multiplier = systemFontScale
     )
+    val userScale = fontScaleSetting / 100f
 
     val textArgb = palette.text.toArgb()
     val views = RemoteViews(context.packageName, R.layout.widget_clock_temp)
@@ -124,16 +124,16 @@ suspend fun buildWidgetViews(context: Context, appWidgetId: Int): RemoteViews {
     views.setCharSequence(R.id.widget_date, "setFormat24Hour", datePattern)
 
     views.setTextViewTextSize(
-        R.id.widget_time, TypedValue.COMPLEX_UNIT_PX, baseSp * density * multiplier
+        R.id.widget_time, TypedValue.COMPLEX_UNIT_PX, baseSp * density * systemFontScale * userScale
     )
     views.setTextViewTextSize(
-        R.id.widget_temp, TypedValue.COMPLEX_UNIT_PX, baseSp * density * multiplier
+        R.id.widget_temp, TypedValue.COMPLEX_UNIT_PX, baseSp * density * systemFontScale * userScale
     )
     views.setTextViewTextSize(
-        R.id.widget_date, TypedValue.COMPLEX_UNIT_PX, baseSp * SUB_RATIO * density * multiplier
+        R.id.widget_date, TypedValue.COMPLEX_UNIT_PX, baseSp * SUB_RATIO * density * systemFontScale * userScale
     )
     views.setTextViewTextSize(
-        R.id.widget_sub, TypedValue.COMPLEX_UNIT_PX, baseSp * SUB_RATIO * density * multiplier
+        R.id.widget_sub, TypedValue.COMPLEX_UNIT_PX, baseSp * SUB_RATIO * density * systemFontScale * userScale
     )
     views.setTextColor(R.id.widget_time, textArgb)
     views.setTextColor(R.id.widget_date, textArgb)

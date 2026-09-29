@@ -8,6 +8,10 @@ private const val SUB_RATIO = 0.52f
 private const val ICON_RATIO = 1.1f
 private const val GAP_EM = 0.4f
 
+/** Паттерны даты виджета: ими же подписаны чипы в настройках. */
+internal const val WIDGET_DATE_PATTERN_TEXT = "EEE, d MMM"
+internal const val WIDGET_DATE_PATTERN_NUMERIC = "dd.MM"
+
 /**
  * Подбирает базовый размер шрифта (верхняя строка) для двухстрочного виджета.
  *

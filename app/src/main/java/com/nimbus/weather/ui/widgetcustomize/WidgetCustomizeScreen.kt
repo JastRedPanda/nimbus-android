@@ -62,7 +62,6 @@ private val BG_PALETTE = listOf(
     "#FFFFFF",
     "#000000",
     "#1976D2",
-    "#00695C",
     "#388E3C",
     "#F57C00",
     "#7B1FA2",
@@ -82,6 +81,20 @@ fun WidgetCustomizeScreen(
     val themeMode by settings.themeMode.collectAsState(initial = ThemeMode.SYSTEM)
     val dark = isDarkTheme(context, themeMode)
     val palette = resolveWidgetPalette(dark, state.bgColorHex, state.bgAlpha, state.textOption)
+    // Подписи чипов — сегодняшняя дата теми же паттернами, что рисует виджет.
+    val today = remember { java.util.Date() }
+    val dateNumericExample = remember {
+        java.text.SimpleDateFormat(
+            com.nimbus.weather.widget.WIDGET_DATE_PATTERN_NUMERIC,
+            java.util.Locale.getDefault()
+        ).format(today)
+    }
+    val dateTextExample = remember {
+        java.text.SimpleDateFormat(
+            com.nimbus.weather.widget.WIDGET_DATE_PATTERN_TEXT,
+            java.util.Locale.getDefault()
+        ).format(today)
+    }
 
     Scaffold(
         topBar = {
@@ -187,12 +200,12 @@ fun WidgetCustomizeScreen(
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 TextOptionChip(
-                    label = stringResource(R.string.widget_date_numeric),
+                    label = dateNumericExample,
                     selected = state.dateFormat == "numeric",
                     onClick = { viewModel.onDateFormatSelected("numeric") }
                 )
                 TextOptionChip(
-                    label = stringResource(R.string.widget_date_text),
+                    label = dateTextExample,
                     selected = state.dateFormat == "text",
                     onClick = { viewModel.onDateFormatSelected("text") }
                 )
@@ -324,11 +337,13 @@ private fun WidgetPreviewBox(
             if (min != null) append(" ↓${min}°")
         }
     } else "23° ↑28° ↓16°"
-    val dateText = if (dateFormat == "text") {
-        java.text.SimpleDateFormat("EEE, d MMM", java.util.Locale.getDefault())
-            .format(java.util.Date())
+    val datePattern = if (dateFormat == "text") {
+        com.nimbus.weather.widget.WIDGET_DATE_PATTERN_TEXT
     } else {
-        java.text.SimpleDateFormat("dd.MM", java.util.Locale.getDefault())
+        com.nimbus.weather.widget.WIDGET_DATE_PATTERN_NUMERIC
+    }
+    val dateText = remember(datePattern) {
+        java.text.SimpleDateFormat(datePattern, java.util.Locale.getDefault())
             .format(java.util.Date())
     }
     val scale = fontScale / 100f
@@ -357,7 +372,8 @@ private fun WidgetPreviewBox(
                         style = MaterialTheme.typography.displaySmall.copy(
                             fontSize = (30 * scale).sp
                         ),
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1
                     )
                     androidx.compose.foundation.Image(
                         painter = androidx.compose.ui.res.painterResource(iconRes),
@@ -383,6 +399,7 @@ private fun WidgetPreviewBox(
                             fontSize = (15 * scale).sp
                         ),
                         fontWeight = FontWeight.Medium,
+                        maxLines = 1,
                         modifier = Modifier.padding(start = 4.dp)
                     )
                 }
@@ -398,6 +415,7 @@ private fun WidgetPreviewBox(
                         fontSize = (30 * scale).sp
                     ),
                     fontWeight = FontWeight.Bold,
+                    maxLines = 1,
                     textAlign = androidx.compose.ui.text.style.TextAlign.End
                 )
                 Text(
@@ -407,6 +425,7 @@ private fun WidgetPreviewBox(
                         fontSize = (15 * scale).sp
                     ),
                     fontWeight = FontWeight.Medium,
+                    maxLines = 1,
                     textAlign = androidx.compose.ui.text.style.TextAlign.End
                 )
             }
