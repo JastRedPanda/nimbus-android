@@ -383,14 +383,14 @@ private fun WidgetPreviewBox(
                             .size((34 * scale).dp)
                     )
                 }
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(verticalAlignment = Alignment.Bottom) {
                     androidx.compose.foundation.Image(
                         painter = androidx.compose.ui.res.painterResource(
                             com.nimbus.weather.R.drawable.ic_widget_feels_like
                         ),
                         contentDescription = null,
                         colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(palette.text),
-                        modifier = Modifier.size((16 * scale).dp)
+                        modifier = Modifier.size((18 * scale).dp)
                     )
                     Text(
                         text = subText,
