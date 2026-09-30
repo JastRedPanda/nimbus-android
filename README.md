@@ -7,10 +7,10 @@ Free and open-source Android weather app. No ads, no trackers, no API keys.
 - Current weather, hourly strip and 7-day forecast: temperature, feels like, humidity, pressure, wind, UV index, precipitation, sunrise / sunset
 - Dynamic sky background following weather and time of day; frosted-glass cards tinted by the app theme with adaptive text
 - Hourly temperature sparkline scrolling together with the strip, colored from frost blue to heat red (frost threshold 0 °C)
-- Air quality index (AQI) with six components
-- City search with debounce, favourites and recent cities
+- Air quality index (AQI) with scale marker and PM2.5 / PM10 / O₃ readings (toggleable)
+- City search with debounce, favourites and search history (multilingual fallback with transliteration ranking)
 - Tablet-friendly layout on screens ≥ 600 dp
-- Home screen widget 1×4 (Glance): city time + date + temperature, 9 background colors + auto, transparency and text color settings
+- Home screen widget 2×4 (RemoteViews + TextClock, ticks without the app process): current temperature with weather icon and time, feels-like/min-max with date; 6 background colors + auto + custom color dialog (tone grid + HEX input), transparency, text color, date format and font size settings
 - Weather notifications (toggle)
 - Theme: system / light / dark
 - Background updates via WorkManager (2 / 12 / 24 h)
@@ -44,14 +44,13 @@ All data comes from [Open-Meteo](https://open-meteo.com): weather forecasts, geo
 - Jetpack Compose + Material 3
 - MVVM (ViewModel + Repository)
 - Retrofit + OkHttp + kotlinx.serialization
-- Glance (Android widgets)
 - WorkManager (background updates)
 - DataStore Preferences
 - Coroutines + Flow
 
 ## Widget
 
-Single 1×4 home screen widget: large city time on the left (with date, text or numeric format), temperature on the right. Customizable background (9 colors + auto, transparency slider) and text color (auto / black / white). Tap opens the app.
+Single 2×4 home screen widget (classic RemoteViews; time and date are drawn by the launcher via TextClock, so they tick even with the app process dead): top row — current temperature with weather icon and time, bottom row — feels-like/min-max with date. Adaptive font fits both width and height. Customizable background (6 colors + auto + custom color, transparency slider), text color (auto / black / white), date format and font size. Tap opens the app.
 
 ---
 
@@ -67,10 +66,10 @@ Single 1×4 home screen widget: large city time on the left (with date, text or 
 - Поточна погода, погодинний прогноз і прогноз на 7 днів: температура, відчуття, вологість, тиск, вітер, УФ-індекс, опади, схід / захід сонця
 - Динамічне небо, що підлаштовується під погоду й час доби; матове скло карток у тоні теми застосунку з адаптивним текстом
 - Спарклайн температури в погодинному прогнозі, що прокручується разом зі стрічкою, колір від морозно-синього до спекотно-червоного (поріг морозу 0 °C)
-- Індекс якості повітря (AQI) з шістьма компонентами
-- Пошук міст, обране та нещодавні міста
+- Індекс якості повітря (AQI) зі шкалою та показниками PM2.5 / PM10 / O₃ (вимикається)
+- Пошук міст, обране та історія пошуку (багатомовний пошук із транслітерацією)
 - Планшетне компонування на екранах ≥ 600 dp
-- Віджет на головному екрані 1×4 (Glance): час міста + дата + температура, 9 кольорів фону + авто, налаштування прозорості та кольору тексту
+- Віджет на головному екрані 2×4 (RemoteViews + TextClock, цокає без процесу застосунку): поточна температура зі значком погоди й час, відчуття/мін-макс із датою; 6 кольорів фону + авто + свій колір (сітка тонів + HEX-ввід), прозорість, колір тексту, формат дати та розмір шрифту
 - Сповіщення про погоду (увімкнення / вимкнення)
 - Тема: системна / світла / темна
 - Фонове оновлення через WorkManager (2 / 12 / 24 год)
@@ -104,13 +103,12 @@ gradlew.bat test
 - Jetpack Compose + Material 3
 - MVVM (ViewModel + Repository)
 - Retrofit + OkHttp + kotlinx.serialization
-- Glance (віджети Android)
 - WorkManager (фонові оновлення)
 - DataStore Preferences
 - Coroutines + Flow
 
 ## Віджет
 
-Один віджет 1×4 на головному екрані: великий час міста зліва (з датою, текстовим або числовим форматом), температура справа. Налаштовуються фон (9 кольорів + авто, слайдер прозорості) та колір тексту (авто / чорний / білий). Натискання відкриває застосунок.
+Один віджет 2×4 на головному екрані (класичні RemoteViews; час і дату малює лаунчер через TextClock, тож вони цокають навіть без процесу застосунку): верхній рядок — поточна температура зі значком погоди й час, нижній — відчуття/мін-макс із датою. Адаптивний шрифт під ширину й висоту. Налаштовуються фон (6 кольорів + авто + свій колір, слайдер прозорості), колір тексту (авто / чорний / білий), формат дати та розмір шрифту. Натискання відкриває застосунок.
 
 </details>

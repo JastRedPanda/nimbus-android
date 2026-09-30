@@ -14,7 +14,7 @@
 | Фон | WorkManager 2.10 |
 | Навигация | navigation-compose 2.8.5 (NavHost в MainActivity) |
 | Splash | core-splashscreen 1.0.1 |
-| Версии | minSdk 26, compileSdk/targetSdk 35, versionCode — автоинкремент (app/version.properties), versionName "1.1" (меняется вручную) |
+| Версии | minSdk 26, compileSdk/targetSdk 35, versionCode — автоинкремент (app/version.properties), versionName вручную по тегу релиза (сейчас 1.48) |
 
 ## Сеть (Open-Meteo)
 
@@ -95,8 +95,8 @@ ui/
 └── components/ CurrentWeatherCard.kt, DailyForecastCard.kt, HourlyForecastBar.kt (TempSparkline),
                 AqiCard.kt, WeatherIcon.kt, GlassCard.kt
 widget/         ClockTempWidget.kt (ClockTempWidgetReceiver : AppWidgetProvider),
-                WidgetRemoteViews.kt (сборка RemoteViews: температура, шрифты, фон, форматы),
-                WidgetPalette.kt, WidgetRender.kt (fitBaseSp — адаптивный шрифт)
+                WidgetRemoteViews.kt (сборка RemoteViews: погода, иконки-битмапы, шрифты, фон, форматы),
+                WidgetPalette.kt, WidgetRender.kt (fitBaseSp — фит по ширине + колпак по высоте)
 service/        WeatherUpdateWorker.kt (воркер + общий performWeatherRefresh + WeatherUpdateScheduler),
                 WeatherAlarm.kt (WeatherAlarmReceiver + WeatherAlarmScheduler — точный будильник),
                 NotificationHelper.kt, WidgetUpdateManager.kt, KeepAliveService.kt
@@ -109,7 +109,7 @@ util/           CityNameResolver.kt, CityNameTranslator.kt, LanguageHelper.kt,
 
 - `WeatherCache` — ответы API (погода + AQI + таймстемп) в JSON-файле в `cacheDir`
 - При ошибке сети `WeatherRepository` читает из кэша
-- TTL = 2 × интервал обновления (`setTtlHours` в `HomeViewModel.loadWeather`), при успешном обновлении кэш перезаписывается
+- TTL = 2 × интервал обновления (`setTtlHours` в `HomeViewModel.performLoad` и `WidgetUpdateManager.updateFromTargetCity`), при успешном обновлении кэш перезаписывается
 - Индикатор «показаны кэшированные данные» — AssistChip на главном экране (`showingCachedWeather`)
 
 ## Зависимости (app/build.gradle.kts)
