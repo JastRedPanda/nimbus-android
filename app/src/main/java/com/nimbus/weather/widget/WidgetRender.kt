@@ -4,7 +4,9 @@ import android.text.TextPaint
 
 private const val MIN_FONT_SP = 10f
 private const val MAX_FONT_SP = 400f
-private const val SUB_RATIO = 0.52f
+internal const val SUB_RATIO = 0.52f
+/** Высота строки однострочного текста с учётом выносов шрифта. */
+internal const val LINE_EM = 1.25f
 /** Высота иконки погоды от базового шрифта (битмап растится под шрифт). */
 internal const val ICON_RATIO = 1.5f
 /** Высота иконки «ощущается» от базового шрифта. */
@@ -12,6 +14,13 @@ internal const val FEELS_ICON_RATIO = 0.42f
 private const val GAP_EM = 0.4f
 /** Отступ между «ощущается» и «макс/мин» — заметно шире пробела внутри группы. */
 private const val SUB_GAP_EM = 0.9f
+
+/** Высота всего контента виджета в em базового шрифта. */
+internal fun widgetContentHeightEm(): Float {
+    val top = maxOf(LINE_EM, ICON_RATIO)
+    val bottom = maxOf(SUB_RATIO * LINE_EM, FEELS_ICON_RATIO)
+    return top + bottom
+}
 
 /** Паттерны даты виджета: ими же подписаны чипы в настройках. */
 internal const val WIDGET_DATE_PATTERN_TEXT = "EEE, d MMM"
