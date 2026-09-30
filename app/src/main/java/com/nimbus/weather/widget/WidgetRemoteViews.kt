@@ -29,7 +29,6 @@ import java.util.Locale
 private const val FALLBACK_WIDTH_DP = 250
 private const val FALLBACK_HEIGHT_DP = 110
 private const val CORNER_RADIUS_DP = 24
-private const val SUB_RATIO = 0.52f
 private const val TIME_PATTERN = "HH:mm"
 
 /**
@@ -109,7 +108,9 @@ suspend fun buildWidgetViews(context: Context, appWidgetId: Int): RemoteViews {
     val availPx = (widthDp * density - 24f * density).coerceAtLeast(10f)
     // Фит меряем только с системным масштабом: пользовательский применяется
     // после (иначе замер и итог взаимно гасятся и настройка ни на что не влияет).
-    val baseSp = fitBaseSp(
+    val userScale = fontScaleSetting / 100f
+    // Фит по ширине…
+    val widthFit = fitBaseSp(
         timeText = timeText,
         dateText = dateText,
         tempText = tempText,
@@ -120,7 +121,12 @@ suspend fun buildWidgetViews(context: Context, appWidgetId: Int): RemoteViews {
         multiplier = systemFontScale,
         columnGapPx = 24f * density
     )
-    val userScale = fontScaleSetting / 100f
+    // …и колпак по высоте, чтобы низ не обрезался в невысоких виджетах:
+    // контент масштабируется, а не вылезает за границу.
+    val availHeightPx = (heightDp * density - 24f * density).coerceAtLeast(1f)
+    val heightCap = availHeightPx /
+        (widgetContentHeightEm() * density * systemFontScale * userScale)
+    val baseSp = minOf(widthFit, heightCap).coerceAtLeast(4f)
 
     val textArgb = palette.text.toArgb()
     val views = RemoteViews(context.packageName, R.layout.widget_clock_temp)
