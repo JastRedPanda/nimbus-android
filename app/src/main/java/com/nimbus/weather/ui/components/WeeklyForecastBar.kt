@@ -1,6 +1,5 @@
 package com.nimbus.weather.ui.components
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,8 +14,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
@@ -25,8 +26,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.nimbus.weather.R
-import com.nimbus.weather.ui.theme.LocalGlassDark
-import com.nimbus.weather.ui.theme.skyTextColors
+import com.nimbus.weather.ui.theme.rememberSkyTextColors
 import com.nimbus.weather.util.TemperatureUnit
 import com.nimbus.weather.util.displayString
 import com.nimbus.weather.util.formatDayMonth
@@ -58,7 +58,7 @@ fun WeeklyForecastBar(
 ) {
     if (days.isEmpty()) return
     GlassCard(modifier = modifier) {
-        val t = skyTextColors(LocalGlassDark.current)
+        val t = rememberSkyTextColors()
         Column {
             Text(
                 text = stringResource(R.string.weekly_forecast),
@@ -78,7 +78,7 @@ fun WeeklyForecastBar(
 
 @Composable
 private fun WeeklyTopRow(days: List<DailyForecastData>, tempUnit: TemperatureUnit) {
-    val t = skyTextColors(LocalGlassDark.current)
+    val t = rememberSkyTextColors()
     Row(modifier = Modifier.fillMaxWidth()) {
         days.forEach { day ->
             val today = isToday(day.date)
@@ -117,7 +117,7 @@ private fun WeeklyTopRow(days: List<DailyForecastData>, tempUnit: TemperatureUni
 
 @Composable
 private fun WeeklyBottomRow(days: List<DailyForecastData>, tempUnit: TemperatureUnit) {
-    val t = skyTextColors(LocalGlassDark.current)
+    val t = rememberSkyTextColors()
     val windUnit = stringResource(R.string.wind_ms)
     Row(modifier = Modifier.fillMaxWidth()) {
         days.forEach { day ->
@@ -191,61 +191,75 @@ private fun WeeklyTempChart(
     modifier: Modifier = Modifier
 ) {
     if (days.size < 2) return
-    val ring = skyTextColors(LocalGlassDark.current).title
+    val ring = rememberSkyTextColors().title
     // Координаты — в выбранной единице, цвет — по цельсию:
     // порог «мороз/тепло» всегда 0 °C.
-    val maxValues = days.map { it.tempMax.toCelsiusOrFahrenheit(tempUnit) }
-    val minValues = days.map { it.tempMin.toCelsiusOrFahrenheit(tempUnit) }
-    val maxCelsius = days.map { it.tempMax }
-    val minCelsius = days.map { it.tempMin }
+    val maxValues = remember(days, tempUnit) { days.map { it.tempMax.toCelsiusOrFahrenheit(tempUnit) } }
+    val minValues = remember(days, tempUnit) { days.map { it.tempMin.toCelsiusOrFahrenheit(tempUnit) } }
+    val maxCelsius = remember(days) { days.map { it.tempMax } }
+    val minCelsius = remember(days) { days.map { it.tempMin } }
 
-    Canvas(
+    Spacer(
         modifier = modifier
             .fillMaxWidth()
             .height(ChartHeight)
-    ) {
-        val n = days.size
-        val h = size.height
-        val padTop = 5.dp.toPx()
-        val padBottom = 5.dp.toPx()
-        val bandGap = 8.dp.toPx()
-        val band = (h - padTop - padBottom - bandGap) / 2f
-        val topBand = padTop..(padTop + band)
-        val bottomBand = (h - padBottom - band)..(h - padBottom)
+            .drawWithCache {
+                val n = days.size
+                val h = size.height
+                val padTop = 5.dp.toPx()
+                val padBottom = 5.dp.toPx()
+                val bandGap = 8.dp.toPx()
+                val band = (h - padTop - padBottom - bandGap) / 2f
+                val topBand = padTop..(padTop + band)
+                val bottomBand = (h - padBottom - band)..(h - padBottom)
 
-        // Центр i-й колонки — точки строго под её метками.
-        fun x(i: Int): Float = (i + 0.5f) * size.width / n
+                // Центр i-й колонки — точки строго под её метками.
+                fun x(i: Int): Float = (i + 0.5f) * size.width / n
 
-        fun yIn(value: Double, lo: Double, hi: Double, range: ClosedFloatingPointRange<Float>): Float {
-            val span = hi - lo
-            // Разброс меньше градуса — плоская линия по центру полосы,
-            // без искусственного растягивания шума округления.
-            if (span < 1.0) return (range.start + range.endInclusive) / 2f
-            val f = ((value - lo) / span).toFloat()
-            return range.start + (1 - f) * (range.endInclusive - range.start)
-        }
+                fun yIn(
+                    value: Double,
+                    lo: Double,
+                    hi: Double,
+                    range: ClosedFloatingPointRange<Float>
+                ): Float {
+                    val span = hi - lo
+                    // Разброс меньше градуса — плоская линия по центру полосы,
+                    // без искусственного растягивания шума округления.
+                    if (span < 1.0) return (range.start + range.endInclusive) / 2f
+                    val f = ((value - lo) / span).toFloat()
+                    return range.start + (1 - f) * (range.endInclusive - range.start)
+                }
 
-        fun drawSeries(
-            values: List<Double>,
-            celsius: List<Double>,
-            range: ClosedFloatingPointRange<Float>,
-            colorFor: (Double) -> Color
-        ) {
-            val lo = values.minOrNull() ?: return
-            val hi = values.maxOrNull() ?: return
-            val pts = values.indices.map { Offset(x(it), yIn(values[it], lo, hi, range)) }
-            drawSparkline(
-                points = pts,
-                ringColor = ring,
-                strokeWidth = 2.dp.toPx(),
-                dotRadius = 2.5.dp.toPx(),
-                ringRadius = 4.dp.toPx(),
-                pointColor = { colorFor(celsius[it]) },
-                segmentColor = { colorFor((celsius[it] + celsius[it + 1]) / 2) }
-            )
-        }
+                fun buildSeries(
+                    values: List<Double>,
+                    celsius: List<Double>,
+                    range: ClosedFloatingPointRange<Float>,
+                    colorFor: (Double) -> Color
+                ): SparklineSeries? {
+                    val lo = values.minOrNull() ?: return null
+                    val hi = values.maxOrNull() ?: return null
+                    val pts = values.indices.map { Offset(x(it), yIn(values[it], lo, hi, range)) }
+                    return buildSparklineSeries(
+                        points = pts,
+                        pointColor = { colorFor(celsius[it]) },
+                        segmentColor = { colorFor((celsius[it] + celsius[it + 1]) / 2) }
+                    )
+                }
 
-        drawSeries(maxValues, maxCelsius, topBand, ::tempLineColor)
-        drawSeries(minValues, minCelsius, bottomBand, ::coldLineColor)
-    }
+                val topSeries = buildSeries(maxValues, maxCelsius, topBand, ::tempLineColor)
+                val bottomSeries = buildSeries(minValues, minCelsius, bottomBand, ::coldLineColor)
+                val strokeWidth = 2.dp.toPx()
+                val dotRadius = 2.5.dp.toPx()
+                val ringRadius = 4.dp.toPx()
+
+                onDrawBehind {
+                    topSeries?.let {
+                        drawSparkline(it, ring, strokeWidth, dotRadius, ringRadius)
+                    }
+                    bottomSeries?.let {
+                        drawSparkline(it, ring, strokeWidth, dotRadius, ringRadius)
+                    }
+                }
+            }
+    )
 }

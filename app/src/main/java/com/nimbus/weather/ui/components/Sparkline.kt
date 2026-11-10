@@ -40,35 +40,62 @@ internal fun smoothSegment(p0: Offset, p1: Offset, p2: Offset, p3: Offset): Path
     }
 
 /**
- * Ряд спарклайна: сглаженная линия по [points] и точки с кольцом-обводкой.
- * Цвет сегмента и точки задаёт вызывающий — почасовой красит по температуре,
- * недельный ведёт два ряда с разными палитрами.
+ * Готовая геометрия спарклайна: пути сегментов и точки с цветами.
+ * Собирается один раз на размер и данные, а не в каждом кадре прокрутки.
  */
-internal fun DrawScope.drawSparkline(
+internal class SparklineSeries(
+    val segments: List<Path>,
+    val segmentColors: List<Color>,
+    val points: List<Offset>,
+    val pointColors: List<Color>
+)
+
+/**
+ * Собирает геометрию ряда по [points]: сегменты сглаженной линии
+ * и точки с кольцом-обводкой. Цвет сегмента и точки задаёт вызывающий —
+ * почасовой красит по температуре, недельный ведёт два ряда
+ * с разными палитрами.
+ */
+internal fun buildSparklineSeries(
     points: List<Offset>,
-    ringColor: Color,
-    strokeWidth: Float,
-    dotRadius: Float,
-    ringRadius: Float,
     pointColor: (Int) -> Color,
     segmentColor: (Int) -> Color
-) {
-    if (points.size < 2) return
-    val stroke = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+): SparklineSeries {
+    if (points.size < 2) {
+        return SparklineSeries(emptyList(), emptyList(), emptyList(), emptyList())
+    }
+    val segments = ArrayList<Path>(points.size - 1)
+    val colors = ArrayList<Color>(points.size - 1)
     for (i in 0 until points.size - 1) {
         val p0 = points.getOrElse(i - 1) { points[i] }
         val p1 = points[i]
         val p2 = points[i + 1]
         val p3 = points.getOrElse(i + 2) { points[i + 1] }
-        drawPath(
-            path = smoothSegment(p0, p1, p2, p3),
-            color = segmentColor(i),
-            style = stroke
-        )
+        segments += smoothSegment(p0, p1, p2, p3)
+        colors += segmentColor(i)
     }
-    points.forEachIndexed { i, pt ->
+    val pointColors = points.indices.map(pointColor)
+    return SparklineSeries(segments, colors, points, pointColors)
+}
+
+/**
+ * Рисует заранее собранный ряд: только команды отрисовки, без аллокаций.
+ */
+internal fun DrawScope.drawSparkline(
+    series: SparklineSeries,
+    ringColor: Color,
+    strokeWidth: Float,
+    dotRadius: Float,
+    ringRadius: Float
+) {
+    if (series.points.size < 2) return
+    val stroke = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+    series.segments.forEachIndexed { i, path ->
+        drawPath(path = path, color = series.segmentColors[i], style = stroke)
+    }
+    series.points.forEachIndexed { i, pt ->
         drawCircle(ringColor, radius = ringRadius, center = pt)
-        drawCircle(pointColor(i), radius = dotRadius, center = pt)
+        drawCircle(series.pointColors[i], radius = dotRadius, center = pt)
     }
 }
 

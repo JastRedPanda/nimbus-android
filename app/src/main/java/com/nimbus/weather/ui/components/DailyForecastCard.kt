@@ -29,8 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.nimbus.weather.R
-import com.nimbus.weather.ui.theme.LocalGlassDark
-import com.nimbus.weather.ui.theme.skyTextColors
+import com.nimbus.weather.ui.theme.rememberSkyTextColors
 import com.nimbus.weather.util.TemperatureUnit
 import com.nimbus.weather.util.displayString
 import com.nimbus.weather.util.formatDayOfWeek
@@ -64,7 +63,7 @@ fun DailyForecastCard(
     modifier: Modifier = Modifier
 ) {
     GlassCard(modifier = modifier) {
-        val t = skyTextColors(LocalGlassDark.current)
+        val t = rememberSkyTextColors()
         Column(modifier = Modifier.padding(0.dp)) {
             val tmax = day.tempMax.toCelsiusOrFahrenheit(tempUnit).toInt()
             val tmin = day.tempMin.toCelsiusOrFahrenheit(tempUnit).toInt()
@@ -196,7 +195,7 @@ private fun DailyDetailItem(
         modifier = modifier.fillMaxWidth(),
         horizontalAlignment = align
     ) {
-        val t = skyTextColors(LocalGlassDark.current)
+        val t = rememberSkyTextColors()
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
                 imageVector = icon,

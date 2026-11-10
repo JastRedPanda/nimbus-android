@@ -63,9 +63,14 @@ import java.util.Locale
 class MainActivity : ComponentActivity() {
 
     override fun attachBaseContext(newBase: Context) {
+        // Быстрый путь — SharedPreferences-кэш языка, без DataStore.
+        // runBlocking остаётся только как разовая миграция для установок,
+        // где язык ещё не попал в кэш.
         val language = try {
-            runBlocking { SettingsDataStore(newBase).appLanguage.first() }
-        } catch (_: Exception) { "auto" }
+            LanguageHelper.readCachedLanguage(newBase)
+                ?: runBlocking { SettingsDataStore(newBase).appLanguage.first() }
+                    .also { LanguageHelper.writeCachedLanguage(newBase, it) }
+        } catch (_: Exception) { LanguageHelper.AUTO }
         val locale = LanguageHelper.resolveLocale(language)
         Locale.setDefault(locale)
         super.attachBaseContext(LanguageHelper.createContextWithLocale(newBase, locale))
@@ -80,6 +85,16 @@ class MainActivity : ComponentActivity() {
 
         lifecycleScope.launch(Dispatchers.IO) {
             val settings = SettingsDataStore(this@MainActivity)
+            // Если кэш языка пуст (обновление с версии без кэша),
+            // заполняем его из DataStore — attachBaseContext следующего
+            // старта обойдётся без runBlocking. Существующий кэш
+            // не трогаем: его пишет setAppLanguage.
+            if (LanguageHelper.readCachedLanguage(this@MainActivity) == null) {
+                LanguageHelper.writeCachedLanguage(
+                    this@MainActivity,
+                    settings.appLanguage.first()
+                )
+            }
             val interval = settings.updateIntervalHours.first()
             WeatherUpdateScheduler.schedule(this@MainActivity, interval)
             WeatherAlarmScheduler.schedule(this@MainActivity, interval)

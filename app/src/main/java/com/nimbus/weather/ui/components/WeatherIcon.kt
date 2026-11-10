@@ -12,9 +12,10 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
@@ -25,6 +26,17 @@ fun weatherCodePulse(code: Int): Boolean = when (code) {
     in 51..67, in 71..86, 95, 96, 99 -> true
     else -> false
 }
+
+/**
+ * Общая фаза пульсации иконок на экране.
+ *
+ * В почасовой ленте и недельном блоке одновременно живут десятки иконок.
+ * Своя [rememberInfiniteTransition] у каждой — это столько же независимых
+ * анимаций, каждая будит Choreographer. Провайдер задаёт одно значение
+ * на экран; чтение происходит в draw-фазе через `graphicsLayer`, поэтому
+ * рекомпозиции нет. Без провайдера иконка пульсирует своей анимацией.
+ */
+val LocalWeatherIconPulse = compositionLocalOf<State<Float>?> { null }
 
 @Composable
 fun WeatherIcon(
@@ -41,20 +53,30 @@ fun WeatherIcon(
         // Цветные векторы рисуются как есть, без tint.
         val iconModifier = modifier.size(size)
         if (weatherCodePulse(targetCode)) {
-            val transition = rememberInfiniteTransition(label = "weather_pulse")
-            val scale by transition.animateFloat(
-                initialValue = 1f,
-                targetValue = 1.12f,
-                animationSpec = infiniteRepeatable(tween(900), RepeatMode.Reverse),
-                label = "scale"
-            )
+            val shared = LocalWeatherIconPulse.current
+            // Значение читается внутри graphicsLayer, то есть в draw-фазе:
+            // общая анимация не вызывает рекомпозицию ни одной иконки.
+            val scale: () -> Float = if (shared != null) {
+                { shared.value }
+            } else {
+                val transition = rememberInfiniteTransition(label = "weather_pulse")
+                val own = transition.animateFloat(
+                    initialValue = 1f,
+                    targetValue = 1.12f,
+                    animationSpec = infiniteRepeatable(tween(900), RepeatMode.Reverse),
+                    label = "scale"
+                )
+                val fallback: () -> Float = { own.value }
+                fallback
+            }
             Image(
                 painter = painterResource(weatherIcon(targetCode, targetDay)),
                 contentDescription = null,
                 colorFilter = null,
                 modifier = iconModifier.graphicsLayer {
-                    scaleX = scale
-                    scaleY = scale
+                    val value = scale()
+                    scaleX = value
+                    scaleY = value
                 }
             )
         } else {

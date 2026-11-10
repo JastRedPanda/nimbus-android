@@ -22,6 +22,15 @@ internal fun widgetContentHeightEm(): Float {
     return top + bottom
 }
 
+/**
+ * Измерительный paint на поток: [fitBaseSp] вызывает measureText десятки раз
+ * за подбор, а TextPaint создавался на каждый вызов. ThreadLocal — чтобы
+ * не делить изменяемый textSize между потоками обновления виджета.
+ */
+private val measurePaint = object : ThreadLocal<TextPaint>() {
+    override fun initialValue(): TextPaint = TextPaint()
+}
+
 /** Паттерны даты виджета: ими же подписаны чипы в настройках. */
 internal const val WIDGET_DATE_PATTERN_TEXT = "EEE, d MMM"
 internal const val WIDGET_DATE_PATTERN_NUMERIC = "dd.MM"
@@ -48,7 +57,7 @@ internal fun fitBaseSp(
     multiplier: Float,
     columnGapPx: Float
 ): Float {
-    val paint = TextPaint()
+    val paint = measurePaint.get() ?: TextPaint()
 
     fun widthOf(text: String, ratio: Float, sp: Float): Float {
         paint.textSize = sp * ratio * density * multiplier

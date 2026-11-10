@@ -1,6 +1,8 @@
 package com.nimbus.weather.ui.theme
 
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 
@@ -44,6 +46,17 @@ fun skyTextColors(dark: Boolean): SkyTextColors = if (dark) {
         body = ink.copy(alpha = 0.85f),
         subtle = ink.copy(alpha = 0.60f)
     )
+}
+
+/**
+ * Цвета текста стеклянных карточек по текущему [LocalGlassDark].
+ * Кэшируются: без этого каждый лист карточки собирает свой data class
+ * на каждую рекомпозицию.
+ */
+@Composable
+fun rememberSkyTextColors(): SkyTextColors {
+    val dark = LocalGlassDark.current
+    return remember(dark) { skyTextColors(dark) }
 }
 
 /**

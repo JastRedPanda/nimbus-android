@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
@@ -35,24 +36,28 @@ fun GlassCard(
     content: @Composable BoxScope.() -> Unit
 ) {
     val glassDark = LocalGlassDark.current
-    val shape = RoundedCornerShape(cornerRadius)
+    val shape = remember(cornerRadius) { RoundedCornerShape(cornerRadius) }
 
-    val fill = if (!glassDark) {
-        Color.White.copy(alpha = 0.55f)
-    } else {
-        // Тёмная тема — стекло тонировано в чёрное, небо лишь просвечивает
-        Color.Black.copy(alpha = 0.45f)
+    val fill = remember(glassDark) {
+        if (!glassDark) {
+            Color.White.copy(alpha = 0.55f)
+        } else {
+            // Тёмная тема — стекло тонировано в чёрное, небо лишь просвечивает
+            Color.Black.copy(alpha = 0.45f)
+        }
     }
 
-    val borderBrush = Brush.verticalGradient(
-        colors = if (glassDark) listOf(
-            Color.White.copy(alpha = 0.35f),
-            Color.White.copy(alpha = 0.08f)
-        ) else listOf(
-            Color.White.copy(alpha = 0.70f),
-            Color.White.copy(alpha = 0.20f)
+    val borderBrush = remember(glassDark) {
+        Brush.verticalGradient(
+            colors = if (glassDark) listOf(
+                Color.White.copy(alpha = 0.35f),
+                Color.White.copy(alpha = 0.08f)
+            ) else listOf(
+                Color.White.copy(alpha = 0.70f),
+                Color.White.copy(alpha = 0.20f)
+            )
         )
-    )
+    }
 
     Box(
         modifier = modifier
