@@ -31,8 +31,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.nimbus.weather.R
 import com.nimbus.weather.data.model.CurrentWeather
-import com.nimbus.weather.ui.theme.LocalGlassDark
-import com.nimbus.weather.ui.theme.skyTextColors
+import com.nimbus.weather.ui.theme.rememberSkyTextColors
 import com.nimbus.weather.util.TemperatureUnit
 import com.nimbus.weather.util.displayString
 import com.nimbus.weather.util.formatTime
@@ -51,7 +50,7 @@ fun CurrentWeatherCard(
     modifier: Modifier = Modifier
 ) {
     GlassCard(modifier = modifier) {
-        val t = skyTextColors(LocalGlassDark.current)
+        val t = rememberSkyTextColors()
         Column {
             Text(
                 text = cityName,
@@ -174,7 +173,7 @@ private fun WeatherDetailItem(
     value: String,
     align: Alignment.Horizontal = Alignment.Start
 ) {
-    val t = skyTextColors(LocalGlassDark.current)
+    val t = rememberSkyTextColors()
     Column(horizontalAlignment = align) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(

@@ -25,8 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.nimbus.weather.R
 import com.nimbus.weather.data.model.AirQualityCurrent
-import com.nimbus.weather.ui.theme.LocalGlassDark
-import com.nimbus.weather.ui.theme.skyTextColors
+import com.nimbus.weather.ui.theme.rememberSkyTextColors
 
 @Composable
 fun AqiCard(
@@ -37,7 +36,7 @@ fun AqiCard(
     val color = aqiColor(aqiValue)
 
     GlassCard(modifier = modifier) {
-        val t = skyTextColors(LocalGlassDark.current)
+        val t = rememberSkyTextColors()
         Column {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -131,7 +130,7 @@ private fun AqiScaleBar(value: Int) {
 
 @Composable
 private fun AqiItem(label: String, value: String) {
-    val t = skyTextColors(LocalGlassDark.current)
+    val t = rememberSkyTextColors()
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             text = value,

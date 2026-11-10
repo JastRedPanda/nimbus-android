@@ -8,9 +8,32 @@ object LanguageHelper {
 
     const val AUTO = "auto"
 
+    private const val CACHE_PREFS = "language_cache"
+    private const val CACHE_KEY = "app_language"
+
     private val CYRILLIC_FALLBACK = setOf(
         "be", "bg", "kk", "mk", "mn", "sr", "tg", "ky", "os", "ba", "cv", "ce"
     )
+
+    /**
+     * Язык из SharedPreferences — синхронно и без DataStore.
+     * `null`, если кэша ещё нет (первый старт после обновления
+     * с версии, где язык жил только в DataStore).
+     *
+     * `attachBaseContext` вызывается до того, как в процессе появится
+     * хоть один scope, и читать DataStore там приходилось через
+     * `runBlocking`, то есть поднимать корутинный движок и парсить protobuf
+     * прямо на главном потоке холодного старта. Кэш пишется рядом
+     * с `SettingsDataStore.setAppLanguage`.
+     */
+    fun readCachedLanguage(context: Context): String? =
+        context.getSharedPreferences(CACHE_PREFS, Context.MODE_PRIVATE)
+            .getString(CACHE_KEY, null)
+
+    fun writeCachedLanguage(context: Context, language: String) {
+        context.getSharedPreferences(CACHE_PREFS, Context.MODE_PRIVATE)
+            .edit().putString(CACHE_KEY, language).commit()
+    }
 
     fun resolveLocale(systemLocale: Locale = Locale.getDefault()): Locale {
         return when (val lang = systemLocale.language) {

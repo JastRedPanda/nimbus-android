@@ -1,6 +1,7 @@
 package com.nimbus.weather.ui.home
 
 import android.app.Application
+import android.os.SystemClock
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.nimbus.weather.data.local.SettingsDataStore
@@ -18,11 +19,13 @@ import com.nimbus.weather.util.CityNameResolver
 import com.nimbus.weather.util.CityNameTranslator
 import com.nimbus.weather.util.LanguageHelper
 import com.nimbus.weather.util.TemperatureUnit
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 data class HomeUiState(
     val cityName: String = "",
@@ -55,59 +58,44 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val _state = MutableStateFlow(HomeUiState())
     val state: StateFlow<HomeUiState> = _state.asStateFlow()
 
+    /** Когда последний раз стартовали загрузку — для троттлинга ON_RESUME. */
+    private var lastLoadStartedAt = 0L
+
+    /** Загрузка уже идёт: второй параллельный запрос не нужен. */
+    private var loadInFlight = false
+
+    companion object {
+        /**
+         * Минимальный зазор между фоновыми перезагрузками главного экрана.
+         * Возврат из настроек/диалога дергает ON_RESUME, и без порога
+         * каждый такой возврат запускал сетевой запрос заново.
+         */
+        private const val MIN_RELOAD_INTERVAL_MS = 30_000L
+    }
+
     init {
+        // Одна подписка на DataStore вместо восьми: при любом изменении
+        // настроек Preferences парсится один раз, а не восемь.
         viewModelScope.launch {
-            settings.favouriteCities.collect { cities ->
-                _state.value = _state.value.copy(
-                    favouriteCities = cities,
-                    favouriteDisplayNames = buildDisplayNames(cities, _state.value.appLanguage)
+            settings.uiSettings.collect { prefs ->
+                val previous = _state.value
+                _state.value = previous.copy(
+                    favouriteCities = prefs.favouriteCities,
+                    favouriteDisplayNames = buildDisplayNames(prefs.favouriteCities, prefs.appLanguage),
+                    appLanguage = prefs.appLanguage,
+                    showAqi = prefs.showAqi,
+                    tempUnit = prefs.tempUnit,
+                    hourlyIntervalHours = prefs.hourlyIntervalHours,
+                    notificationsEnabled = prefs.notificationsEnabled,
+                    skyAnimationEnabled = prefs.skyAnimationEnabled,
+                    lastWeatherUpdateMillis = prefs.lastWeatherUpdateMillis
                 )
-            }
-        }
-        viewModelScope.launch {
-            settings.appLanguage.collect { lang ->
-                val previous = _state.value.appLanguage
-                _state.value = _state.value.copy(
-                    appLanguage = lang,
-                    favouriteDisplayNames = buildDisplayNames(_state.value.favouriteCities, lang)
-                )
-                if (previous != lang && _state.value.current != null) {
-                    loadWeather()
+                if (previous.appLanguage != prefs.appLanguage && previous.current != null) {
+                    loadWeather(force = true)
                 }
             }
         }
-        viewModelScope.launch {
-            settings.showAqi.collect { show ->
-                _state.value = _state.value.copy(showAqi = show)
-            }
-        }
-        viewModelScope.launch {
-            settings.tempUnit.collect { unit ->
-                _state.value = _state.value.copy(tempUnit = unit)
-            }
-        }
-        viewModelScope.launch {
-            settings.hourlyIntervalHours.collect { interval ->
-                val current = _state.value
-                _state.value = current.copy(hourlyIntervalHours = interval)
-            }
-        }
-        viewModelScope.launch {
-            settings.notificationsEnabled.collect { enabled ->
-                _state.value = _state.value.copy(notificationsEnabled = enabled)
-            }
-        }
-        viewModelScope.launch {
-            settings.skyAnimationEnabled.collect { enabled ->
-                _state.value = _state.value.copy(skyAnimationEnabled = enabled)
-            }
-        }
-        viewModelScope.launch {
-            settings.lastWeatherUpdateMillis.collect { millis ->
-                _state.value = _state.value.copy(lastWeatherUpdateMillis = millis)
-            }
-        }
-        loadWeather()
+        loadWeather(force = true)
         ensureCityTranslations()
     }
 
@@ -144,19 +132,39 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun loadWeather() {
+    fun loadWeather(force: Boolean = false) {
+        if (loadInFlight) return
+        val now = SystemClock.elapsedRealtime()
+        if (!force && now - lastLoadStartedAt < MIN_RELOAD_INTERVAL_MS) return
+        lastLoadStartedAt = now
+        loadInFlight = true
         viewModelScope.launch {
-            _state.value = _state.value.copy(loading = true, error = null)
-            performLoad()
+            // Спиннер — только когда показывать нечего. Возврат на экран
+            // с готовыми данными не должен подменять контент индикатором.
+            _state.value = _state.value.copy(
+                loading = _state.value.current == null,
+                error = null
+            )
+            try {
+                performLoad()
+            } finally {
+                loadInFlight = false
+            }
         }
     }
 
     fun refresh() {
-        if (_state.value.refreshing) return
+        if (_state.value.refreshing || loadInFlight) return
+        loadInFlight = true
+        lastLoadStartedAt = SystemClock.elapsedRealtime()
         viewModelScope.launch {
             _state.value = _state.value.copy(refreshing = true)
-            performLoad()
-            _state.value = _state.value.copy(refreshing = false)
+            try {
+                performLoad()
+            } finally {
+                loadInFlight = false
+                _state.value = _state.value.copy(refreshing = false)
+            }
         }
     }
 
@@ -166,10 +174,15 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             val ctx = getApplication<Application>()
             repository.setTtlHours(home.updateIntervalHours * 2)
             val response = repository.getWeather(home.lat, home.lon, ctx)
-            WidgetUpdateManager.updateAllWidgets(ctx, response, home.cityName)
 
-            if (home.notificationsEnabled) {
-                NotificationHelper.showWeatherNotification(ctx, response)
+            // Виджет и уведомление — файловый кэш, RemoteViews и binder-вызовы
+            // AppWidgetManager. На главном потоке они давали заметный провал
+            // в кадрах сразу после загрузки погоды.
+            withContext(Dispatchers.Default) {
+                WidgetUpdateManager.updateAllWidgets(ctx, response, home.cityName)
+                if (home.notificationsEnabled) {
+                    NotificationHelper.showWeatherNotification(ctx, response)
+                }
             }
 
             val aqi = if (home.showAqi) {
@@ -204,7 +217,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     fun switchToCity(city: FavouriteCity) {
         viewModelScope.launch {
             settings.setLocation(city.name, city.lat, city.lon, city.tz, city.localNames)
-            loadWeather()
+            loadWeather(force = true)
         }
     }
 

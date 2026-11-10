@@ -1,6 +1,5 @@
 package com.nimbus.weather.ui.components
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,8 +18,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
@@ -28,8 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.nimbus.weather.R
-import com.nimbus.weather.ui.theme.LocalGlassDark
-import com.nimbus.weather.ui.theme.skyTextColors
+import com.nimbus.weather.ui.theme.rememberSkyTextColors
 import com.nimbus.weather.util.TemperatureUnit
 import com.nimbus.weather.util.displayString
 import com.nimbus.weather.util.formatHour
@@ -73,7 +73,7 @@ fun HourlyForecastBar(
     modifier: Modifier = Modifier
 ) {
     GlassCard(modifier = modifier) {
-        val t = skyTextColors(LocalGlassDark.current)
+        val t = rememberSkyTextColors()
         Column {
             Text(
                 text = stringResource(R.string.hourly_forecast),
@@ -101,7 +101,7 @@ private fun HourlyTopRow(
     sunrise: String,
     sunset: String
 ) {
-    val t = skyTextColors(LocalGlassDark.current)
+    val t = rememberSkyTextColors()
     Row(horizontalArrangement = Arrangement.spacedBy(HourlyChipGap)) {
         hourly.forEach { h ->
             Column(
@@ -129,7 +129,7 @@ private fun HourlyBottomRow(
     hourly: List<HourlyForecastData>,
     tempUnit: TemperatureUnit
 ) {
-    val t = skyTextColors(LocalGlassDark.current)
+    val t = rememberSkyTextColors()
     val windUnit = stringResource(R.string.wind_ms)
     Row(horizontalArrangement = Arrangement.spacedBy(HourlyChipGap)) {
         hourly.forEach { h ->
@@ -217,42 +217,47 @@ private fun TempSparkline(
     modifier: Modifier = Modifier
 ) {
     if (hourly.size < 2) return
-    val ring = skyTextColors(LocalGlassDark.current).title
-    val temps = hourly.map { it.temperature.toCelsiusOrFahrenheit(tempUnit) }
+    val ring = rememberSkyTextColors().title
+    val temps = remember(hourly, tempUnit) {
+        hourly.map { it.temperature.toCelsiusOrFahrenheit(tempUnit) }
+    }
     // Цельсии для цвета: порог мороза — 0°C при любой единице отображения
-    val tempsC = hourly.map { it.temperature }
+    val tempsC = remember(hourly) { hourly.map { it.temperature } }
     val min = temps.minOrNull() ?: return
     val max = temps.maxOrNull() ?: return
+    val chartWidth = HourlyChipWidth * hourly.size + HourlyChipGap * (hourly.size - 1)
 
-    Canvas(
+    Spacer(
         modifier = modifier
-            .width(HourlyChipWidth * hourly.size + HourlyChipGap * (hourly.size - 1))
+            .width(chartWidth)
             .height(ChartHeight)
-    ) {
-        val h = size.height
-        val chipW = HourlyChipWidth.toPx()
-        val gap = HourlyChipGap.toPx()
-        val padTop = 5.dp.toPx()
-        val padBottom = 5.dp.toPx()
-        // Центр i-й колонки — точка строго под её меткой времени
-        fun x(i: Int) = i * (chipW + gap) + chipW / 2f
-        fun y(v: Double): Float {
-            if (max == min) return h / 2f
-            val f = ((v - min) / (max - min)).toFloat()
-            return padTop + (1 - f) * (h - padTop - padBottom)
-        }
-        val pts = temps.indices.map { Offset(x(it), y(temps[it])) }
-
-        drawSparkline(
-            points = pts,
-            ringColor = ring,
-            strokeWidth = 2.dp.toPx(),
-            dotRadius = 2.5.dp.toPx(),
-            ringRadius = 4.dp.toPx(),
-            pointColor = { tempLineColor(tempsC[it]) },
-            // Сегмент красится по средней температуре концов —
-            // переход через ноль виден по смене цвета
-            segmentColor = { tempLineColor((tempsC[it] + tempsC[it + 1]) / 2) }
-        )
-    }
+            .drawWithCache {
+                val h = size.height
+                val chipW = HourlyChipWidth.toPx()
+                val gap = HourlyChipGap.toPx()
+                val padTop = 5.dp.toPx()
+                val padBottom = 5.dp.toPx()
+                // Центр i-й колонки — точка строго под её меткой времени
+                fun x(i: Int) = i * (chipW + gap) + chipW / 2f
+                fun y(v: Double): Float {
+                    if (max == min) return h / 2f
+                    val f = ((v - min) / (max - min)).toFloat()
+                    return padTop + (1 - f) * (h - padTop - padBottom)
+                }
+                val pts = temps.indices.map { Offset(x(it), y(temps[it])) }
+                val series = buildSparklineSeries(
+                    points = pts,
+                    pointColor = { tempLineColor(tempsC[it]) },
+                    // Сегмент красится по средней температуре концов —
+                    // переход через ноль виден по смене цвета
+                    segmentColor = { tempLineColor((tempsC[it] + tempsC[it + 1]) / 2) }
+                )
+                val strokeWidth = 2.dp.toPx()
+                val dotRadius = 2.5.dp.toPx()
+                val ringRadius = 4.dp.toPx()
+                onDrawBehind {
+                    drawSparkline(series, ring, strokeWidth, dotRadius, ringRadius)
+                }
+            }
+    )
 }

@@ -197,6 +197,7 @@ class SettingsDataStore(private val context: Context) {
         context.dataStore.edit { prefs ->
             prefs.clear()
         }
+        LanguageHelper.writeCachedLanguage(context, LanguageHelper.AUTO)
     }
 
     suspend fun setThemeMode(mode: ThemeMode) {
@@ -215,6 +216,8 @@ class SettingsDataStore(private val context: Context) {
         context.dataStore.edit { prefs ->
             prefs[KEY_APP_LANGUAGE] = language
         }
+        // Дубликат для attachBaseContext: DataStore там недоступен без runBlocking.
+        LanguageHelper.writeCachedLanguage(context, language)
     }
 
     suspend fun setWidgetBgColor(colorHex: String?) {
@@ -363,6 +366,35 @@ class SettingsDataStore(private val context: Context) {
             notificationsEnabled = prefs[KEY_NOTIFICATIONS_ENABLED] ?: true,
             appLanguage = prefs[KEY_APP_LANGUAGE] ?: LanguageHelper.AUTO,
             showAqi = prefs[KEY_SHOW_AQI] ?: true
+        )
+    }
+
+    /**
+     * Настройки, которые читает главный экран. Собираются из одного снимка
+     * Preferences: восемь отдельных `.map {}` заставляли DataStore парсить
+     * файл восемь раз на каждое изменение.
+     */
+    data class UiSettings(
+        val favouriteCities: List<FavouriteCity> = emptyList(),
+        val appLanguage: String = LanguageHelper.AUTO,
+        val showAqi: Boolean = true,
+        val tempUnit: TemperatureUnit = TemperatureUnit.CELSIUS,
+        val hourlyIntervalHours: Int = DEFAULT_HOURLY_INTERVAL_HOURS,
+        val notificationsEnabled: Boolean = true,
+        val skyAnimationEnabled: Boolean = true,
+        val lastWeatherUpdateMillis: Long = 0L
+    )
+
+    val uiSettings: Flow<UiSettings> = context.dataStore.data.map { prefs ->
+        UiSettings(
+            favouriteCities = prefs.cities(KEY_FAVOURITE_CITIES),
+            appLanguage = prefs[KEY_APP_LANGUAGE] ?: LanguageHelper.AUTO,
+            showAqi = prefs[KEY_SHOW_AQI] ?: true,
+            tempUnit = decode(prefs[KEY_TEMP_UNIT], TemperatureUnit.CELSIUS),
+            hourlyIntervalHours = prefs[KEY_HOURLY_INTERVAL_HOURS] ?: DEFAULT_HOURLY_INTERVAL_HOURS,
+            notificationsEnabled = prefs[KEY_NOTIFICATIONS_ENABLED] ?: true,
+            skyAnimationEnabled = prefs[KEY_SKY_ANIMATION_ENABLED] ?: true,
+            lastWeatherUpdateMillis = prefs[KEY_LAST_WEATHER_UPDATE] ?: 0L
         )
     }
 
