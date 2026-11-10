@@ -65,6 +65,7 @@ import com.nimbus.weather.ui.components.AqiCard
 import com.nimbus.weather.ui.components.CurrentWeatherCard
 import com.nimbus.weather.ui.components.DailyForecastCard
 import com.nimbus.weather.ui.components.HourlyForecastBar
+import com.nimbus.weather.ui.components.WeeklyForecastBar
 import com.nimbus.weather.ui.theme.AnimatedSky
 import com.nimbus.weather.ui.theme.GlassRainOverlay
 import com.nimbus.weather.ui.theme.LocalGlassDark
@@ -308,6 +309,13 @@ private fun TabletLayout(
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
+                if (state.daily.isNotEmpty()) {
+                    WeeklyForecastBar(
+                        days = state.daily,
+                        tempUnit = state.tempUnit,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
                 if (aqi != null) {
                     AqiCard(aqi = aqi, modifier = Modifier.fillMaxWidth())
                 }
@@ -373,6 +381,15 @@ private fun PhoneLayout(
                     tempUnit = state.tempUnit,
                     sunrise = state.sunrise,
                     sunset = state.sunset,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
+        if (state.daily.isNotEmpty()) {
+            item {
+                WeeklyForecastBar(
+                    days = state.daily,
+                    tempUnit = state.tempUnit,
                     modifier = Modifier.fillMaxWidth()
                 )
             }

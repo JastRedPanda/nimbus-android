@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
@@ -53,20 +52,20 @@ fun CurrentWeatherCard(
 ) {
     GlassCard(modifier = modifier) {
         val t = skyTextColors(LocalGlassDark.current)
-        Column(modifier = Modifier.padding(4.dp)) {
+        Column {
             Text(
                 text = cityName,
                 style = MaterialTheme.typography.titleLarge,
                 color = t.title
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(2.dp))
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 WeatherIcon(
                     code = current.weatherCode,
                     isDay = isDay,
-                    size = 112.dp
+                    size = 88.dp
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 val animatedTemp by animateIntAsState(
@@ -87,7 +86,7 @@ fun CurrentWeatherCard(
                 )
             }
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(2.dp))
 
             Text(
                 text = "${stringResource(R.string.feels_like)} ${current.apparentTemperature.toCelsiusOrFahrenheit(tempUnit).toInt()}${tempUnit.displayString()}",
@@ -95,7 +94,7 @@ fun CurrentWeatherCard(
                 color = t.subtle
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -122,7 +121,7 @@ fun CurrentWeatherCard(
                 )
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -143,7 +142,7 @@ fun CurrentWeatherCard(
                 )
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),

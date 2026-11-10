@@ -13,7 +13,7 @@
     <string name="sunrise">Sunrise</string>
     <string name="sunset">Sunset</string>
     <string name="today">Today</string>
-    <string name="forecast_7_days">7-day forecast</string>
+    <string name="forecast_7_days">Detailed weekly forecast</string>
     <string name="loading">Loading…</string>
     <string name="error_loading">Failed to load data</string>
     <string name="retry">Retry</string>
@@ -49,6 +49,7 @@
     <string name="exact_alarm_allow">Allow</string>
     <string name="sky_animation">Animated background</string>
     <string name="hourly_forecast">Hourly forecast</string>
+    <string name="weekly_forecast">Weekly forecast</string>
     <string name="hourly_interval">Hourly forecast interval</string>
     <string name="hourly_interval_1h">Every 1 hour</string>
     <string name="hourly_interval_3h">Every 3 hours</string>

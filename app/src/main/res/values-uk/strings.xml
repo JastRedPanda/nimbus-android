@@ -13,7 +13,7 @@
     <string name="sunrise">Схід</string>
     <string name="sunset">Захід</string>
     <string name="today">Сьогодні</string>
-    <string name="forecast_7_days">Прогноз на 7 днів</string>
+    <string name="forecast_7_days">Детальний прогноз на тиждень</string>
     <string name="loading">Завантаження…</string>
     <string name="error_loading">Помилка завантаження даних</string>
     <string name="retry">Повторити</string>
@@ -49,6 +49,7 @@
     <string name="exact_alarm_allow">Дозволити</string>
     <string name="sky_animation">Анімація фону</string>
     <string name="hourly_forecast">Погодинний прогноз</string>
+    <string name="weekly_forecast">Прогноз на тиждень</string>
     <string name="hourly_interval">Інтервал погодинного прогнозу</string>
     <string name="hourly_interval_1h">Кожну годину</string>
     <string name="hourly_interval_3h">Кожні 3 години</string>

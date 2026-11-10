@@ -13,7 +13,7 @@
     <string name="sunrise">Východ</string>
     <string name="sunset">Západ</string>
     <string name="today">Dnes</string>
-    <string name="forecast_7_days">7denní předpověď</string>
+    <string name="forecast_7_days">Podrobná týdenní předpověď</string>
     <string name="loading">Načítání…</string>
     <string name="error_loading">Nepodařilo se načíst data</string>
     <string name="retry">Zkusit znovu</string>
@@ -43,6 +43,7 @@
     <string name="exact_alarm_allow">Povolit</string>
     <string name="sky_animation">Animované pozadí</string>
     <string name="hourly_forecast">Hodinová předpověď</string>
+    <string name="weekly_forecast">Týdenní předpověď</string>
     <string name="hourly_interval">Interval hodinové předpovědi</string>
     <string name="hourly_interval_1h">Každou hodinu</string>
     <string name="hourly_interval_3h">Každé 3 hodiny</string>
