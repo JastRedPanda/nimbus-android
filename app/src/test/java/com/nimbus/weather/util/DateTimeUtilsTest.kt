@@ -2,6 +2,7 @@ package com.nimbus.weather.util
 
 import java.time.LocalDate
 import java.time.LocalTime
+import java.util.Locale
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -22,6 +23,32 @@ class DateTimeUtilsTest {
     @Test
     fun `formatTime falls back to last 5 chars on error`() {
         assertEquals("23:59", formatTime("23:59"))
+    }
+
+    @Test
+    fun `formatDayMonth renders day and month without leading zeros`() {
+        assertEquals("29/4", formatDayMonth("2026-04-29"))
+    }
+
+    @Test
+    fun `formatDayMonth returns empty on bad input`() {
+        assertEquals("", formatDayMonth("not-a-date"))
+    }
+
+    @Test
+    fun `formatDayOfWeekShort capitalizes short name`() {
+        val previous = Locale.getDefault()
+        try {
+            Locale.setDefault(Locale("ru"))
+            assertEquals("Ср", formatDayOfWeekShort("2026-04-29"))
+        } finally {
+            Locale.setDefault(previous)
+        }
+    }
+
+    @Test
+    fun `formatDayOfWeekShort returns empty on bad input`() {
+        assertEquals("", formatDayOfWeekShort("not-a-date"))
     }
 
     @Test

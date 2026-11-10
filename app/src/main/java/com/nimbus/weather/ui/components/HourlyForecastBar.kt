@@ -1,44 +1,41 @@
 package com.nimbus.weather.ui.components
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Opacity
+import androidx.compose.material.icons.filled.WaterDrop
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.nimbus.weather.R
 import com.nimbus.weather.ui.theme.LocalGlassDark
 import com.nimbus.weather.ui.theme.skyTextColors
 import com.nimbus.weather.util.TemperatureUnit
 import com.nimbus.weather.util.displayString
-import com.nimbus.weather.util.isDayNow
 import com.nimbus.weather.util.formatHour
+import com.nimbus.weather.util.isDayNow
 import com.nimbus.weather.util.toCelsiusOrFahrenheit
+import com.nimbus.weather.util.windDirection
 
 data class HourlyForecastData(
     val time: String,
@@ -52,10 +49,21 @@ data class HourlyForecastData(
     val uvIndex: Double
 )
 
-/** Ширина чипа часа и зазор — общие для ленты и спарклайна, чтобы точки легли под метки. */
+/** Ширина колонки часа и зазор — общие для ленты и спарклайна, чтобы точки легли под метки. */
 private val HourlyChipWidth = 56.dp
 private val HourlyChipGap = 8.dp
 
+/** Высота графика: одна линия, поэтому ниже, чем двухполосный недельный. */
+private val ChartHeight = 34.dp
+
+/**
+ * Почасовой прогноз в том же языке, что и недельный обзор:
+ * прозрачные колонки без капсул, метаданные сверху, спарклайн
+ * посередине, значение под ним.
+ *
+ * Лента и график живут в одном горизонтальном скролле — точки
+ * едут вместе с метками времени и всегда стоят под ними.
+ */
 @Composable
 fun HourlyForecastBar(
     hourly: List<HourlyForecastData>,
@@ -74,20 +82,131 @@ fun HourlyForecastBar(
                 color = t.title
             )
             Spacer(modifier = Modifier.height(8.dp))
-            // Линия и чипы в одном горизонтальном скролле:
-            // точки строго под метками времени, едут вместе
             Box(modifier = Modifier.horizontalScroll(rememberScrollState())) {
                 Column {
+                    HourlyTopRow(hourly = hourly, sunrise = sunrise, sunset = sunset)
+                    Spacer(modifier = Modifier.height(4.dp))
                     TempSparkline(hourly = hourly, tempUnit = tempUnit)
                     Spacer(modifier = Modifier.height(4.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(HourlyChipGap)) {
-                        hourly.forEach { h ->
-                            HourlyColumn(h, tempUnit, isDayNow(h.time, sunrise, sunset))
-                        }
-                    }
+                    HourlyBottomRow(hourly = hourly, tempUnit = tempUnit)
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun HourlyTopRow(
+    hourly: List<HourlyForecastData>,
+    sunrise: String,
+    sunset: String
+) {
+    val t = skyTextColors(LocalGlassDark.current)
+    Row(horizontalArrangement = Arrangement.spacedBy(HourlyChipGap)) {
+        hourly.forEach { h ->
+            Column(
+                modifier = Modifier.width(HourlyChipWidth),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = formatHour(h.time),
+                    style = ChipLabelText,
+                    color = t.subtle
+                )
+                WeatherIcon(
+                    code = h.weatherCode,
+                    isDay = isDayNow(h.time, sunrise, sunset),
+                    size = 22.dp
+                )
+                PrecipitationLabel(precipitation = h.precipitation)
+            }
+        }
+    }
+}
+
+@Composable
+private fun HourlyBottomRow(
+    hourly: List<HourlyForecastData>,
+    tempUnit: TemperatureUnit
+) {
+    val t = skyTextColors(LocalGlassDark.current)
+    val windUnit = stringResource(R.string.wind_ms)
+    Row(horizontalArrangement = Arrangement.spacedBy(HourlyChipGap)) {
+        hourly.forEach { h ->
+            Column(
+                modifier = Modifier.width(HourlyChipWidth),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "${h.temperature.toCelsiusOrFahrenheit(tempUnit).toInt()}${tempUnit.displayString()}",
+                    style = ChipValueText,
+                    fontWeight = FontWeight.SemiBold,
+                    color = t.title,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                // Колонка часа шире недельной, поэтому скорость и направление
+                // помещаются в одну строку без обрезки по краям.
+                Text(
+                    text = "${h.windSpeed.toInt()} $windUnit ${windDirection(h.windDirection)}",
+                    style = ChipMetaText,
+                    color = t.subtle,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    softWrap = false,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                HumidityLabel(humidity = h.humidity)
+            }
+        }
+    }
+}
+
+@Composable
+private fun HumidityLabel(humidity: Double) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.height(12.dp),
+        horizontalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            imageVector = Icons.Default.Opacity,
+            contentDescription = null,
+            tint = Color(0xFF4FC3F7),
+            modifier = Modifier.size(9.dp)
+        )
+        Spacer(modifier = Modifier.width(2.dp))
+        Text(
+            text = "${humidity.toInt()}%",
+            style = ChipMetaText,
+            color = Color(0xFF4FC3F7)
+        )
+    }
+}
+
+@Composable
+private fun PrecipitationLabel(precipitation: Double) {
+    // Без капсул резерв под пустую строку не нужен: колонки выровнены
+    // по верху, а график и температура живут в отдельных рядах.
+    if (precipitation <= 0) return
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.height(12.dp),
+        horizontalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            imageVector = Icons.Default.WaterDrop,
+            contentDescription = null,
+            tint = Color(0xFF64B5F6),
+            modifier = Modifier.size(9.dp)
+        )
+        Spacer(modifier = Modifier.width(2.dp))
+        Text(
+            text = "${precipitation.toInt()} mm",
+            style = ChipMetaText,
+            color = Color(0xFF64B5F6)
+        )
     }
 }
 
@@ -108,15 +227,14 @@ private fun TempSparkline(
     Canvas(
         modifier = modifier
             .width(HourlyChipWidth * hourly.size + HourlyChipGap * (hourly.size - 1))
-            .height(56.dp)
+            .height(ChartHeight)
     ) {
         val h = size.height
         val chipW = HourlyChipWidth.toPx()
         val gap = HourlyChipGap.toPx()
-        val padTop = 8.dp.toPx()
-        val padBottom = 8.dp.toPx()
-        val n = temps.size
-        // Центр i-го чипа — точка строго под его меткой времени
+        val padTop = 5.dp.toPx()
+        val padBottom = 5.dp.toPx()
+        // Центр i-й колонки — точка строго под её меткой времени
         fun x(i: Int) = i * (chipW + gap) + chipW / 2f
         fun y(v: Double): Float {
             if (max == min) return h / 2f
@@ -124,121 +242,17 @@ private fun TempSparkline(
             return padTop + (1 - f) * (h - padTop - padBottom)
         }
         val pts = temps.indices.map { Offset(x(it), y(temps[it])) }
-        val stroke = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round)
-        val guideWidth = 1.dp.toPx()
-        val dotR = 3.dp.toPx()
-        val ringR = 4.5.dp.toPx()
 
-        // Направляющие от точек вниз к чипам — визуальная связка линии с колонками
-        pts.forEachIndexed { i, pt ->
-            drawLine(
-                color = tempLineColor(tempsC[i]).copy(alpha = 0.30f),
-                start = Offset(pt.x, pt.y),
-                end = Offset(pt.x, h),
-                strokeWidth = guideWidth
-            )
-        }
-
-        // Каждый сегмент сплайна красится по средней температуре
-        // его концов — переход через ноль виден по смене цвета
-        for (i in 0 until n - 1) {
-            val p0 = pts.getOrElse(i - 1) { pts[i] }
-            val p1 = pts[i]
-            val p2 = pts[i + 1]
-            val p3 = pts.getOrElse(i + 2) { pts[i + 1] }
-            val seg = Path().apply {
-                moveTo(p1.x, p1.y)
-                cubicTo(
-                    p1.x + (p2.x - p0.x) / 6f, p1.y + (p2.y - p0.y) / 6f,
-                    p2.x - (p3.x - p1.x) / 6f, p2.y - (p3.y - p1.y) / 6f,
-                    p2.x, p2.y
-                )
-            }
-            val segColor = tempLineColor((tempsC[i] + tempsC[i + 1]) / 2)
-            val segFill = Path().apply {
-                addPath(seg)
-                lineTo(p2.x, h)
-                lineTo(p1.x, h)
-                close()
-            }
-            drawPath(
-                path = segFill,
-                brush = Brush.verticalGradient(
-                    listOf(segColor.copy(alpha = 0.35f), Color.Transparent)
-                )
-            )
-            drawPath(path = seg, color = segColor, style = stroke)
-        }
-        pts.forEachIndexed { i, pt ->
-            val dotColor = tempLineColor(tempsC[i])
-            drawCircle(ring, radius = ringR, center = pt)
-            drawCircle(dotColor, radius = dotR, center = pt)
-        }
-    }
-}
-
-/**
- * Цвет линии по температуре: ноль и ниже — синий (мороз),
- * выше нуля — оранжево-красный (тепло). Чем дальше от нуля,
- * тем насыщеннее. Порог — 0°C при любой единице отображения.
- */
-private fun tempLineColor(celsius: Double): Color {
-    return if (celsius <= 0) {
-        val f = ((-celsius) / 20.0).coerceIn(0.0, 1.0).toFloat()
-        lerp(Color(0xFF8FCBFF), Color(0xFF1565C0), f)
-    } else {
-        val f = (celsius / 30.0).coerceIn(0.0, 1.0).toFloat()
-        lerp(Color(0xFFFFB74D), Color(0xFFD32F2F), f)
-    }
-}
-
-@Composable
-private fun HourlyColumn(
-    h: HourlyForecastData,
-    tempUnit: TemperatureUnit,
-    isDay: Boolean = true
-) {
-    val isDark = LocalGlassDark.current
-    val t = skyTextColors(isDark)
-    val chipShape = RoundedCornerShape(12.dp)
-    val chipBg = if (isDark) Color.White.copy(alpha = 0.08f) else Color.White.copy(alpha = 0.40f)
-    val chipBorder = Brush.verticalGradient(
-        if (isDark) listOf(Color.White.copy(alpha = 0.20f), Color.White.copy(alpha = 0.05f))
-        else listOf(Color.White.copy(alpha = 0.50f), Color.White.copy(alpha = 0.15f))
-    )
-
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .width(HourlyChipWidth)
-            .clip(chipShape)
-            .background(chipBg)
-            .border(width = 0.5.dp, brush = chipBorder, shape = chipShape)
-            .padding(vertical = 6.dp)
-    ) {
-        Text(
-            text = formatHour(h.time),
-            style = MaterialTheme.typography.labelSmall,
-            color = t.subtle
+        drawSparkline(
+            points = pts,
+            ringColor = ring,
+            strokeWidth = 2.dp.toPx(),
+            dotRadius = 2.5.dp.toPx(),
+            ringRadius = 4.dp.toPx(),
+            pointColor = { tempLineColor(tempsC[it]) },
+            // Сегмент красится по средней температуре концов —
+            // переход через ноль виден по смене цвета
+            segmentColor = { tempLineColor((tempsC[it] + tempsC[it + 1]) / 2) }
         )
-        WeatherIcon(code = h.weatherCode, isDay = isDay, size = 32.dp)
-        Text(
-            text = "${h.temperature.toCelsiusOrFahrenheit(tempUnit).toInt()}${tempUnit.displayString()}",
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.SemiBold,
-            color = t.title
-        )
-        if (h.precipitation > 0) {
-            Text(
-                text = "${h.precipitation.toInt()} mm",
-                style = MaterialTheme.typography.labelSmall,
-                color = Color(0xFF64B5F6)
-            )
-        } else {
-            Text(
-                text = "",
-                modifier = Modifier.height(12.dp)
-            )
-        }
     }
 }

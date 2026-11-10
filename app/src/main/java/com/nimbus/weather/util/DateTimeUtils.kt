@@ -8,6 +8,7 @@ import java.util.Locale
 import java.util.TimeZone
 
 private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+private val dayMonthFormatter = DateTimeFormatter.ofPattern("d/M")
 
 private val validTimeZoneIds: Set<String> = TimeZone.getAvailableIDs().toHashSet()
 
@@ -34,6 +35,33 @@ fun formatDayOfWeek(dateStr: String): String {
         date.dayOfWeek
             .getDisplayName(TextStyle.FULL, locale)
             .replaceFirstChar { if (it.isLowerCase()) it.titlecase(locale) else it.toString() }
+    } catch (_: Exception) {
+        ""
+    }
+}
+
+/**
+ * Короткое название дня недели для узких колонок недельного блока
+ * («Ср», «Wed», «Út»). Точка после сокращения срезается — в русском
+ * и чешском TextStyle.SHORT её добавляет.
+ */
+fun formatDayOfWeekShort(dateStr: String): String {
+    return try {
+        val date = LocalDate.parse(dateStr)
+        val locale = Locale.forLanguageTag(LanguageHelper.getLocaleTag())
+        date.dayOfWeek
+            .getDisplayName(TextStyle.SHORT, locale)
+            .replaceFirstChar { if (it.isLowerCase()) it.titlecase(locale) else it.toString() }
+            .trimEnd('.')
+    } catch (_: Exception) {
+        ""
+    }
+}
+
+/** Дата для колонки недельного блока: «29/4» без ведущих нулей. */
+fun formatDayMonth(dateStr: String): String {
+    return try {
+        LocalDate.parse(dateStr).format(dayMonthFormatter)
     } catch (_: Exception) {
         ""
     }
