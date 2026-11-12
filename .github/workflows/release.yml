@@ -42,7 +42,14 @@ jobs:
           APKSIGNER=$(find "$ANDROID_HOME/build-tools" -name apksigner | sort | tail -1)
           "$APKSIGNER" verify --print-certs app/build/outputs/apk/release/*.apk
 
+      - name: Generate release notes
+        run: |
+          git fetch --tags --force
+          python3 .github/scripts/release_notes.py "$GITHUB_REF_NAME" > release_notes.md
+          cat release_notes.md
+
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release create "$GITHUB_REF_NAME" "app/build/outputs/apk/release/Nimbus ${GITHUB_REF_NAME#v}.apk" --generate-notes --title "Nimbus Weather ${GITHUB_REF_NAME#v}"
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: gh release create "$GITHUB_REF_NAME" "app/build/outputs/apk/release/Nimbus ${GITHUB_REF_NAME#v}.apk" --notes-file release_notes.md --title "Nimbus Weather ${GITHUB_REF_NAME#v}"
