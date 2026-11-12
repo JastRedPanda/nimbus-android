@@ -1,0 +1,40 @@
+version: 2
+
+updates:
+  - package-ecosystem: "gradle"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "build"
+    groups:
+      # AGP, Kotlin and Compose must move together — separate PRs break the build.
+      android-build:
+        patterns:
+          - "com.android.tools.build"
+          - "org.jetbrains.kotlin*"
+          - "androidx.compose*"
+      androidx:
+        patterns:
+          - "androidx.*"
+      other:
+        patterns:
+          - "*"
+        exclude-patterns:
+          - "com.android.tools.build"
+          - "org.jetbrains.kotlin*"
+          - "androidx.*"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    commit-message:
+      prefix: "ci"
+    groups:
+      actions:
+        patterns:
+          - "*"
