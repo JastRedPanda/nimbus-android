@@ -64,19 +64,13 @@ object WeatherAlarmScheduler {
         val triggerAt = nextTriggerMillis(System.currentTimeMillis(), intervalHours)
         val pendingIntent = alarmPendingIntent(context)
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pendingIntent)
-            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pendingIntent)
             } else {
                 @Suppress("DEPRECATION")
-                alarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerAt, pendingIntent)
+                alarmManager.set(AlarmManager.RTC_WAKEUP, triggerAt, pendingIntent)
             }
-        } catch (_: SecurityException) {
-            runCatching {
-                alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pendingIntent)
-            }
-        }
+        } catch (_: Exception) {}
     }
 
     suspend fun scheduleNext(context: Context) {
@@ -90,11 +84,7 @@ object WeatherAlarmScheduler {
     }
 
     /** true, когда точные будильники недоступны и нужен запрос у пользователя. */
-    fun needsExactPermission(context: Context): Boolean {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return false
-        val alarmManager = context.getSystemService(AlarmManager::class.java) ?: return false
-        return !alarmManager.canScheduleExactAlarms()
-    }
+    fun needsExactPermission(context: Context): Boolean = false
 
     private fun alarmPendingIntent(context: Context): PendingIntent {
         val intent = Intent(context, WeatherAlarmReceiver::class.java).setAction(ACTION_REFRESH)
