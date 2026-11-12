@@ -31,6 +31,7 @@ android {
         targetSdk = 35
         versionCode = ciVersionCode ?: localNextVersionCode
         versionName = releaseVersionName
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     signingConfigs {
@@ -130,4 +131,8 @@ dependencies {
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
     testImplementation("io.mockk:mockk:1.13.13")
     testImplementation("app.cash.turbine:turbine:1.2.0")
+
+    // Instrumented UI metrics
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
+    androidTestImplementation("androidx.test:runner:1.6.2")
 }
