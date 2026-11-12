@@ -20,6 +20,7 @@ object ApiClient {
     private val okHttp = OkHttpClient.Builder()
         .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(15, TimeUnit.SECONDS)
+        .retryOnConnectionFailure(true)
         .build()
 
     private val weatherRetrofit = Retrofit.Builder()
