@@ -5,6 +5,9 @@ import com.nimbus.weather.data.api.ApiClient
 import com.nimbus.weather.data.model.AirQualityResponse
 import com.nimbus.weather.data.model.GeocodingResult
 import com.nimbus.weather.data.model.WeatherResponse
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.util.concurrent.ConcurrentHashMap
 
 class WeatherRepository {
@@ -79,14 +82,15 @@ class WeatherRepository {
         }
     }
 
-    suspend fun getWeather(lat: Double, lon: Double, context: Context? = null): WeatherResponse {
+    suspend fun getWeather(lat: Double, lon: Double, context: Context? = null): WeatherResponse = withContext(Dispatchers.IO) {
         val c = context?.let { getCache(it) }
-        return try {
+        try {
             val response = weatherApi.getForecast(latitude = lat, longitude = lon)
             showingCachedWeather = false
             c?.cacheWeather(response)
             response
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             val cached = c?.getCachedWeather(allowExpired = true)
             if (cached != null) {
                 showingCachedWeather = true
@@ -98,20 +102,21 @@ class WeatherRepository {
         }
     }
 
-    suspend fun getAirQuality(lat: Double, lon: Double, context: Context? = null): AirQualityResponse {
+    suspend fun getAirQuality(lat: Double, lon: Double, context: Context? = null): AirQualityResponse = withContext(Dispatchers.IO) {
         val c = context?.let { getCache(it) }
-        return try {
+        try {
             val response = airQualityApi.getAirQuality(latitude = lat, longitude = lon)
             c?.cacheAqi(response)
             response
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             val cached = c?.getCachedAqi(allowExpired = true)
             if (cached != null) cached else throw e
         }
     }
 
-    suspend fun searchCities(query: String, language: String = "ru"): List<GeocodingResult> {
-        return geocodingApi.searchCities(name = query, language = language).results.orEmpty()
+    suspend fun searchCities(query: String, language: String = "ru"): List<GeocodingResult> = withContext(Dispatchers.IO) {
+        geocodingApi.searchCities(name = query, language = language).results.orEmpty()
     }
 
     /**
@@ -124,18 +129,19 @@ class WeatherRepository {
      * Сравнение через транслит (кириллица→латиница), чтобы «Харків»
      * совпадал с «Kharkiv».
      */
-    suspend fun searchCitiesWithFallback(query: String, language: String): List<GeocodingResult> {
+    suspend fun searchCitiesWithFallback(query: String, language: String): List<GeocodingResult> = withContext(Dispatchers.IO) {
         val merged = LinkedHashMap<Int, GeocodingResult>()
         for (lang in buildLanguageChain(language)) {
             val results = try {
                 geocodingApi.searchCities(name = query, language = lang).results.orEmpty()
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 emptyList()
             }
             for (r in results) merged.putIfAbsent(r.id, r)
             if (merged.values.any { isExactMatch(query, it.name) }) break
         }
-        return rankResults(query, merged.values.toList())
+        rankResults(query, merged.values.toList())
     }
 
     suspend fun translateCityName(name: String, lat: Double, lon: Double, toLang: String): String? {
