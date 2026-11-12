@@ -36,6 +36,9 @@ app/version.properties
 .DS_Store
 Thumbs.db
 
+# Local image generation output
+generated/
+
 # Keystore files
 *.jks
 *.keystore

@@ -1,0 +1,97 @@
+name: Bug report
+description: Something in the app is broken, crashes or looks wrong
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. Before filing, please check that the problem still
+        happens on the [latest release](https://github.com/JastRedPanda/nimbus-android/releases/latest)
+        — older versions are not maintained.
+
+  - type: input
+    id: app-version
+    attributes:
+      label: App version
+      description: The release tag you installed (for example `1.50`), or the version shown in Android Settings → Apps → Nimbus Weather.
+      placeholder: "1.50"
+    validations:
+      required: true
+
+  - type: input
+    id: android-version
+    attributes:
+      label: Android version
+      placeholder: "14 (API 34)"
+    validations:
+      required: true
+
+  - type: input
+    id: device
+    attributes:
+      label: Device
+      description: Manufacturer and model. Add the ROM if it is not stock (MIUI, One UI, LineageOS…).
+      placeholder: "Xiaomi Redmi Note 9 Pro, MIUI 13"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: source
+    attributes:
+      label: How did you install it
+      options:
+        - APK from GitHub Releases
+        - Built from source
+        - Other (explain below)
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Numbered steps. Say whether the app was freshly installed or updated over an older version.
+      placeholder: |
+        1. Open the app
+        2. Tap the gear icon
+        3. Change the theme to Dark
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+      description: What happens instead. Crashes, wrong values, layout issues — be specific.
+    validations:
+      required: true
+
+  - type: textarea
+    id: extras
+    attributes:
+      label: Screenshots, logs or APK details
+      description: |
+        Screenshots help with layout bugs. For crashes, paste the stack trace from
+        `adb logcat` or attach the file. For signing problems, include the output of
+        `apksigner verify --print-certs <apk>`.
+      render: shell
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and this is not a duplicate
+          required: true
+        - label: I am running the latest release
+          required: true

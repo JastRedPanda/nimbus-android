@@ -14,11 +14,20 @@ Free and open-source Android weather app. No ads, no trackers, no API keys.
 
 </div>
 
-[Features](#features) · [Install](#install) · [Build from source](#build-from-source) · [Contributing](#contributing) · [License](#license)
+[Screenshots](#screenshots) · [Features](#features) · [Install](#install) · [Build from source](#build-from-source) · [Contributing](#contributing) · [License](#license)
 
 ## About
 
 Nimbus is built around one screen: current conditions, an hourly strip and the week at a glance. Data comes from Open-Meteo, so there is no account to create and no key to paste. The home screen widget draws time and date in the launcher process, so it keeps ticking with the app closed. Interface and saved city names are available in four languages.
+
+## Screenshots
+
+<div align="center">
+  <img src="docs/screenshots/home.png" width="200" alt="Current conditions, hourly and weekly forecast" />
+  <img src="docs/screenshots/home-weekly.png" width="200" alt="Detailed weekly forecast" />
+  <img src="docs/screenshots/settings.png" width="200" alt="Settings" />
+  <img src="docs/screenshots/widget.png" width="200" alt="Widget appearance" />
+</div>
 
 ## Features
 
@@ -85,7 +94,7 @@ Single 4×2 home screen widget (four columns, two rows; classic RemoteViews): to
 
 ## Contributing
 
-Bug reports and feature requests are welcome in [Issues](https://github.com/JastRedPanda/nimbus-android/issues). For code changes, open an issue first: the project has one maintainer and a deliberately narrow scope. All UI strings live in four locale folders (`values`, `values-ru`, `values-uk`, `values-cs`), commits follow Conventional Commits.
+Bug reports and feature requests are welcome in [Issues](https://github.com/JastRedPanda/nimbus-android/issues) — use the templates. For code changes, open an issue first: the project has one maintainer and a deliberately narrow scope. Details are in [CONTRIBUTING.md](CONTRIBUTING.md), including the four-locale rule for strings and the Conventional Commits format. Participants are expected to follow the [Code of Conduct](CODE_OF_CONDUCT.md). Security issues go through the private channel described in [SECURITY.md](SECURITY.md), not the public tracker.
 
 ## License
 
@@ -103,6 +112,15 @@ Nimbus Weather is released under the [GNU General Public License v3.0](LICENSE).
 ## Про застосунок
 
 Nimbus будується навколо одного екрана: поточні умови, погодинна стрічка й тиждень одним поглядом. Дані дає Open-Meteo, тож не треба ні акаунта, ні ключа. Віджет малює час і дату в процесі лаунчера, тому цокає й із закритим застосунком. Інтерфейс і назви збережених міст доступні чотирма мовами.
+
+## Скриншоти
+
+<div align="center">
+  <img src="docs/screenshots/home.png" width="200" alt="Поточні умови, погодинний і тижневий прогноз" />
+  <img src="docs/screenshots/home-weekly.png" width="200" alt="Детальний тижневий прогноз" />
+  <img src="docs/screenshots/settings.png" width="200" alt="Налаштування" />
+  <img src="docs/screenshots/widget.png" width="200" alt="Вигляд віджета" />
+</div>
 
 ## Можливості
 
@@ -169,7 +187,7 @@ gradlew.bat test
 
 ## Долучитися
 
-Повідомлення про помилки та пропозиції — у [Issues](https://github.com/JastRedPanda/nimbus-android/issues). Для змін у коді спершу відкрийте issue: у проєкту один супровідник і свідомо вузькі рамки. Усі рядки інтерфейсу живуть у чотирьох папках локалей (`values`, `values-ru`, `values-uk`, `values-cs`), коміти — у стилі Conventional Commits.
+Повідомлення про помилки та пропозиції — у [Issues](https://github.com/JastRedPanda/nimbus-android/issues), через шаблони. Для змін у коді спершу відкрийте issue: у проєкту один супровідник і свідомо вузькі рамки. Подробиці — у [CONTRIBUTING.md](CONTRIBUTING.md), включно з правилом чотирьох локалей для рядків і форматом Conventional Commits. Учасники дотримуються [Кодексу поведінки](CODE_OF_CONDUCT.md). Питання безпеки — через приватний канал зі [SECURITY.md](SECURITY.md), не в публічному трекері.
 
 ## Ліцензія
 

@@ -1,0 +1,53 @@
+name: Feature request
+description: Suggest an improvement or a new capability
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Nimbus has a deliberately narrow scope: one screen, one widget, Open-Meteo,
+        no accounts and no cloud. Requests that fit that shape are easier to accept.
+        Add-ons from other weather apps (maps, radar, social feed, sync) are usually
+        out of scope — say why it belongs here anyway if you are proposing one.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve
+      description: Describe the situation where the app falls short, not the UI you have in mind.
+      placeholder: "I check the widget in the morning and cannot tell whether the rain starts before I leave."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: What should the app do. Sketches and mockups are welcome.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Other ways to solve it, including doing nothing.
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Devices, languages, screenshots from other apps, related issues.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and this is not a duplicate
+          required: true

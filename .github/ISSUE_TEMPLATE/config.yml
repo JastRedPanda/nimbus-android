@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Download the latest release
+    url: https://github.com/JastRedPanda/nimbus-android/releases/latest
+    about: Check the version you are running before filing a bug report.
+  - name: Report a security issue
+    url: https://github.com/JastRedPanda/nimbus-android/security/advisories/new
+    about: Please report vulnerabilities privately, not in a public issue.
+  - name: Questions and how the app works
+    url: https://github.com/JastRedPanda/nimbus-android#readme
+    about: The README covers features, installation and building from source.
