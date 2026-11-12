@@ -49,7 +49,9 @@ Download the APK from [Releases](https://github.com/JastRedPanda/nimbus-android/
 Every release is signed with the same certificate, so a new version installs over the previous one. To check a downloaded APK, run `apksigner verify --print-certs <apk>` or compare the certificate fingerprint:
 
 ```
-SHA-256 5E:92:A5:4C:09:B0:73:AD:0A:72:C0:BB:A9:FE:6D:32:53:08:64:5F:E1:FB:35:C8:03:87:DA:A2:96:B9:9B:24
+SHA-256
+5E:92:A5:4C:09:B0:73:AD:0A:72:C0:BB:A9:FE:6D:32
+53:08:64:5F:E1:FB:35:C8:03:87:DA:A2:96:B9:9B:24
 ```
 
 ## Build from source
@@ -131,7 +133,9 @@ Nimbus будується навколо одного екрана: поточн
 Кожен реліз підписано тим самим сертифікатом, тому нова версія ставиться поверх попередньої. Перевірити завантажений APK можна через `apksigner verify --print-certs <apk>` або порівнявши відбиток сертифіката:
 
 ```
-SHA-256 5E:92:A5:4C:09:B0:73:AD:0A:72:C0:BB:A9:FE:6D:32:53:08:64:5F:E1:FB:35:C8:03:87:DA:A2:96:B9:9B:24
+SHA-256
+5E:92:A5:4C:09:B0:73:AD:0A:72:C0:BB:A9:FE:6D:32
+53:08:64:5F:E1:FB:35:C8:03:87:DA:A2:96:B9:9B:24
 ```
 
 ## Збірка з вихідного коду
