@@ -23,12 +23,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.nimbus.weather.R
+import com.nimbus.weather.ui.theme.LocalGlassDark
+import com.nimbus.weather.ui.theme.rememberColdAccent
+import com.nimbus.weather.ui.theme.rememberPrecipitationAccent
 import com.nimbus.weather.ui.theme.rememberSkyTextColors
 import com.nimbus.weather.util.TemperatureUnit
 import com.nimbus.weather.util.displayString
@@ -165,6 +167,7 @@ private fun HourlyBottomRow(
 
 @Composable
 private fun HumidityLabel(humidity: Double) {
+    val accent = rememberColdAccent()
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.height(12.dp),
@@ -173,14 +176,14 @@ private fun HumidityLabel(humidity: Double) {
         Icon(
             imageVector = Icons.Default.Opacity,
             contentDescription = null,
-            tint = Color(0xFF4FC3F7),
+            tint = accent,
             modifier = Modifier.size(9.dp)
         )
         Spacer(modifier = Modifier.width(2.dp))
         Text(
             text = "${humidity.toInt()}%",
             style = ChipMetaText,
-            color = Color(0xFF4FC3F7)
+            color = accent
         )
     }
 }
@@ -190,6 +193,7 @@ private fun PrecipitationLabel(precipitation: Double) {
     // Без капсул резерв под пустую строку не нужен: колонки выровнены
     // по верху, а график и температура живут в отдельных рядах.
     if (precipitation <= 0) return
+    val accent = rememberPrecipitationAccent()
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.height(12.dp),
@@ -198,14 +202,14 @@ private fun PrecipitationLabel(precipitation: Double) {
         Icon(
             imageVector = Icons.Default.WaterDrop,
             contentDescription = null,
-            tint = Color(0xFF64B5F6),
+            tint = accent,
             modifier = Modifier.size(9.dp)
         )
         Spacer(modifier = Modifier.width(2.dp))
         Text(
             text = "${precipitation.toInt()} mm",
             style = ChipMetaText,
-            color = Color(0xFF64B5F6)
+            color = accent
         )
     }
 }
@@ -218,6 +222,7 @@ private fun TempSparkline(
 ) {
     if (hourly.size < 2) return
     val ring = rememberSkyTextColors().title
+    val dark = LocalGlassDark.current
     val temps = remember(hourly, tempUnit) {
         hourly.map { it.temperature.toCelsiusOrFahrenheit(tempUnit) }
     }
@@ -247,10 +252,10 @@ private fun TempSparkline(
                 val pts = temps.indices.map { Offset(x(it), y(temps[it])) }
                 val series = buildSparklineSeries(
                     points = pts,
-                    pointColor = { tempLineColor(tempsC[it]) },
+                    pointColor = { tempLineColor(tempsC[it], dark) },
                     // Сегмент красится по средней температуре концов —
                     // переход через ноль виден по смене цвета
-                    segmentColor = { tempLineColor((tempsC[it] + tempsC[it + 1]) / 2) }
+                    segmentColor = { tempLineColor((tempsC[it] + tempsC[it + 1]) / 2, dark) }
                 )
                 val strokeWidth = 2.dp.toPx()
                 val dotRadius = 2.5.dp.toPx()

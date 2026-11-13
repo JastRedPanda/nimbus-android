@@ -26,6 +26,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.nimbus.weather.R
+import com.nimbus.weather.ui.theme.LocalGlassDark
+import com.nimbus.weather.ui.theme.rememberPrecipitationAccent
 import com.nimbus.weather.ui.theme.rememberSkyTextColors
 import com.nimbus.weather.util.TemperatureUnit
 import com.nimbus.weather.util.displayString
@@ -159,6 +161,7 @@ private fun WeeklyBottomRow(days: List<DailyForecastData>, tempUnit: Temperature
 @Composable
 private fun PrecipitationLabel(probability: Int) {
     if (probability > 0) {
+        val accent = rememberPrecipitationAccent()
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.height(12.dp),
@@ -167,14 +170,14 @@ private fun PrecipitationLabel(probability: Int) {
             Icon(
                 imageVector = Icons.Default.WaterDrop,
                 contentDescription = null,
-                tint = Color(0xFF64B5F6),
+                tint = accent,
                 modifier = Modifier.size(9.dp)
             )
             Spacer(modifier = Modifier.width(2.dp))
             Text(
                 text = "$probability%",
                 style = ChipMetaText,
-                color = Color(0xFF64B5F6)
+                color = accent
             )
         }
     } else {
@@ -192,6 +195,7 @@ private fun WeeklyTempChart(
 ) {
     if (days.size < 2) return
     val ring = rememberSkyTextColors().title
+    val dark = LocalGlassDark.current
     // Координаты — в выбранной единице, цвет — по цельсию:
     // порог «мороз/тепло» всегда 0 °C.
     val maxValues = remember(days, tempUnit) { days.map { it.tempMax.toCelsiusOrFahrenheit(tempUnit) } }
@@ -246,8 +250,8 @@ private fun WeeklyTempChart(
                     )
                 }
 
-                val topSeries = buildSeries(maxValues, maxCelsius, topBand, ::tempLineColor)
-                val bottomSeries = buildSeries(minValues, minCelsius, bottomBand, ::coldLineColor)
+                val topSeries = buildSeries(maxValues, maxCelsius, topBand) { tempLineColor(it, dark) }
+                val bottomSeries = buildSeries(minValues, minCelsius, bottomBand) { coldLineColor(it, dark) }
                 val strokeWidth = 2.dp.toPx()
                 val dotRadius = 2.5.dp.toPx()
                 val ringRadius = 4.dp.toPx()

@@ -29,6 +29,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.nimbus.weather.R
+import com.nimbus.weather.ui.theme.rememberColdAccent
+import com.nimbus.weather.ui.theme.rememberPrecipitationAccent
 import com.nimbus.weather.ui.theme.rememberSkyTextColors
 import com.nimbus.weather.util.TemperatureUnit
 import com.nimbus.weather.util.displayString
@@ -64,6 +66,8 @@ fun DailyForecastCard(
 ) {
     GlassCard(modifier = modifier) {
         val t = rememberSkyTextColors()
+        val precipAccent = rememberPrecipitationAccent()
+        val coldAccent = rememberColdAccent()
         Column(modifier = Modifier.padding(0.dp)) {
             val tmax = day.tempMax.toCelsiusOrFahrenheit(tempUnit).toInt()
             val tmin = day.tempMin.toCelsiusOrFahrenheit(tempUnit).toInt()
@@ -119,7 +123,7 @@ fun DailyForecastCard(
                 )
                 DailyDetailItem(
                     icon = Icons.Default.WaterDrop,
-                    iconTint = Color(0xFF64B5F6),
+                    iconTint = precipAccent,
                     label = stringResource(R.string.precipitation),
                     value = "${day.precipitation} mm (${day.precipProbability}%)",
                     modifier = Modifier.weight(1f),
@@ -132,7 +136,7 @@ fun DailyForecastCard(
             Row(modifier = Modifier.fillMaxWidth()) {
                 DailyDetailItem(
                     icon = Icons.Default.Air,
-                    iconTint = Color(0xFF81D4FA),
+                    iconTint = coldAccent,
                     label = stringResource(R.string.wind),
                     value = "${day.windMax.toInt()} - ${day.windGusts.toInt()} ${stringResource(R.string.wind_ms)} ${windDirection(day.windDirection)}",
                     modifier = Modifier.weight(1f),

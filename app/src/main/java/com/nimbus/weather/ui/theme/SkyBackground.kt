@@ -60,6 +60,29 @@ fun rememberSkyTextColors(): SkyTextColors {
 }
 
 /**
+ * Голубой акцент влажности/осадков. На тёмном стекле — светлый,
+ * на светлом — насыщенный: иначе голубой текст сливается с белой
+ * подложкой карточки. Оттенок подобран так, чтобы контраст к стеклу
+ * оставался выше 4.5:1 в обеих темах.
+ */
+fun coldAccent(dark: Boolean): Color = if (dark) Color(0xFF4FC3F7) else Color(0xFF0277BD)
+
+/** Второй, чуть более глубокий оттенок — для осадков. */
+fun precipitationAccent(dark: Boolean): Color = if (dark) Color(0xFF64B5F6) else Color(0xFF01579B)
+
+@Composable
+fun rememberColdAccent(): Color {
+    val dark = LocalGlassDark.current
+    return remember(dark) { coldAccent(dark) }
+}
+
+@Composable
+fun rememberPrecipitationAccent(): Color {
+    val dark = LocalGlassDark.current
+    return remember(dark) { precipitationAccent(dark) }
+}
+
+/**
  * Динамические палитры «неба» для фона главного экрана.
  * Подбираются по WMO-коду погоды и флагу «день/ночь».
  */
