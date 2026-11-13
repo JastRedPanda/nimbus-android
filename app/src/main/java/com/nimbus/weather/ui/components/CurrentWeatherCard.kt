@@ -31,6 +31,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.nimbus.weather.R
 import com.nimbus.weather.data.model.CurrentWeather
+import com.nimbus.weather.ui.theme.rememberColdAccent
+import com.nimbus.weather.ui.theme.rememberPrecipitationAccent
 import com.nimbus.weather.ui.theme.rememberSkyTextColors
 import com.nimbus.weather.util.TemperatureUnit
 import com.nimbus.weather.util.displayString
@@ -51,6 +53,8 @@ fun CurrentWeatherCard(
 ) {
     GlassCard(modifier = modifier) {
         val t = rememberSkyTextColors()
+        val precipAccent = rememberPrecipitationAccent()
+        val coldAccent = rememberColdAccent()
         Column {
             Text(
                 text = cityName,
@@ -101,13 +105,13 @@ fun CurrentWeatherCard(
             ) {
                 WeatherDetailItem(
                     icon = Icons.Default.WaterDrop,
-                    iconTint = Color(0xFF64B5F6),
+                    iconTint = precipAccent,
                     label = stringResource(R.string.precipitation),
                     value = "${current.precipitation} mm"
                 )
                 WeatherDetailItem(
                     icon = Icons.Default.Opacity,
-                    iconTint = Color(0xFF4FC3F7),
+                    iconTint = coldAccent,
                     label = stringResource(R.string.humidity),
                     value = "${current.humidity.toInt()}%"
                 )
@@ -128,7 +132,7 @@ fun CurrentWeatherCard(
             ) {
                 WeatherDetailItem(
                     icon = Icons.Default.Air,
-                    iconTint = Color(0xFF81D4FA),
+                    iconTint = coldAccent,
                     label = stringResource(R.string.wind),
                     value = "${current.windSpeed.toInt()} ${stringResource(R.string.wind_ms)} ${windDirection(current.windDirection)}"
                 )

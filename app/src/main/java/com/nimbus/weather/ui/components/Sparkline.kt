@@ -104,13 +104,15 @@ internal fun DrawScope.drawSparkline(
  * выше нуля — оранжево-красный (тепло). Чем дальше от нуля,
  * тем насыщеннее. Порог — 0°C при любой единице отображения.
  */
-internal fun tempLineColor(celsius: Double): Color {
+internal fun tempLineColor(celsius: Double, dark: Boolean = true): Color {
     return if (celsius <= 0) {
         val f = ((-celsius) / 20.0).coerceIn(0.0, 1.0).toFloat()
-        lerp(Color(0xFF8FCBFF), Color(0xFF1565C0), f)
+        if (dark) lerp(Color(0xFF8FCBFF), Color(0xFF1565C0), f)
+        else lerp(Color(0xFF1976D2), Color(0xFF0D47A1), f)
     } else {
         val f = (celsius / 30.0).coerceIn(0.0, 1.0).toFloat()
-        lerp(Color(0xFFFFB74D), Color(0xFFD32F2F), f)
+        if (dark) lerp(Color(0xFFFFB74D), Color(0xFFD32F2F), f)
+        else lerp(Color(0xFFEF6C00), Color(0xFFC62828), f)
     }
 }
 
@@ -118,8 +120,10 @@ internal fun tempLineColor(celsius: Double): Color {
  * Цвет линии минимумов: всегда холодная гамма, чтобы нижний ряд
  * недельного графика не сливался с верхним летом, когда обе
  * температуры положительные. Чем холоднее — тем насыщеннее.
+ * На светлом стекле стартуем с насыщенного синего: пастель на белом не видна.
  */
-internal fun coldLineColor(celsius: Double): Color {
+internal fun coldLineColor(celsius: Double, dark: Boolean = true): Color {
     val f = ((10.0 - celsius) / 30.0).coerceIn(0.0, 1.0).toFloat()
-    return lerp(Color(0xFFB3DDFF), Color(0xFF1E6FD9), f)
+    return if (dark) lerp(Color(0xFFB3DDFF), Color(0xFF1E6FD9), f)
+    else lerp(Color(0xFF2196F3), Color(0xFF0D47A1), f)
 }
