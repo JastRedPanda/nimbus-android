@@ -98,7 +98,7 @@ widget/         ClockTempWidget.kt (ClockTempWidgetReceiver : AppWidgetProvider)
                 WidgetRemoteViews.kt (сборка RemoteViews: погода, иконки-битмапы, шрифты, фон, форматы),
                 WidgetPalette.kt, WidgetRender.kt (fitBaseSp — фит по ширине + колпак по высоте)
 service/        WeatherUpdateWorker.kt (воркер + общий performWeatherRefresh + WeatherUpdateScheduler),
-                WeatherAlarm.kt (WeatherAlarmReceiver + WeatherAlarmScheduler — точный будильник),
+                WeatherAlarm.kt (WeatherAlarmReceiver + WeatherAlarmScheduler — неточный будильник, setAndAllowWhileIdle),
                 NotificationHelper.kt, WidgetUpdateManager.kt, KeepAliveService.kt
 util/           CityNameResolver.kt, CityNameTranslator.kt, LanguageHelper.kt,
                 DateTimeUtils.kt, WeatherCodeUtils.kt, TemperatureUtils.kt,
