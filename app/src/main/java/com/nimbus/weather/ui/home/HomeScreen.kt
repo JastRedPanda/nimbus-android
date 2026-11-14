@@ -65,6 +65,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
@@ -96,6 +97,7 @@ import com.nimbus.weather.ui.theme.SkyPalette
 import com.nimbus.weather.ui.theme.skyEffectFor
 import com.nimbus.weather.ui.theme.skyTextColors
 import com.nimbus.weather.util.formatUpdateTime
+import com.nimbus.weather.util.formatRelativeCacheAge
 import com.nimbus.weather.util.isDayNowByTime
 import kotlin.math.abs
 
@@ -414,9 +416,13 @@ private fun PhoneLayout(
     ) {
         if (state.fromCache) {
             item {
+                val context = LocalContext.current
+                val ageText = remember(state.lastWeatherUpdateMillis) {
+                    formatRelativeCacheAge(state.lastWeatherUpdateMillis, context)
+                }
                 AssistChip(
                     onClick = { },
-                    label = { Text(stringResource(R.string.cached_data)) }
+                    label = { Text(if (ageText.isNotEmpty()) "${stringResource(R.string.cached_data)} ($ageText)" else stringResource(R.string.cached_data)) }
                 )
             }
         }

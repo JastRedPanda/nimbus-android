@@ -54,6 +54,10 @@
     <string name="hourly_interval_6h">Кожні 6 годин</string>
     <string name="show_aqi">Показувати індекс якості повітря</string>
     <string name="cached_data">Кешовані дані (офлайн)</string>
+    <string name="cache_age_just_now">Щойно</string>
+    <string name="cache_age_minutes">%d хв. тому</string>
+    <string name="cache_age_hours">%d год. тому</string>
+    <string name="cache_age_days">%d дн. тому</string>
     <string name="notifications">Сповіщення</string>
     <string name="notifications_enabled">Сповіщення про погоду</string>
 

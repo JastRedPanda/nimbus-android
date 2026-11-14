@@ -23,7 +23,6 @@
 - [ ] **Возраст кэша.** Показывать «данные за N ч назад» вместо просто «Offline cached data»; TTL сейчас не ограничивает fallback (`allowExpired = true`), может показаться кэш недельной давности.
 - [ ] **Системные мелочи Android.** `localeConfig` (per-app language), `enableOnBackInvokedCallback` (predictive back), `<monochrome>` в adaptive icon, `dataExtractionRules` при `allowBackup="true"`, настроить `Theme.SplashScreen` + `setKeepOnScreenCondition` (сейчас между splash и `NavHost` возможен пустой кадр).
 - [ ] **Виджет.** `resizeMode="horizontal|vertical"` (фит по высоте уже есть), `widgetFeatures="reconfigurable"`, `previewLayout`/`description` для Android 12+; монохромная small icon для уведомления вместо adaptive foreground.
-- [ ] **Диагностика в настройках.** Последнее обновление, статус WorkManager, выданные разрешения, состояние будильника — чтобы баг-репорты не начинались с «не обновляется на MIUI».
 
 ### P3 — рефакторинг
 
