@@ -1,5 +1,6 @@
 package com.nimbus.weather.ui.location
 
+import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nimbus.weather.data.local.SettingsDataStore
@@ -16,6 +17,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
+@Immutable
 data class LocationSearchUiState(
     val query: String = "",
     val results: List<GeocodingResult> = emptyList(),

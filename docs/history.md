@@ -279,3 +279,11 @@
 - **mockk в Gradle 9.** Тестовый воркер запускается без разрешения self-attach, ByteBuddy не ставил агент, и все тесты падали на `JvmMockKGateway`. В `testOptions.unitTests.all` добавлены `-Djdk.attach.allowAttachSelf=true` и `-XX:+EnableDynamicAgentLoading`
 - **Линт после смены AGP.** Старый `app/build/intermediates/lint-cache` держал файлы и валил `lintAnalyzeDebugAndroidTest` ошибкой «файл занят другим процессом»; помогла полная чистка `app/build`
 - **Проверено:** `assembleDebug`, `test` (76 тестов), `lintDebug` (0 ошибок), `assembleRelease` с R8 и shrinkResources. Запуск на API 26/36/37 не проверен — эмулятора и устройства нет
+
+### После обновления — остаток P1
+
+- **Robolectric 4.18** для тестов, которым нужен Android-контекст. `NotificationHelperTest` проверяет создание канала, текст уведомления, отсутствие уведомления без `POST_NOTIFICATIONS` и без блока `current`. SDK в `@Config` — 35: на 36 Robolectric требует Java 21, а проект на 17
+- **Compose UI-тест без устройства**: `AqiCardTest` поднимает реальную композицию через `createComposeRule` и Robolectric, проверяет значение AQI и заголовки загрязнителей
+- **`@Preview`** для `CurrentWeatherCard` (день и ночь/°F), `HourlyForecastBar`, `DailyForecastCard`, `WeeklyForecastBar`, `AqiCard` — в `ComponentPreviews.kt`
+- **Compose stability**: `@Immutable` на четырёх UiState. Списки внутри не мутируются, состояние пересоздаётся через `copy`, поэтому обещание аннотации корректно и Compose не считает экран нестабильным
+- **Итог:** 83 теста, lint — 0 ошибок. Screenshot-тесты и baseline profile остаются: эталоны требуют Linux-CI, профиль — устройства

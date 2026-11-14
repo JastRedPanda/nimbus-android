@@ -84,6 +84,7 @@ android {
 
     testOptions {
         unitTests.isReturnDefaultValues = true
+        unitTests.isIncludeAndroidResources = true
         // mockk ставит ByteBuddy-агент в тестовую JVM. Gradle 9 запускает
         // воркер без разрешения self-attach, и без флага все тесты падают
         // на инициализации JvmMockKGateway.
@@ -159,6 +160,11 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.mockk)
     testImplementation(libs.turbine)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(platform(libs.compose.bom))
+    testImplementation(libs.compose.ui.test.junit4)
+    debugImplementation(libs.compose.ui.test.manifest)
 
     // Instrumented UI metrics
     androidTestImplementation(libs.androidx.test.ext.junit)

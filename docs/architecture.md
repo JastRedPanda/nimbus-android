@@ -132,8 +132,11 @@ datastore = "1.1.1"                # 1.2+ падает на Windows-тестах
 work = "2.12.0"
 coreKtx = "1.19.1"
 splashscreen = "1.2.0"
-junit = "4.13.2", coroutinesTest = "1.11.0", mockk = "1.14.12", turbine = "1.2.1"
+junit = "4.13.2", coroutinesTest = "1.11.0", mockk = "1.14.12", turbine = "1.2.1",
+robolectric = "4.18", androidxTestCore = "1.7.0", compose-ui-test-junit4 (BOM)
 ```
+
+Тесты с Android-контекстом (уведомления, Compose-композиция) идут через Robolectric, `@Config(sdk = [35])`: SDK 36 требует Java 21, проект — на 17.
 
 `compileSdk = 37` + `compileSdkMinor = 2`, `targetSdk = 36`: свежие AndroidX требуют компиляции против 37, но runtime-поведения API 37 не проверены на устройстве. AGP 9 несёт встроенную поддержку Kotlin — плагин `org.jetbrains.kotlin.android` подключать нельзя, иначе сборка падает.
 

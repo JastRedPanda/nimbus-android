@@ -18,12 +18,19 @@ import com.nimbus.weather.util.LanguageHelper
 import com.nimbus.weather.util.TemperatureUnit
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import androidx.compose.runtime.Immutable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
+/**
+ * @Immutable — состояние пересоздаётся через copy, списки внутри не
+ * мутируются. Без аннотации Compose считает List нестабильным и
+ * перекомпоновывает весь экран при каждом обновлении погоды.
+ */
+@Immutable
 data class HomeUiState(
     val cityName: String = "",
     val current: CurrentWeather? = null,
