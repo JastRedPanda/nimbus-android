@@ -65,7 +65,7 @@ SHA-256
 
 ## Build from source
 
-Requirements: JDK 17, Android SDK (compileSdk 35).
+Requirements: JDK 17, Android SDK (compileSdk 37).
 
 ```
 gradlew.bat assembleDebug
@@ -158,7 +158,7 @@ SHA-256
 
 ## Збірка з вихідного коду
 
-Вимоги: JDK 17, Android SDK (compileSdk 35).
+Вимоги: JDK 17, Android SDK (compileSdk 37).
 
 ```
 gradlew.bat assembleDebug

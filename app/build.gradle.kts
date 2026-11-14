@@ -1,13 +1,15 @@
-plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android")
-    id("org.jetbrains.kotlin.plugin.compose")
-    id("org.jetbrains.kotlin.plugin.serialization")
-}
-
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.util.Properties
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
+plugins {
+    // AGP 9 несёт встроенную поддержку Kotlin: отдельный kotlin-android
+    // подключать нельзя, его применение падает с явной ошибкой.
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
+}
 
 val versionPropsFile = file("version.properties")
 val versionProps = Properties().apply {
@@ -26,33 +28,44 @@ val releaseVersionName: String =
         ?: storedVersionName
         ?: "dev"
 val userHome: String = System.getenv("HOME") ?: System.getenv("USERPROFILE") ?: "."
+val releaseKeystore = file("$userHome/.android/debug.keystore")
+// На чистом клоне и в PR ключа нет. Тогда release собирается unsigned:
+// CI проверяет R8 и компиляцию, а подпись появляется только в release.yml,
+// где keystore восстанавливается из секрета до сборки.
+val hasReleaseKeystore: Boolean = releaseKeystore.exists()
 
 android {
     namespace = "com.nimbus.weather"
-    compileSdk = 35
+    compileSdk = 37
+    // Свежие AndroidX (Compose BOM 2026.09) требуют компиляции против 37,
+    // но targetSdk остаётся 36: новые runtime-поведения не проверены на устройстве.
+    compileSdkMinor = 2
 
     defaultConfig {
         applicationId = "com.nimbus.weather"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 36
         versionCode = ciVersionCode ?: localNextVersionCode
         versionName = releaseVersionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     signingConfigs {
-        create("release") {
-            storeFile = file("$userHome/.android/debug.keystore")
-            storePassword = "android"
-            keyAlias = "androiddebugkey"
-            keyPassword = "android"
+        if (hasReleaseKeystore) {
+            create("release") {
+                storeFile = releaseKeystore
+                storePassword = "android"
+                keyAlias = "androiddebugkey"
+                keyPassword = "android"
+            }
         }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = true
-            signingConfig = signingConfigs.getByName("release")
+            isShrinkResources = true
+            if (hasReleaseKeystore) signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -65,25 +78,35 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
-    }
-
     buildFeatures {
         compose = true
     }
 
     testOptions {
         unitTests.isReturnDefaultValues = true
-    }
-
-    applicationVariants.all {
-        val variantName = name
-        outputs.all {
-            val output = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
-            output.outputFileName =
-                if (variantName == "release") "Nimbus $releaseVersionName.apk" else "app-$variantName.apk"
+        // mockk ставит ByteBuddy-агент в тестовую JVM. Gradle 9 запускает
+        // воркер без разрешения self-attach, и без флага все тесты падают
+        // на инициализации JvmMockKGateway.
+        unitTests.all {
+            it.jvmArgs("-Djdk.attach.allowAttachSelf=true", "-XX:+EnableDynamicAgentLoading")
         }
+    }
+}
+
+// Имя APK задаётся через новый API вариантов: applicationVariants удалён в AGP 9.
+androidComponents {
+    onVariants { variant ->
+        variant.outputs.forEach { output ->
+            val fileName =
+                if (variant.buildType == "release") "Nimbus $releaseVersionName.apk" else "app-${variant.name}.apk"
+            output.outputFileName.set(fileName)
+        }
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_17)
     }
 }
 
@@ -100,45 +123,44 @@ tasks.named("preBuild") {
 
 dependencies {
     // Compose BOM
-    val composeBom = platform("androidx.compose:compose-bom:2024.12.01")
-    implementation(composeBom)
-    implementation("androidx.compose.material3:material3")
-    implementation("androidx.compose.ui:ui")
-    implementation("androidx.compose.ui:ui-tooling-preview")
-    implementation("androidx.compose.material:material-icons-extended")
-    debugImplementation("androidx.compose.ui:ui-tooling")
+    implementation(platform(libs.compose.bom))
+    implementation(libs.compose.material3)
+    implementation(libs.compose.ui)
+    implementation(libs.compose.ui.tooling.preview)
+    implementation(libs.compose.material.icons.extended)
+    debugImplementation(libs.compose.ui.tooling)
 
     // Activity Compose + Lifecycle
-    implementation("androidx.activity:activity-compose:1.9.3")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
+    implementation(libs.activity.compose)
+    implementation(libs.lifecycle.viewmodel.compose)
+    implementation(libs.lifecycle.runtime.compose)
 
     // Navigation
-    implementation("androidx.navigation:navigation-compose:2.8.5")
+    implementation(libs.navigation.compose)
 
     // Retrofit + OkHttp
-    implementation("com.squareup.retrofit2:retrofit:2.11.0")
-    implementation("com.squareup.okhttp3:okhttp:4.12.0")
-    implementation("com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter:1.0.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
+    implementation(libs.retrofit)
+    implementation(libs.okhttp)
+    implementation(libs.retrofit.kotlinx.serialization)
+    implementation(libs.kotlinx.serialization.json)
 
     // DataStore
-    implementation("androidx.datastore:datastore-preferences:1.1.1")
+    implementation(libs.datastore.preferences)
 
     // WorkManager
-    implementation("androidx.work:work-runtime-ktx:2.10.0")
+    implementation(libs.work.runtime.ktx)
 
     // Core
-    implementation("androidx.core:core-ktx:1.15.0")
-    implementation("androidx.core:core-splashscreen:1.0.1")
+    implementation(libs.core.ktx)
+    implementation(libs.core.splashscreen)
 
     // Test
-    testImplementation("junit:junit:4.13.2")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
-    testImplementation("io.mockk:mockk:1.13.13")
-    testImplementation("app.cash.turbine:turbine:1.2.0")
+    testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.mockk)
+    testImplementation(libs.turbine)
 
     // Instrumented UI metrics
-    androidTestImplementation("androidx.test.ext:junit:1.2.1")
-    androidTestImplementation("androidx.test:runner:1.6.2")
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.test.runner)
 }

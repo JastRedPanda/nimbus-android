@@ -15,7 +15,8 @@ Android-приложение погоды: Open-Meteo, Compose, RemoteViews-ви
 | DI | Ручной (без фреймворка) |
 | Настройки | DataStore Preferences |
 | Фон | WorkManager |
-| minSdk 26, targetSdk 35 | Релизы: постоянная debug-подпись (см. «Подводные камни»), versionCode автоинкремент, versionName вручную. Публикация — GitHub Actions на тег `v*` (`.github/workflows/release.yml`) |
+| Сборка | AGP 9.5.1 + Gradle 9.9.1, версии в `gradle/libs.versions.toml` |
+| minSdk 26, compileSdk 37.2, targetSdk 36 | Релизы: постоянная debug-подпись (см. «Подводные камни»), versionCode автоинкремент, versionName вручную. Публикация — GitHub Actions на тег `v*` (`.github/workflows/release.yml`) |
 
 ## Структура пакета `com.nimbus.weather`
 

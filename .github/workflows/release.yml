@@ -26,12 +26,18 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v4
 
+      - name: Install platform and build tools
+        run: sdkmanager "platforms;android-37.2" "build-tools;37.0.0" > /dev/null 2>&1
+
       - name: Restore debug keystore
         run: |
           mkdir -p "$HOME/.android"
           echo "${{ secrets.DEBUG_KEYSTORE_B64 }}" | base64 --decode > "$HOME/.android/debug.keystore"
           sha256sum "$HOME/.android/debug.keystore"
           keytool -list -v -keystore "$HOME/.android/debug.keystore" -storepass android
+
+      - name: Run unit tests
+        run: ./gradlew test --console=plain
 
       - name: Build release APK
         run: ./gradlew assembleRelease --console=plain "-PversionName=${GITHUB_REF_NAME#v}" "-PversionCode=$(git rev-list --count HEAD)"
