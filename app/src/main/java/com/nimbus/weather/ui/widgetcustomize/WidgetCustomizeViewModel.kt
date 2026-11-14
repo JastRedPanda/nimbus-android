@@ -1,11 +1,10 @@
 package com.nimbus.weather.ui.widgetcustomize
 
-import android.app.Application
 import androidx.compose.runtime.Stable
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nimbus.weather.data.local.SettingsDataStore
-import com.nimbus.weather.service.WidgetUpdateManager
+import com.nimbus.weather.service.WeatherEffects
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -34,10 +33,9 @@ interface WidgetCustomizeActions {
 }
 
 class WidgetCustomizeViewModel(
-    application: Application
-) : AndroidViewModel(application), WidgetCustomizeActions {
-
-    private val settings = SettingsDataStore(application)
+    private val settings: SettingsDataStore,
+    private val effects: WeatherEffects
+) : ViewModel(), WidgetCustomizeActions {
 
     private val _state = MutableStateFlow(WidgetCustomizeUiState())
     val state: StateFlow<WidgetCustomizeUiState> = _state.asStateFlow()
@@ -59,7 +57,7 @@ class WidgetCustomizeViewModel(
     private fun persist(block: suspend () -> Unit) {
         viewModelScope.launch {
             block()
-            WidgetUpdateManager.refreshAllWidgets(getApplication())
+            effects.onWidgetSettingsChanged()
         }
     }
 

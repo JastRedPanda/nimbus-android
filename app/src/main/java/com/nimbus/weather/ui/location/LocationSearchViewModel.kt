@@ -1,13 +1,12 @@
 package com.nimbus.weather.ui.location
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nimbus.weather.data.local.SettingsDataStore
 import com.nimbus.weather.data.local.SettingsDataStore.FavouriteCity
 import com.nimbus.weather.data.model.GeocodingResult
 import com.nimbus.weather.data.repository.WeatherRepository
-import com.nimbus.weather.service.WidgetUpdateManager
+import com.nimbus.weather.service.WeatherEffects
 import com.nimbus.weather.util.CityNameTranslator
 import com.nimbus.weather.util.LanguageHelper
 import kotlinx.coroutines.Job
@@ -27,10 +26,11 @@ data class LocationSearchUiState(
     val appLanguage: String = "auto"
 )
 
-class LocationSearchViewModel(application: Application) : AndroidViewModel(application) {
-
-    private val repository = WeatherRepository()
-    private val settings = SettingsDataStore(application)
+class LocationSearchViewModel(
+    private val settings: SettingsDataStore,
+    private val repository: WeatherRepository,
+    private val effects: WeatherEffects
+) : ViewModel() {
 
     private val _state = MutableStateFlow(LocationSearchUiState())
     val state: StateFlow<LocationSearchUiState> = _state.asStateFlow()
@@ -114,7 +114,7 @@ class LocationSearchViewModel(application: Application) : AndroidViewModel(appli
                 settings.addFavouriteCity(city)
                 translateAll(city)
             }
-            WidgetUpdateManager.updateFromTargetCity(getApplication())
+            effects.onFavouriteChanged()
         }
     }
 

@@ -110,7 +110,7 @@ class WeatherCache(private val context: Context) {
 
     fun cacheWeather(response: WeatherResponse, lat: Double = response.latitude, lon: Double = response.longitude) {
         try {
-            weatherFile.writeText(json.encodeToString(response))
+            writeAtomically(weatherFile, json.encodeToString(response))
             writeCoords(weatherCoordsFile, lat, lon)
             updateTimestamp()
         } catch (_: Exception) {}
@@ -118,22 +118,43 @@ class WeatherCache(private val context: Context) {
 
     fun cacheWidgetWeather(response: WeatherResponse, lat: Double = response.latitude, lon: Double = response.longitude) {
         try {
-            widgetWeatherFile.writeText(json.encodeToString(response))
+            writeAtomically(widgetWeatherFile, json.encodeToString(response))
             writeCoords(widgetCoordsFile, lat, lon)
             val now = System.currentTimeMillis()
             synchronized(metaAccessLock) {
                 widgetCachedExpiry = now
             }
-            try { widgetMetaFile.writeText(now.toString()) } catch (_: Exception) {}
+            try { writeAtomically(widgetMetaFile, now.toString()) } catch (_: Exception) {}
         } catch (_: Exception) {}
     }
 
     fun cacheAqi(response: AirQualityResponse, lat: Double, lon: Double) {
         try {
-            aqiFile.writeText(json.encodeToString(response))
+            writeAtomically(aqiFile, json.encodeToString(response))
             writeCoords(aqiCoordsFile, lat, lon)
             updateTimestamp()
         } catch (_: Exception) {}
+    }
+
+    /**
+     * Запись через временный файл: прерванная запись (убитый процесс,
+     * кончилось место) не оставляет полуразобранный JSON, после которого
+     * кэш навсегда читается как null.
+     */
+    private fun writeAtomically(file: File, text: String) {
+        val tmp = File(file.parentFile, "${file.name}.tmp")
+        try {
+            tmp.writeText(text)
+            if (tmp.renameTo(file)) return
+            // На части ФС rename поверх существующего файла невозможен.
+            file.delete()
+            if (tmp.renameTo(file)) return
+            file.writeText(text)
+        } catch (_: Exception) {
+            // Оставляем прежний файл как есть.
+        } finally {
+            tmp.delete()
+        }
     }
 
     private fun readCoords(file: File): Pair<Double, Double>? {
@@ -149,7 +170,7 @@ class WeatherCache(private val context: Context) {
     }
 
     private fun writeCoords(file: File, lat: Double, lon: Double) {
-        try { file.writeText("$lat,$lon") } catch (_: Exception) {}
+        try { writeAtomically(file, "$lat,$lon") } catch (_: Exception) {}
     }
 
     private fun isExpired(): Boolean {
@@ -183,7 +204,7 @@ class WeatherCache(private val context: Context) {
         synchronized(metaAccessLock) {
             cachedExpiry = now
         }
-        try { metaFile.writeText(now.toString()) } catch (_: Exception) {}
+        try { writeAtomically(metaFile, now.toString()) } catch (_: Exception) {}
     }
 
     fun clear() {

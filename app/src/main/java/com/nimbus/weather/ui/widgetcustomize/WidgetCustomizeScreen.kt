@@ -41,7 +41,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -99,12 +99,12 @@ private fun Color.toHex(): String =
 @Composable
 fun WidgetCustomizeScreen(
     onBackClick: () -> Unit,
-    viewModel: WidgetCustomizeViewModel = viewModel()
+    viewModel: WidgetCustomizeViewModel
 ) {
-    val state by viewModel.state.collectAsState()
+    val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val settings = remember { SettingsDataStore(context.applicationContext) }
-    val themeMode by settings.themeMode.collectAsState(initial = ThemeMode.SYSTEM)
+    val themeMode by settings.themeMode.collectAsStateWithLifecycle(initialValue = ThemeMode.SYSTEM)
     val dark = isDarkTheme(context, themeMode)
     val palette = resolveWidgetPalette(dark, state.bgColorHex, state.bgAlpha, state.textOption)
     // Подписи чипов — сегодняшняя дата теми же паттернами, что рисует виджет.

@@ -12,12 +12,9 @@
 
 ### P1 — инженерия
 
-- [ ] **CI: lint + release-сборка.** Добавить `lintDebug` и `assembleRelease` на PR, в `release.yml` — прогон `test` до публикации. Сейчас ошибки R8 и missing translations ловятся только на теге.
-- [ ] **DI и тесты ViewModel.** `HomeViewModel` (проверить и остальные) создаёт `WeatherRepository()`/`SettingsDataStore` внутри конструктора — подменить в тестах нельзя. Ввести `AppContainer` в `Application` + фабрики ViewModel, покрыть загрузку, ошибку сети, кэш и смену языка.
-- [ ] **Расширить тесты.** `SettingsDataStore` (миграции, corruption, JSON-списки), `WidgetRender`/`WidgetPalette`, `LocationSearchViewModel` (debounce/fallback), `NotificationHelper`; Compose UI-тесты с assert (сейчас `HomeScrollMetricsTest` только логирует метрики); screenshot-тесты (Paparazzi/Roborazzi); `@Preview` для ключевых экранов.
-- [ ] **Производительность и размер.** Baseline profile; `isShrinkResources = true`; проверить `material-icons-extended`; AQI запрашивать параллельно с погодой (`async`); `collectAsStateWithLifecycle` вместо `collectAsState` на экранах; Compose stability (`@Immutable`, immutable-коллекции) по compiler reports.
-- [ ] **Обновить стек, сохранив Android 8+ (minSdk 26).** AGP 8.7.3, Kotlin 2.0.21, Compose BOM 2024.12.01, targetSdk 35 — обновить до актуальных. **minSdk 26 не поднимать**; после обновления проверить сборку и запуск на API 26 и на последнем актуальном API; новые API использовать только под `Build.VERSION.SDK_INT` guard; targetSdk повышать отдельным шагом с проверкой поведения на старых версиях. Заодно заменить deprecated `applicationVariants.all` и `kotlinOptions`, перейти на `libs.versions.toml`.
-- [ ] **Надёжность кэша и фона.** Атомарная запись `WeatherCache` (temp + rename) вместо `writeText`; `WeatherAlarmReceiver` не должен тянуть сеть в `goAsync` — ставить WorkManager; `MainActivity` не должен звать `updateFromTargetCity`, когда виджетов нет.
+- [x] **Обновлён стек, Android 8+ сохранён (2026-11-14).** AGP 8.7.3 → 9.5.1, Gradle 8.9 → 9.9.1, Kotlin 2.0.21 → 2.4.21, Compose BOM 2024.12.01 → 2026.09.00, Retrofit 2.11 → 3.0, OkHttp 4.12 → 5.5.1; `compileSdk = 37.2`, `targetSdk = 36`, minSdk 26 не тронут. Версии вынесены в `gradle/libs.versions.toml`, `kotlinOptions` заменён на `kotlin.compilerOptions`, `applicationVariants` — на `androidComponents.onVariants`. Сборка, тесты и lint зелёные. **Запуск на API 26 и API 36/37 не проверен** — на машине нет эмулятора и устройства. `targetSdk` 36 — отдельный шаг, поведение на старых версиях ещё предстоит проверить
+- [ ] **Расширить тесты (остаток).** `NotificationHelper`; Compose UI-тесты с assert (сейчас `HomeScrollMetricsTest` только логирует метрики); screenshot-тесты (Paparazzi/Roborazzi); `@Preview` для ключевых экранов
+- [ ] **Производительность (остаток).** Baseline profile; Compose stability (`@Immutable`, immutable-коллекции) по compiler reports. `isShrinkResources`, `collectAsStateWithLifecycle`, параллельный AQI — сделаны
 
 ### P2 — продукт и UX
 
@@ -34,6 +31,7 @@
 
 ## Готово
 
+- 2026-11-14 — P1: CI гоняет lint и release (R8) на каждый PR, unit-тесты перед релизом; ручной DI (`AppContainer` + `NimbusViewModelFactory`), тесты `HomeViewModel`/`LocationSearchViewModel`/`SettingsDataStore`/`WidgetPalette`; атомарная запись кэша, будильник через WorkManager, виджет не обновляется без виджетов; AQI параллельно с погодой, `collectAsStateWithLifecycle`, `isShrinkResources`
 - 2026-11-14 — P0 из ревизии: кэш по координатам города (погода, AQI, виджет), `RECEIVE_BOOT_COMPLETED` для перепланирования будильника, удалены остатки точного будильника, `values-cs/language`, versionName по умолчанию без фантомной 1.1, `attachBaseContext` без `runBlocking`
 - 2026-09-30 — Фит виджета по высоте (v1.48, обрезка низа у товарища)
 - 2026-09-29 — Большие иконки погоды: главная 112, дни 56, часы 32 (v1.46–v1.47)

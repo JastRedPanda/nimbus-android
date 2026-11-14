@@ -26,8 +26,9 @@ import kotlinx.coroutines.launch
  * Google Play), поэтому предупреждения в настройках нет.
  *
  * Receiver различает два вида сигналов:
- *  - [WeatherAlarmScheduler.ACTION_REFRESH] — сам будильник: качает погоду
- *    через общий [performWeatherRefresh] и планирует следующий выстрел
+ *  - [WeatherAlarmScheduler.ACTION_REFRESH] — сам будильник: ставит
+ *    немедленную задачу WorkManager (сеть в `goAsync` не тянем — не
+ *    укладывались в его лимит времени) и планирует следующий выстрел
  *    (алармы одноразовые, поэтому цепочкой);
  *  - BOOT_COMPLETED / MY_PACKAGE_REPLACED / TIME_SET — только перепланирование.
  *    Сеть на каждой перезагрузке не дёргаем: свежесть доберёт WorkManager.
@@ -42,7 +43,11 @@ class WeatherAlarmReceiver : BroadcastReceiver() {
         scope.launch {
             try {
                 if (action == WeatherAlarmScheduler.ACTION_REFRESH) {
-                    performWeatherRefresh(appContext)
+                    // Сеть — отдельной задачей WorkManager. goAsync даёт около
+                    // десяти секунд: медленный запрос не успевал, процесс
+                    // убивался вместе с будильником, и следующий выстрел
+                    // оставался неперепланированным.
+                    WeatherUpdateScheduler.enqueueImmediate(appContext)
                 } else {
                     Log.d("WeatherAlarm", "system event $action, reschedule only")
                 }

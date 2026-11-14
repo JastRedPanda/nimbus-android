@@ -10,8 +10,8 @@ import com.nimbus.weather.data.repository.WeatherRepository
 import com.nimbus.weather.service.KeepAliveService
 import com.nimbus.weather.service.NotificationHelper
 import com.nimbus.weather.service.WeatherAlarmScheduler
+import com.nimbus.weather.service.WeatherEffects
 import com.nimbus.weather.service.WeatherUpdateScheduler
-import com.nimbus.weather.service.WidgetUpdateManager
 import com.nimbus.weather.util.CityNameResolver
 import com.nimbus.weather.util.CityNameTranslator
 import com.nimbus.weather.util.LanguageHelper
@@ -40,9 +40,12 @@ data class SettingsUiState(
     val skyAnimationEnabled: Boolean = true
 )
 
-class SettingsViewModel(application: Application) : AndroidViewModel(application) {
-
-    private val settings = SettingsDataStore(application)
+class SettingsViewModel(
+    application: Application,
+    private val settings: SettingsDataStore,
+    private val repository: WeatherRepository,
+    private val effects: WeatherEffects
+) : AndroidViewModel(application) {
 
     private val _state = MutableStateFlow(SettingsUiState())
     val state: StateFlow<SettingsUiState> = _state.asStateFlow()
@@ -95,7 +98,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     private suspend fun translateCitiesForLanguage(language: String) {
         try {
-            val translator = CityNameTranslator(WeatherRepository(), settings)
+            val translator = CityNameTranslator(repository, settings)
             val loc = settings.getLocationSnapshot()
             val cities = buildList {
                 add(FavouriteCity(loc.name, loc.lat, loc.lon, loc.tz, loc.localNames))
@@ -121,7 +124,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             if (enabled) {
                 try {
                     val loc = settings.getLocationSnapshot()
-                    val response = WeatherRepository().getWeather(loc.lat, loc.lon, getApplication())
+                    val response = repository.getWeather(loc.lat, loc.lon, getApplication())
                     NotificationHelper.showWeatherNotification(getApplication(), response)
                 } catch (_: Exception) {
                 }
@@ -158,7 +161,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun removeFavouriteCity(name: String) {
         viewModelScope.launch {
             settings.removeFavouriteCity(name)
-            WidgetUpdateManager.updateFromTargetCity(getApplication())
+            effects.onFavouriteChanged()
         }
     }
 
@@ -172,7 +175,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             settings.setFavouriteCities(
                 current.toMutableList().apply { add(target, removeAt(index)) }
             )
-            WidgetUpdateManager.updateFromTargetCity(getApplication())
+            effects.onFavouriteChanged()
         }
     }
 

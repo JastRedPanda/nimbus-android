@@ -10,7 +10,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.concurrent.ConcurrentHashMap
 
-class WeatherRepository {
+/**
+ * @param appContext контекст приложения для файлового кэша. Передаётся из
+ * [com.nimbus.weather.AppContainer]; методы по-прежнему принимают контекст
+ * явно, если вызывающий хочет свой.
+ */
+class WeatherRepository(private val appContext: Context? = null) {
 
     companion object {
         const val DEFAULT_TTL_HOURS = 4
@@ -82,8 +87,11 @@ class WeatherRepository {
         }
     }
 
+    private fun cacheFor(context: Context?): WeatherCache? =
+        (context ?: appContext)?.let { getCache(it) }
+
     suspend fun getWeather(lat: Double, lon: Double, context: Context? = null): WeatherResponse = withContext(Dispatchers.IO) {
-        val c = context?.let { getCache(it) }
+        val c = cacheFor(context)
         try {
             val response = weatherApi.getForecast(latitude = lat, longitude = lon)
             showingCachedWeather = false
@@ -105,7 +113,7 @@ class WeatherRepository {
     }
 
     suspend fun getAirQuality(lat: Double, lon: Double, context: Context? = null): AirQualityResponse = withContext(Dispatchers.IO) {
-        val c = context?.let { getCache(it) }
+        val c = cacheFor(context)
         try {
             val response = airQualityApi.getAirQuality(latitude = lat, longitude = lon)
             c?.cacheAqi(response, lat, lon)
