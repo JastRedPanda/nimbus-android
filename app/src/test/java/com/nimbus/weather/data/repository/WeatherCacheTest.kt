@@ -1,6 +1,8 @@
 package com.nimbus.weather.data.repository
 
 import android.content.Context
+import com.nimbus.weather.data.model.AirQualityCurrent
+import com.nimbus.weather.data.model.AirQualityResponse
 import com.nimbus.weather.data.model.CurrentWeather
 import com.nimbus.weather.data.model.WeatherResponse
 import io.mockk.every
@@ -81,5 +83,30 @@ class WeatherCacheTest {
         val widgetResult = weatherCache.getCachedWidgetWeather(allowExpired = true)
         assertNotNull(widgetResult)
         assertEquals(22.5, widgetResult?.current?.temperature ?: 0.0, 0.01)
+    }
+
+    @Test
+    fun `cached weather is not reused for another city`() {
+        weatherCache.cacheWeather(sampleWeather, lat = 50.45, lon = 30.52)
+
+        assertNotNull(weatherCache.getCachedWeatherFor(50.45, 30.52, allowExpired = true))
+        // Тот же кэш, но другой город (Львов) — ответ должен быть отброшен.
+        assertNull(weatherCache.getCachedWeatherFor(49.84, 24.03, allowExpired = true))
+    }
+
+    @Test
+    fun `coordinate comparison tolerates api rounding`() {
+        weatherCache.cacheWeather(sampleWeather, lat = 50.4501, lon = 30.5234)
+
+        assertNotNull(weatherCache.getCachedWeatherFor(50.455, 30.529, allowExpired = true))
+    }
+
+    @Test
+    fun `cached aqi is bound to city coordinates`() {
+        val aqi = AirQualityResponse(current = AirQualityCurrent(europeanAqi = 42.0))
+        weatherCache.cacheAqi(aqi, lat = 50.45, lon = 30.52)
+
+        assertNotNull(weatherCache.getCachedAqiFor(50.45, 30.52, allowExpired = true))
+        assertNull(weatherCache.getCachedAqiFor(49.84, 24.03, allowExpired = true))
     }
 }

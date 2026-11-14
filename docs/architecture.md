@@ -108,7 +108,8 @@ util/           CityNameResolver.kt, CityNameTranslator.kt, LanguageHelper.kt,
 ## Кэш
 
 - `WeatherCache` — ответы API (погода + AQI + таймстемп) в JSON-файле в `cacheDir`
-- При ошибке сети `WeatherRepository` читает из кэша
+- **Кэш привязан к городу**: рядом с ответом лежат запрошенные координаты (`weather_coords.txt`, `aqi_coords.txt`, `widget_coords.txt`), при чтении fallback сверяется с ними (`coordsMatch`, допуск 0.01° ≈ 1 км). В `AirQualityResponse` координат нет — для AQI метаданные единственный источник; кэш AQI без них считается чужим
+- При ошибке сети `WeatherRepository` читает из кэша только ответ того же города (`getCachedWeatherFor` / `getCachedAqiFor`), иначе пробрасывает ошибку
 - TTL = 2 × интервал обновления (`setTtlHours` в `HomeViewModel.performLoad` и `WidgetUpdateManager.updateFromTargetCity`), при успешном обновлении кэш перезаписывается
 - Индикатор «показаны кэшированные данные» — AssistChip на главном экране (`showingCachedWeather`)
 

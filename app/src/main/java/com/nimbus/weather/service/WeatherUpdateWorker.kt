@@ -44,9 +44,8 @@ suspend fun performWeatherRefresh(context: Context): androidx.work.ListenableWor
         val response = target?.let {
             repository.getWeather(it.lat, it.lon, context)
         } ?: repository.getWeather(home.lat, home.lon, context)
-        val responseCity = target?.name ?: home.cityName
 
-        WidgetUpdateManager.updateAllWidgets(context, response, responseCity)
+        WidgetUpdateManager.updateAllWidgets(context, response)
 
         if (home.notificationsEnabled) {
             NotificationHelper.showWeatherNotification(context, response)
