@@ -4,17 +4,18 @@
 
 | Компонент | Выбор |
 |---|---|
+| Сборка | AGP 9.5.1, Gradle 9.9.1, Kotlin 2.4.21 (встроенный в AGP), версии — `gradle/libs.versions.toml` |
 | Язык | Kotlin (jvmTarget 17) |
-| UI | Jetpack Compose + Material 3 (BOM 2024.12.01) |
+| UI | Jetpack Compose + Material 3 (BOM 2026.09.00) |
 | Виджет | Классические RemoteViews + TextClock (Glance удалён — часы на нём замирали на MIUI) |
 | Архитектура | MVVM: ViewModel + Repository, ручной DI |
-| Сеть | Retrofit 2.11 + OkHttp 4.12 + kotlinx.serialization 1.7.3 |
+| Сеть | Retrofit 3.0 + OkHttp 5.5.1 + kotlinx.serialization 1.13.0 |
 | Асинхронность | Coroutines + Flow |
-| Настройки | DataStore Preferences 1.1.1 |
-| Фон | WorkManager 2.10 |
-| Навигация | navigation-compose 2.8.5 (NavHost в MainActivity) |
-| Splash | core-splashscreen 1.0.1 |
-| Версии | minSdk 26, compileSdk/targetSdk 35, versionCode — автоинкремент (app/version.properties), versionName вручную по тегу релиза (сейчас 1.48) |
+| Настройки | DataStore Preferences 1.1.1 (1.2+ на Windows ломает JVM-тесты) |
+| Фон | WorkManager 2.12.0 |
+| Навигация | navigation-compose 2.10.2 (NavHost в MainActivity) |
+| Splash | core-splashscreen 1.2.0 |
+| Версии | minSdk 26, compileSdk 37.2, targetSdk 36, versionCode — автоинкремент (app/version.properties), versionName вручную по тегу релиза (сейчас 1.48) |
 
 ## Сеть (Open-Meteo)
 
@@ -113,36 +114,28 @@ util/           CityNameResolver.kt, CityNameTranslator.kt, LanguageHelper.kt,
 - TTL = 2 × интервал обновления (`setTtlHours` в `HomeViewModel.performLoad` и `WidgetUpdateManager.updateFromTargetCity`), при успешном обновлении кэш перезаписывается
 - Индикатор «показаны кэшированные данные» — AssistChip на главном экране (`showingCachedWeather`)
 
-## Зависимости (app/build.gradle.kts)
+## Зависимости (gradle/libs.versions.toml)
 
-```kotlin
-// Compose BOM
-platform("androidx.compose:compose-bom:2024.12.01")
-androidx.compose.material3, ui, ui-tooling(-preview), material-icons-extended
+Версии собраны в version catalog; `app/build.gradle.kts` подключает алиасы.
 
-// Activity + Lifecycle
-androidx.activity:activity-compose:1.9.3
-androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7
-androidx.lifecycle:lifecycle-runtime-compose:2.8.7
-
-// Navigation
-androidx.navigation:navigation-compose:2.8.5
-
-// Retrofit + OkHttp + serialization
-com.squareup.retrofit2:retrofit:2.11.0
-com.squareup.okhttp3:okhttp:4.12.0
-com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter:1.0.0
-org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3
-
-// DataStore, WorkManager, Core, Splash
-androidx.datastore:datastore-preferences:1.1.1
-androidx.work:work-runtime-ktx:2.10.0
-androidx.core:core-ktx:1.15.0
-androidx.core:core-splashscreen:1.0.1
-
-// Tests
-junit 4.13.2, kotlinx-coroutines-test 1.9.0, mockk 1.13.13, turbine 1.2.0
+```toml
+agp = "9.5.1"
+kotlin = "2.4.21"
+composeBom = "2026.09.00"          # требует compileSdk 37
+activityCompose = "1.13.0"
+lifecycle = "2.11.0"
+navigationCompose = "2.10.2"
+retrofit = "3.0.0"
+okhttp = "5.5.1"
+kotlinxSerialization = "1.13.0"
+datastore = "1.1.1"                # 1.2+ падает на Windows-тестах (okio atomicMove)
+work = "2.12.0"
+coreKtx = "1.19.1"
+splashscreen = "1.2.0"
+junit = "4.13.2", coroutinesTest = "1.11.0", mockk = "1.14.12", turbine = "1.2.1"
 ```
+
+`compileSdk = 37` + `compileSdkMinor = 2`, `targetSdk = 36`: свежие AndroidX требуют компиляции против 37, но runtime-поведения API 37 не проверены на устройстве. AGP 9 несёт встроенную поддержку Kotlin — плагин `org.jetbrains.kotlin.android` подключать нельзя, иначе сборка падает.
 
 ## Подводные камни
 
