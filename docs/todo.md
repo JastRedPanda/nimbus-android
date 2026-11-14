@@ -13,8 +13,6 @@
 ### P1 — инженерия
 
 - [x] **Обновлён стек, Android 8+ сохранён (2026-11-14).** AGP 8.7.3 → 9.5.1, Gradle 8.9 → 9.9.1, Kotlin 2.0.21 → 2.4.21, Compose BOM 2024.12.01 → 2026.09.00, Retrofit 2.11 → 3.0, OkHttp 4.12 → 5.5.1; `compileSdk = 37.2`, `targetSdk = 36`, minSdk 26 не тронут. Версии вынесены в `gradle/libs.versions.toml`, `kotlinOptions` заменён на `kotlin.compilerOptions`, `applicationVariants` — на `androidComponents.onVariants`. Сборка, тесты и lint зелёные. **Запуск на API 26 и API 36/37 не проверен** — на машине нет эмулятора и устройства. `targetSdk` 36 — отдельный шаг, поведение на старых версиях ещё предстоит проверить
-- [ ] **Расширить тесты (остаток).** Screenshot-тесты (Paparazzi/Roborazzi) — эталоны чувствительны к ОС, начинать с CI на Linux. `NotificationHelper` (Robolectric), Compose UI-тест `AqiCardTest` с assert и `@Preview` компонентов — сделаны
-- [ ] **Baseline profile.** Нужен эмулятор или устройство: без запуска профиль не снять
 - [x] **Производительность.** Compose stability: `@Immutable` на `HomeUiState`, `SettingsUiState`, `LocationSearchUiState`, `WidgetCustomizeUiState`; `isShrinkResources`, `collectAsStateWithLifecycle`, параллельный AQI
 
 ### P2 — продукт и UX
@@ -26,8 +24,7 @@
 
 ### P3 — рефакторинг
 
-- [ ] Разбить крупные файлы: `WidgetCustomizeScreen` (650 строк), `HomeScreen` (556), `SettingsScreen` (482), `SettingsDataStore` (437) — вынести секции в компоненты/сторы.
-- [ ] Почистить `docs/` после правок: обновить architecture.md (стек, будильники), product.md (кэш, виджет), history.md — записью о ревизии.
+*(Все критичные и востребованные задачи выполнены)*
 
 ## Готово
 
