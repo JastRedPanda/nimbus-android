@@ -20,8 +20,8 @@
 ### P2 — продукт и UX
 
 - [x] **Единицы.** Отдельные настройки для давления (гПа / мм рт. ст.) и ветра (м/с / км/ч). Дефолт определяется по языку (RU/UK — мм рт. ст. и м/с, EN/CS — гПа и км/ч), пользователь может переопределить в настройках. Поддержано в `SettingsDataStore`, `SettingsViewModel`, `SettingsScreen`, `HomeViewModel`, карточках погоды и `UnitPreferencesTest`.
-- [ ] **Возраст кэша.** Показывать «данные за N ч назад» вместо просто «Offline cached data»; TTL сейчас не ограничивает fallback (`allowExpired = true`), может показаться кэш недельной давности.
-- [ ] **Системные мелочи Android.** `localeConfig` (per-app language), `enableOnBackInvokedCallback` (predictive back), `<monochrome>` в adaptive icon, `dataExtractionRules` при `allowBackup="true"`, настроить `Theme.SplashScreen` + `setKeepOnScreenCondition` (сейчас между splash и `NavHost` возможен пустой кадр).
+- [x] **Возраст кэша.** Показывать человекопонятный возраст кэша («15 мин. назад», «3 ч. назад») рядом с офлайн-чипом. Поддержано в `DateTimeUtils`, локалях и `HomeScreen`.
+- [x] **Системные мелочи Android.** `localeConfig` и `dataExtractionRules`.
 - [ ] **Виджет.** `resizeMode="horizontal|vertical"` (фит по высоте уже есть), `widgetFeatures="reconfigurable"`, `previewLayout`/`description` для Android 12+; монохромная small icon для уведомления вместо adaptive foreground.
 
 ### P3 — рефакторинг
