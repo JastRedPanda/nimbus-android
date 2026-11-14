@@ -2,6 +2,17 @@
 
 Хроника багфиксов и решений с причинами. Читать при работе с соответствующими компонентами.
 
+## Сессия 2026-11-14 — Ревизия кода, обновление стека, тесты и CI
+
+- **Обновление стека**: AGP 9.5.1, Gradle 9.9.1, Kotlin 2.4.21, Compose BOM 2026.09.00, Retrofit 3.0, OkHttp 5.5.1; `compileSdk = 37.2`, `targetSdk = 36`.
+- **Ручной DI и тестирование**: `AppContainer` + `NimbusViewModelFactory`, эффекты вынесены в `WeatherEffects`. Написаны тесты: `HomeViewModelTest`, `LocationSearchViewModelTest`, `SettingsDataStoreTest`, `WidgetPaletteTest`, `NotificationHelperTest`, `AqiCardTest`, `UnitPreferencesTest`. Robolectric настроен на SDK 35.
+- **Новые функции**:
+  - Настройки единиц давления (hPa / mmHg) и ветра (m/s / km/h) независимо, с дефолтами по языку приложения.
+  - Человекопонятный возраст кэша («3 ч. назад») рядом с офлайн-чипом (`DateTimeUtils.formatRelativeCacheAge`).
+  - Системные файлы `locales_config.xml` и `data_extraction_rules.xml` для Android 13+.
+  - Метаданные и превью для виджета (`widget_clock_temp_preview.xml`, `reconfigurable`, `resizeMode="horizontal|vertical"`).
+- **Исправление CI**: GitHub Actions переведены на JDK 21 (требование AGP 9.5.1).
+
 ## Сессия 2026-08-08 — первая волна (текущая на старте)
 
 - **AQI не появлялся на главном экране**: AQI запрашивался с `api.open-meteo.com` → 404 (хосты Open-Meteo раздельные). Фикс: отдельный Retrofit на `air-quality-api.open-meteo.com` в `ApiClient` (константа `AIR_QUALITY_BASE_URL`)
