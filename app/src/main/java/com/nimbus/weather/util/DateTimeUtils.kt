@@ -1,5 +1,6 @@
 package com.nimbus.weather.util
 
+import com.nimbus.weather.R
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -111,6 +112,20 @@ fun isDayNowByTime(now: LocalTime, sunriseIso: String, sunsetIso: String): Boole
     } catch (_: Exception) {
         true
     }
+}
+
+/**
+ * Человекопонятный возраст кэша («данные 15 мин назад», «данные 3 ч назад» и т. д.).
+ */
+fun formatRelativeCacheAge(millis: Long, context: android.content.Context): String {
+    if (millis <= 0L) return ""
+    val diffMinutes = java.time.Duration.ofMillis(System.currentTimeMillis() - millis).toMinutes()
+    if (diffMinutes < 1) return context.getString(R.string.cache_age_just_now)
+    if (diffMinutes < 60) return context.getString(R.string.cache_age_minutes, diffMinutes)
+    val diffHours = diffMinutes / 60
+    if (diffHours < 24) return context.getString(R.string.cache_age_hours, diffHours)
+    val diffDays = diffHours / 24
+    return context.getString(R.string.cache_age_days, diffDays)
 }
 
 /** Короткие дата+время для метки «обновлено»: 28.09.26, 09:00. */

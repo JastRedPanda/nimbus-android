@@ -54,6 +54,10 @@
     <string name="hourly_interval_6h">Every 6 hours</string>
     <string name="show_aqi">Show air quality index</string>
     <string name="cached_data">Offline cached data</string>
+    <string name="cache_age_just_now">Just updated</string>
+    <string name="cache_age_minutes">Updated %d min ago</string>
+    <string name="cache_age_hours">Updated %d h ago</string>
+    <string name="cache_age_days">Updated %d d ago</string>
     <string name="notifications">Notifications</string>
     <string name="notifications_enabled">Weather notifications</string>
 
