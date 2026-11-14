@@ -340,6 +340,8 @@ private fun TabletLayout(
                     sunrise = state.sunrise,
                     sunset = state.sunset,
                     tempUnit = state.tempUnit,
+                    pressureUnit = state.resolvedPressureUnit,
+                    windSpeedUnit = state.resolvedWindSpeedUnit,
                     isDay = isDay,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -347,6 +349,7 @@ private fun TabletLayout(
                     HourlyForecastBar(
                         hourly = state.hourly,
                         tempUnit = state.tempUnit,
+                        windSpeedUnit = state.resolvedWindSpeedUnit,
                         sunrise = state.sunrise,
                         sunset = state.sunset,
                         modifier = Modifier.fillMaxWidth()
@@ -380,7 +383,11 @@ private fun TabletLayout(
                     )
                     if (dailyExpanded) {
                         state.daily.forEach { day ->
-                            DailyForecastCard(day = day, tempUnit = state.tempUnit)
+                            DailyForecastCard(
+                                day = day,
+                                tempUnit = state.tempUnit,
+                                windSpeedUnit = state.resolvedWindSpeedUnit
+                            )
                         }
                     }
                 }
@@ -420,6 +427,8 @@ private fun PhoneLayout(
                 sunrise = state.sunrise,
                 sunset = state.sunset,
                 tempUnit = state.tempUnit,
+                pressureUnit = state.resolvedPressureUnit,
+                windSpeedUnit = state.resolvedWindSpeedUnit,
                 isDay = isDay,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -429,6 +438,7 @@ private fun PhoneLayout(
                 HourlyForecastBar(
                     hourly = state.hourly,
                     tempUnit = state.tempUnit,
+                    windSpeedUnit = state.resolvedWindSpeedUnit,
                     sunrise = state.sunrise,
                     sunset = state.sunset,
                     modifier = Modifier.fillMaxWidth()
@@ -462,7 +472,11 @@ private fun PhoneLayout(
                     key = { it.date },
                     contentType = { "daily_card" }
                 ) { day ->
-                    DailyForecastCard(day = day, tempUnit = state.tempUnit)
+                    DailyForecastCard(
+                        day = day,
+                        tempUnit = state.tempUnit,
+                        windSpeedUnit = state.resolvedWindSpeedUnit
+                    )
                 }
             }
         }

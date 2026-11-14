@@ -33,10 +33,12 @@ import com.nimbus.weather.ui.theme.rememberColdAccent
 import com.nimbus.weather.ui.theme.rememberPrecipitationAccent
 import com.nimbus.weather.ui.theme.rememberSkyTextColors
 import com.nimbus.weather.util.TemperatureUnit
+import com.nimbus.weather.util.WindSpeedUnit
 import com.nimbus.weather.util.displayString
 import com.nimbus.weather.util.formatHour
 import com.nimbus.weather.util.isDayNow
 import com.nimbus.weather.util.toCelsiusOrFahrenheit
+import com.nimbus.weather.util.toWindSpeed
 import com.nimbus.weather.util.windDirection
 
 data class HourlyForecastData(
@@ -70,6 +72,7 @@ private val ChartHeight = 34.dp
 fun HourlyForecastBar(
     hourly: List<HourlyForecastData>,
     tempUnit: TemperatureUnit = TemperatureUnit.CELSIUS,
+    windSpeedUnit: WindSpeedUnit = WindSpeedUnit.MS,
     sunrise: String = "",
     sunset: String = "",
     modifier: Modifier = Modifier
@@ -90,7 +93,7 @@ fun HourlyForecastBar(
                     Spacer(modifier = Modifier.height(4.dp))
                     TempSparkline(hourly = hourly, tempUnit = tempUnit)
                     Spacer(modifier = Modifier.height(4.dp))
-                    HourlyBottomRow(hourly = hourly, tempUnit = tempUnit)
+                    HourlyBottomRow(hourly = hourly, tempUnit = tempUnit, windSpeedUnit = windSpeedUnit)
                 }
             }
         }
@@ -129,10 +132,13 @@ private fun HourlyTopRow(
 @Composable
 private fun HourlyBottomRow(
     hourly: List<HourlyForecastData>,
-    tempUnit: TemperatureUnit
+    tempUnit: TemperatureUnit,
+    windSpeedUnit: WindSpeedUnit
 ) {
     val t = rememberSkyTextColors()
-    val windUnit = stringResource(R.string.wind_ms)
+    val windUnit = stringResource(
+        if (windSpeedUnit == WindSpeedUnit.MS) R.string.wind_ms else R.string.wind_kmh
+    )
     Row(horizontalArrangement = Arrangement.spacedBy(HourlyChipGap)) {
         hourly.forEach { h ->
             Column(
@@ -150,8 +156,9 @@ private fun HourlyBottomRow(
                 )
                 // Колонка часа шире недельной, поэтому скорость и направление
                 // помещаются в одну строку без обрезки по краям.
+                val windVal = h.windSpeed.toWindSpeed(windSpeedUnit)
                 Text(
-                    text = "${h.windSpeed.toInt()} $windUnit ${windDirection(h.windDirection)}",
+                    text = "${windVal.toInt()} $windUnit ${windDirection(h.windDirection)}",
                     style = ChipMetaText,
                     color = t.subtle,
                     textAlign = TextAlign.Center,

@@ -11,8 +11,10 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.nimbus.weather.util.LanguageHelper
+import com.nimbus.weather.util.PressureUnit
 import com.nimbus.weather.util.ThemeMode
 import com.nimbus.weather.util.TemperatureUnit
+import com.nimbus.weather.util.WindSpeedUnit
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -41,6 +43,8 @@ class SettingsDataStore(
     companion object {
         private val KEY_ONBOARDING_DONE = booleanPreferencesKey("onboarding_done")
         private val KEY_TEMP_UNIT = stringPreferencesKey("temp_unit")
+        private val KEY_PRESSURE_UNIT = stringPreferencesKey("pressure_unit")
+        private val KEY_WIND_UNIT = stringPreferencesKey("wind_unit")
         private val KEY_THEME_MODE = stringPreferencesKey("theme_mode")
         private val KEY_NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
         private val KEY_CITY_NAME = stringPreferencesKey("city_name")
@@ -116,6 +120,16 @@ class SettingsDataStore(
 
     val tempUnit: Flow<TemperatureUnit> = dataStore.data.map { prefs ->
         TemperatureUnit.valueOf(prefs[KEY_TEMP_UNIT] ?: "CELSIUS")
+    }
+
+    /** `null` — выбор не сделан, единица берётся из языка приложения. */
+    val pressureUnit: Flow<PressureUnit?> = dataStore.data.map { prefs ->
+        prefs[KEY_PRESSURE_UNIT]?.let { runCatching { PressureUnit.valueOf(it) }.getOrNull() }
+    }
+
+    /** `null` — выбор не сделан, единица берётся из языка приложения. */
+    val windSpeedUnit: Flow<WindSpeedUnit?> = dataStore.data.map { prefs ->
+        prefs[KEY_WIND_UNIT]?.let { runCatching { WindSpeedUnit.valueOf(it) }.getOrNull() }
     }
 
     val cityName: Flow<String> = dataStore.data.map { prefs ->
@@ -296,6 +310,18 @@ class SettingsDataStore(
         }
     }
 
+    suspend fun setPressureUnit(unit: PressureUnit) {
+        dataStore.edit { prefs ->
+            prefs[KEY_PRESSURE_UNIT] = unit.name
+        }
+    }
+
+    suspend fun setWindSpeedUnit(unit: WindSpeedUnit) {
+        dataStore.edit { prefs ->
+            prefs[KEY_WIND_UNIT] = unit.name
+        }
+    }
+
     suspend fun setLocation(name: String, lat: Double, lon: Double, tz: String, localNames: Map<String, String> = emptyMap()) {
         dataStore.edit { prefs ->
             prefs[KEY_CITY_NAME] = name
@@ -359,6 +385,8 @@ class SettingsDataStore(
         val localNames: Map<String, String> = emptyMap(),
         val updateIntervalHours: Int = DEFAULT_UPDATE_INTERVAL_HOURS,
         val tempUnit: TemperatureUnit = TemperatureUnit.CELSIUS,
+        val pressureUnit: PressureUnit? = null,
+        val windSpeedUnit: WindSpeedUnit? = null,
         val hourlyIntervalHours: Int = DEFAULT_HOURLY_INTERVAL_HOURS,
         val notificationsEnabled: Boolean = true,
         val appLanguage: String = LanguageHelper.AUTO,
@@ -375,6 +403,8 @@ class SettingsDataStore(
             localNames = decode(prefs[KEY_CITY_LOCAL_NAMES], emptyMap()),
             updateIntervalHours = prefs[KEY_UPDATE_INTERVAL_HOURS] ?: DEFAULT_UPDATE_INTERVAL_HOURS,
             tempUnit = decode(prefs[KEY_TEMP_UNIT], TemperatureUnit.CELSIUS),
+            pressureUnit = prefs[KEY_PRESSURE_UNIT]?.let { runCatching { PressureUnit.valueOf(it) }.getOrNull() },
+            windSpeedUnit = prefs[KEY_WIND_UNIT]?.let { runCatching { WindSpeedUnit.valueOf(it) }.getOrNull() },
             hourlyIntervalHours = prefs[KEY_HOURLY_INTERVAL_HOURS] ?: DEFAULT_HOURLY_INTERVAL_HOURS,
             notificationsEnabled = prefs[KEY_NOTIFICATIONS_ENABLED] ?: true,
             appLanguage = prefs[KEY_APP_LANGUAGE] ?: LanguageHelper.AUTO,
@@ -392,6 +422,8 @@ class SettingsDataStore(
         val appLanguage: String = LanguageHelper.AUTO,
         val showAqi: Boolean = true,
         val tempUnit: TemperatureUnit = TemperatureUnit.CELSIUS,
+        val pressureUnit: PressureUnit? = null,
+        val windSpeedUnit: WindSpeedUnit? = null,
         val hourlyIntervalHours: Int = DEFAULT_HOURLY_INTERVAL_HOURS,
         val notificationsEnabled: Boolean = true,
         val skyAnimationEnabled: Boolean = true,
@@ -404,6 +436,8 @@ class SettingsDataStore(
             appLanguage = prefs[KEY_APP_LANGUAGE] ?: LanguageHelper.AUTO,
             showAqi = prefs[KEY_SHOW_AQI] ?: true,
             tempUnit = decode(prefs[KEY_TEMP_UNIT], TemperatureUnit.CELSIUS),
+            pressureUnit = prefs[KEY_PRESSURE_UNIT]?.let { runCatching { PressureUnit.valueOf(it) }.getOrNull() },
+            windSpeedUnit = prefs[KEY_WIND_UNIT]?.let { runCatching { WindSpeedUnit.valueOf(it) }.getOrNull() },
             hourlyIntervalHours = prefs[KEY_HOURLY_INTERVAL_HOURS] ?: DEFAULT_HOURLY_INTERVAL_HOURS,
             notificationsEnabled = prefs[KEY_NOTIFICATIONS_ENABLED] ?: true,
             skyAnimationEnabled = prefs[KEY_SKY_ANIMATION_ENABLED] ?: true,

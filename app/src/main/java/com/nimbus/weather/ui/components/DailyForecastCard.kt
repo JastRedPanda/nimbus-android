@@ -33,11 +33,13 @@ import com.nimbus.weather.ui.theme.rememberColdAccent
 import com.nimbus.weather.ui.theme.rememberPrecipitationAccent
 import com.nimbus.weather.ui.theme.rememberSkyTextColors
 import com.nimbus.weather.util.TemperatureUnit
+import com.nimbus.weather.util.WindSpeedUnit
 import com.nimbus.weather.util.displayString
 import com.nimbus.weather.util.formatDayOfWeek
 import com.nimbus.weather.util.formatTime
 import com.nimbus.weather.util.isToday
 import com.nimbus.weather.util.toCelsiusOrFahrenheit
+import com.nimbus.weather.util.toWindSpeed
 import com.nimbus.weather.util.weatherDescriptionRes
 import com.nimbus.weather.util.windDirection
 
@@ -62,6 +64,7 @@ data class DailyForecastData(
 fun DailyForecastCard(
     day: DailyForecastData,
     tempUnit: TemperatureUnit = TemperatureUnit.CELSIUS,
+    windSpeedUnit: WindSpeedUnit = WindSpeedUnit.MS,
     modifier: Modifier = Modifier
 ) {
     GlassCard(modifier = modifier) {
@@ -134,11 +137,16 @@ fun DailyForecastCard(
             Spacer(modifier = Modifier.height(4.dp))
 
             Row(modifier = Modifier.fillMaxWidth()) {
+                val wMax = day.windMax.toWindSpeed(windSpeedUnit)
+                val wGusts = day.windGusts.toWindSpeed(windSpeedUnit)
+                val wUnitStr = stringResource(
+                    if (windSpeedUnit == WindSpeedUnit.MS) R.string.wind_ms else R.string.wind_kmh
+                )
                 DailyDetailItem(
                     icon = Icons.Default.Air,
                     iconTint = coldAccent,
                     label = stringResource(R.string.wind),
-                    value = "${day.windMax.toInt()} - ${day.windGusts.toInt()} ${stringResource(R.string.wind_ms)} ${windDirection(day.windDirection)}",
+                    value = "${wMax.toInt()} - ${wGusts.toInt()} $wUnitStr ${windDirection(day.windDirection)}",
                     modifier = Modifier.weight(1f),
                     align = Alignment.Start
                 )
