@@ -101,6 +101,8 @@
 
     <!-- Widgets -->
     <string name="widgets">Widget</string>
+    <string name="widget_name">Hodiny a počasí</string>
+    <string name="widget_description">Zobrazuje aktuální čas, datum, počasí a teplotu</string>
     <string name="widget_customize">Vzhled</string>
     <string name="widget_preview">Náhled</string>
     <string name="widget_bg_color">Barva pozadí</string>

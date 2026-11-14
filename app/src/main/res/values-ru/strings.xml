@@ -101,6 +101,8 @@
 
     <!-- Виджеты -->
     <string name="widgets">Виджет</string>
+    <string name="widget_name">Часы и погода</string>
+    <string name="widget_description">Отображает текущее время, дату, погоду и температуру</string>
     <string name="widget_customize">Внешний вид</string>
     <string name="widget_preview">Предпросмотр</string>
     <string name="widget_bg_color">Цвет фона</string>

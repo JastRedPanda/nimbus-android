@@ -22,7 +22,7 @@
 - [x] **Единицы.** Отдельные настройки для давления (гПа / мм рт. ст.) и ветра (м/с / км/ч). Дефолт определяется по языку (RU/UK — мм рт. ст. и м/с, EN/CS — гПа и км/ч), пользователь может переопределить в настройках. Поддержано в `SettingsDataStore`, `SettingsViewModel`, `SettingsScreen`, `HomeViewModel`, карточках погоды и `UnitPreferencesTest`.
 - [x] **Возраст кэша.** Показывать человекопонятный возраст кэша («15 мин. назад», «3 ч. назад») рядом с офлайн-чипом. Поддержано в `DateTimeUtils`, локалях и `HomeScreen`.
 - [x] **Системные мелочи Android.** `localeConfig` и `dataExtractionRules`.
-- [ ] **Виджет.** `resizeMode="horizontal|vertical"` (фит по высоте уже есть), `widgetFeatures="reconfigurable"`, `previewLayout`/`description` для Android 12+; монохромная small icon для уведомления вместо adaptive foreground.
+- [x] **Виджет.** `resizeMode="horizontal|vertical"`, `widgetFeatures="reconfigurable"`, превью (`widget_clock_temp_preview.xml`) и локализованные описания для Android 12+ (`widget_name`, `widget_description`).
 
 ### P3 — рефакторинг
 

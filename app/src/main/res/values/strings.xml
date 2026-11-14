@@ -101,6 +101,8 @@
 
     <!-- Widgets -->
     <string name="widgets">Widget</string>
+    <string name="widget_name">Clock &amp; Temperature Widget</string>
+    <string name="widget_description">Shows current time, date, weather and temperature</string>
     <string name="widget_customize">Appearance</string>
     <string name="widget_preview">Preview</string>
     <string name="widget_bg_color">Background color</string>
