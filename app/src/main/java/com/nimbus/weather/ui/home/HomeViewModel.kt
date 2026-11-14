@@ -1,31 +1,28 @@
 package com.nimbus.weather.ui.home
 
-import android.app.Application
 import android.os.SystemClock
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nimbus.weather.data.local.SettingsDataStore
 import com.nimbus.weather.data.local.SettingsDataStore.FavouriteCity
 import com.nimbus.weather.data.model.AirQualityCurrent
 import com.nimbus.weather.data.model.CurrentWeather
-import com.nimbus.weather.data.model.HourlyWeather
 import com.nimbus.weather.data.model.WeatherResponse
 import com.nimbus.weather.data.repository.WeatherRepository
-import com.nimbus.weather.service.NotificationHelper
-import com.nimbus.weather.service.WidgetUpdateManager
+import com.nimbus.weather.service.WeatherEffects
 import com.nimbus.weather.ui.components.DailyForecastData
 import com.nimbus.weather.ui.components.HourlyForecastData
 import com.nimbus.weather.util.CityNameResolver
 import com.nimbus.weather.util.CityNameTranslator
 import com.nimbus.weather.util.LanguageHelper
 import com.nimbus.weather.util.TemperatureUnit
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 data class HomeUiState(
     val cityName: String = "",
@@ -50,10 +47,11 @@ data class HomeUiState(
     val lastWeatherUpdateMillis: Long = 0L
 )
 
-class HomeViewModel(application: Application) : AndroidViewModel(application) {
-
-    private val repository = WeatherRepository()
-    private val settings = SettingsDataStore(application)
+class HomeViewModel(
+    private val settings: SettingsDataStore,
+    private val repository: WeatherRepository,
+    private val effects: WeatherEffects
+) : ViewModel() {
 
     private val _state = MutableStateFlow(HomeUiState())
     val state: StateFlow<HomeUiState> = _state.asStateFlow()
@@ -171,40 +169,39 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private suspend fun performLoad() {
         try {
             val home = settings.getHomeSettings()
-            val ctx = getApplication<Application>()
             repository.setTtlHours(home.updateIntervalHours * 2)
-            val response = repository.getWeather(home.lat, home.lon, ctx)
 
-            // Виджет и уведомление — файловый кэш, RemoteViews и binder-вызовы
-            // AppWidgetManager. На главном потоке они давали заметный провал
-            // в кадрах сразу после загрузки погоды.
-            withContext(Dispatchers.Default) {
-                WidgetUpdateManager.updateAllWidgets(ctx, response)
-                if (home.notificationsEnabled) {
-                    NotificationHelper.showWeatherNotification(ctx, response)
-                }
+            coroutineScope {
+                // AQI — дополнительный запрос: тянем параллельно с погодой,
+                // а не после неё, иначе главный экран ждёт два сетевых круга.
+                val aqiDeferred = if (home.showAqi) {
+                    async {
+                        try {
+                            repository.getAirQuality(home.lat, home.lon).current
+                        } catch (_: Exception) { null }
+                    }
+                } else null
+
+                val response = repository.getWeather(home.lat, home.lon)
+
+                effects.onWeatherLoaded(response, home.notificationsEnabled)
+
+                val aqi = aqiDeferred?.await()
+                val lang = LanguageHelper.resolve(home.appLanguage)
+
+                _state.value = _state.value.copy(
+                    cityName = CityNameResolver.displayName(home.cityName, home.localNames, lang),
+                    current = response.current,
+                    hourly = mapHourly(response, home.hourlyIntervalHours),
+                    sunrise = response.daily?.sunrise?.firstOrNull() ?: "",
+                    sunset = response.daily?.sunset?.firstOrNull() ?: "",
+                    daily = mapDaily(response),
+                    aqi = aqi,
+                    fromCache = repository.showingCachedWeather,
+                    loading = false,
+                    refreshing = false
+                )
             }
-
-            val aqi = if (home.showAqi) {
-                try {
-                    repository.getAirQuality(home.lat, home.lon, ctx).current
-                } catch (_: Exception) { null }
-            } else null
-
-            val lang = LanguageHelper.resolve(home.appLanguage)
-
-            _state.value = _state.value.copy(
-                cityName = CityNameResolver.displayName(home.cityName, home.localNames, lang),
-                current = response.current,
-                hourly = mapHourly(response, home.hourlyIntervalHours),
-                sunrise = response.daily?.sunrise?.firstOrNull() ?: "",
-                sunset = response.daily?.sunset?.firstOrNull() ?: "",
-                daily = mapDaily(response),
-                aqi = aqi,
-                fromCache = repository.showingCachedWeather,
-                loading = false,
-                refreshing = false
-            )
         } catch (e: Exception) {
             _state.value = _state.value.copy(
                 loading = false,

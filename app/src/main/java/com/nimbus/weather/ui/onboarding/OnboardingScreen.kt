@@ -11,7 +11,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -30,8 +30,8 @@ fun OnboardingScreen(
 ) {
     val context = LocalContext.current
     val settings = remember { SettingsDataStore(context.applicationContext) }
-    val cityName by settings.cityName.collectAsState(initial = "")
-    val favourites by settings.favouriteCities.collectAsState(initial = emptyList())
+    val cityName by settings.cityName.collectAsStateWithLifecycle(initialValue = "")
+    val favourites by settings.favouriteCities.collectAsStateWithLifecycle(initialValue = emptyList())
     Column(
         modifier = Modifier
             .fillMaxSize()

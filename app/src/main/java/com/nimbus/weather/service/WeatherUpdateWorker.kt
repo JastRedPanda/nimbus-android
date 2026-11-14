@@ -28,9 +28,9 @@ class WeatherUpdateWorker(
 }
 
 /**
- * Общий путь фонового обновления погоды: и периодический WorkManager,
- * и точный будильник [WeatherAlarmReceiver] идут сюда. Качает погоду
- * целевого города, обновляет виджет и уведомление.
+ * Общий путь фонового обновления погоды: периодический WorkManager
+ * и немедленная задача от будильника [WeatherAlarmReceiver] идут сюда.
+ * Качает погоду целевого города, обновляет виджет и уведомление.
  */
 suspend fun performWeatherRefresh(context: Context): androidx.work.ListenableWorker.Result {
     return try {

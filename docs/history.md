@@ -262,3 +262,20 @@
 - **values-cs**: добавлена строка `language` — пункт «Язык» больше не падает в английский
 - **versionName по умолчанию**: было `"1.1"` при актуальной 1.52 — локальный release-APK назывался «Nimbus 1.1.apk». Теперь порядок: `-PversionName` → `versionName` из `version.properties` → `"dev"`. Релиз из тега по-прежнему передаёт версию
 - **Без `runBlocking` в `attachBaseContext`**: на первом старте без кэша языка главный поток блокировался на чтение DataStore. Теперь `attachBaseContext` читает только SharedPreferences (нет кэша — системный язык), а `onCreate` фоном сверяет кэш с DataStore, дописывает его и пересоздаёт Activity, если применённый язык отличается от сохранённого
+
+## Сессия 2026-11-14 — P1
+
+- **CI ловит больше**: `android.yml` гоняет `lintDebug` и `assembleRelease` (проверка R8) на каждый push/PR, `release.yml` — `test` до сборки. Подпись release больше не обязательна для сборки: без `~/.android/debug.keystore` APK собирается unsigned, поэтому PR проверяет R8 на чистом клоне; релизный workflow восстанавливает ключ до сборки
+- **Ручной DI**: `NimbusApplication` + `AppContainer` (DataStore, репозиторий, эффекты, фабрика ViewModel). ViewModel получают зависимости в конструкторе; виджет и уведомление спрятаны за `WeatherEffects`, чтобы тесты не поднимали AppWidgetManager и NotificationManager. `WeatherRepository` принимает appContext для кэша, методы по-прежнему могут передать свой контекст
+- **Тесты**: `HomeViewModelTest` (загрузка, ошибка сети, кэш, выключенный AQI, смена языка), `LocationSearchViewModelTest` (debounce, короткий запрос, ошибка, отмена предыдущего поиска), `SettingsDataStoreTest` (дефолты, JSON-списки, upsert, лимит недавних, повреждённый файл), `WidgetPaletteTest`. В `SettingsDataStore` добавлен подменяемый `dataStore`
+- **Производительность**: AQI запрашивается параллельно с погодой (`async`), экраны собирают состояние через `collectAsStateWithLifecycle`, `isShrinkResources = true`. `material-icons-extended` нужен ради одной иконки, но в release R8 вырезает неиспользуемые
+- **Надёжность**: атомарная запись кэша через `.tmp` + rename, будильник ставит WorkManager вместо сети в `goAsync` (запрос не укладывался в лимит receiver), `MainActivity` и `updateFromTargetCity` не дёргают сеть без виджетов
+
+## Сессия 2026-11-14 — обновление стека
+
+- **AGP 9.5.1 / Gradle 9.9.1 / Kotlin 2.4.21.** AGP 9 несёт встроенную поддержку Kotlin: плагин `org.jetbrains.kotlin.android` теперь падает с явной ошибкой, его пришлось убрать. `kotlinOptions` из `android {}` переехал в `kotlin { compilerOptions { jvmTarget } }`, `applicationVariants.all` заменён на `androidComponents.onVariants` — старый API удалён
+- **Compose BOM 2026.09.00 требует compileSdk 37.** Поставил `compileSdk = 37`, `compileSdkMinor = 2` (платформа android-37.2), `targetSdk` оставил 36: против 37 компилируемся, но runtime-поведение API 37 на устройстве не проверено, а `minSdk 26` не менялся. CI ставит `platforms;android-37.2`
+- **DataStore остался 1.1.1.** Начиная с 1.2 запись идёт через okio `atomicMove`, а на Windows это переименование падает (`File.renameTo` не перезаписывает существующий файл) — `SettingsDataStoreTest` краснел на любой версии новее 1.1.1. Версия зафиксирована в каталоге с комментарием
+- **mockk в Gradle 9.** Тестовый воркер запускается без разрешения self-attach, ByteBuddy не ставил агент, и все тесты падали на `JvmMockKGateway`. В `testOptions.unitTests.all` добавлены `-Djdk.attach.allowAttachSelf=true` и `-XX:+EnableDynamicAgentLoading`
+- **Линт после смены AGP.** Старый `app/build/intermediates/lint-cache` держал файлы и валил `lintAnalyzeDebugAndroidTest` ошибкой «файл занят другим процессом»; помогла полная чистка `app/build`
+- **Проверено:** `assembleDebug`, `test` (76 тестов), `lintDebug` (0 ошибок), `assembleRelease` с R8 и shrinkResources. Запуск на API 26/36/37 не проверен — эмулятора и устройства нет

@@ -62,6 +62,9 @@ object WidgetUpdateManager {
         renderWidgets(context, widgetIds(context))
     }
 
+    /** Есть ли на рабочем столе хотя бы один экземпляр виджета. */
+    fun hasWidgets(context: Context): Boolean = widgetIds(context).isNotEmpty()
+
     suspend fun renderWidgets(context: Context, appWidgetIds: IntArray) {
         if (appWidgetIds.isEmpty()) return
         val appWidgetManager = AppWidgetManager.getInstance(context)
@@ -78,6 +81,8 @@ object WidgetUpdateManager {
      * to whatever is already cached.
      */
     suspend fun updateFromTargetCity(context: Context, force: Boolean = false) {
+        // Без виджетов обновлять нечего: не тратим сеть и батарею.
+        if (widgetIds(context).isEmpty()) return
         val target = resolveTargetCity(context) ?: return
         val now = System.currentTimeMillis()
         val settings = SettingsDataStore(context)
@@ -107,7 +112,6 @@ object WidgetUpdateManager {
     }
 
     private fun widgetIds(context: Context): IntArray {
-
         return runCatching {
             AppWidgetManager.getInstance(context).getAppWidgetIds(
                 ComponentName(context, ClockTempWidgetReceiver::class.java)

@@ -113,7 +113,9 @@ class MainActivity : ComponentActivity() {
             if (settings.keepAliveEnabled.first()) {
                 KeepAliveService.start(this@MainActivity)
             }
-            WidgetUpdateManager.updateFromTargetCity(this@MainActivity)
+            if (WidgetUpdateManager.hasWidgets(this@MainActivity)) {
+                WidgetUpdateManager.updateFromTargetCity(this@MainActivity)
+            }
         }
 
         setContent {
@@ -140,6 +142,7 @@ fun NimbusApp() {
     val scope = rememberCoroutineScope()
     val navController = rememberNavController()
     var startDest by remember { mutableStateOf<String?>(null) }
+    val viewModelFactory = (context.applicationContext as NimbusApplication).container.viewModelFactory
 
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -187,7 +190,7 @@ fun NimbusApp() {
         }
 
         composable("home") {
-            val viewModel: HomeViewModel = viewModel()
+            val viewModel: HomeViewModel = viewModel(factory = viewModelFactory)
             HomeScreen(
                 viewModel = viewModel,
                 onSettingsClick = { navController.navigate("settings") }
@@ -195,7 +198,7 @@ fun NimbusApp() {
         }
 
         composable("settings") {
-            val viewModel: SettingsViewModel = viewModel()
+            val viewModel: SettingsViewModel = viewModel(factory = viewModelFactory)
             SettingsScreen(
                 viewModel = viewModel,
                 onBackClick = { navController.popBackStack() },
@@ -206,7 +209,8 @@ fun NimbusApp() {
 
         composable("widget_customize") {
             WidgetCustomizeScreen(
-                onBackClick = { navController.popBackStack() }
+                onBackClick = { navController.popBackStack() },
+                viewModel = viewModel(factory = viewModelFactory)
             )
         }
 
@@ -214,7 +218,7 @@ fun NimbusApp() {
             route = "location_search?closeOnSelect={closeOnSelect}",
             arguments = listOf(navArgument("closeOnSelect") { defaultValue = false })
         ) {
-            val viewModel: LocationSearchViewModel = viewModel()
+            val viewModel: LocationSearchViewModel = viewModel(factory = viewModelFactory)
             val closeOnSelect = it.arguments?.getBoolean("closeOnSelect") ?: false
             LocationSearchScreen(
                 viewModel = viewModel,
