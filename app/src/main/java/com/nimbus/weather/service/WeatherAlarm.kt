@@ -15,34 +15,42 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /**
- * Точный будильник фонового обновления погоды — второй контур доставки
+ * Неточный будильник фонового обновления погоды — второй контур доставки
  * рядом с периодическим WorkManager.
  *
  * Зачем: на агрессивных прошивках (HyperOS/MIUI и т.п.) периодический
  * WorkManager с прибитым процессом может не срабатывать часами даже с
- * отключённой экономией батареи и автозапуском. Точный будильник
- * (`setExactAndAllowWhileIdle`, проходит Doze) добуживается заметно чаще.
- * При срабатывании качает погоду через общий [performWeatherRefresh]
- * и планирует следующий выстрел — цепочкой, т.к. точные алармы одноразовые.
+ * отключённой экономией батареи и автозапуском. `setAndAllowWhileIdle`
+ * проходит Doze и добуживается заметно чаще; точное время не гарантируется,
+ * и это осознанно — SCHEDULE_EXACT_ALARM не запрашиваем (требование
+ * Google Play), поэтому предупреждения в настройках нет.
  *
- * Нужно разрешение SCHEDULE_EXACT_ALARM (Android 12+): без него молча
- * откатываемся на неточный режим — тогда контур равен WorkManager
- * и погоду тянет только он.
+ * Receiver различает два вида сигналов:
+ *  - [WeatherAlarmScheduler.ACTION_REFRESH] — сам будильник: качает погоду
+ *    через общий [performWeatherRefresh] и планирует следующий выстрел
+ *    (алармы одноразовые, поэтому цепочкой);
+ *  - BOOT_COMPLETED / MY_PACKAGE_REPLACED / TIME_SET — только перепланирование.
+ *    Сеть на каждой перезагрузке не дёргаем: свежесть доберёт WorkManager.
  */
 class WeatherAlarmReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
+        val appContext = context.applicationContext
+        val action = intent.action
         val pendingResult = goAsync()
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         scope.launch {
             try {
-                val appContext = context.applicationContext
-                performWeatherRefresh(appContext)
+                if (action == WeatherAlarmScheduler.ACTION_REFRESH) {
+                    performWeatherRefresh(appContext)
+                } else {
+                    Log.d("WeatherAlarm", "system event $action, reschedule only")
+                }
             } catch (e: Exception) {
                 Log.w("WeatherAlarm", "refresh failed", e)
             } finally {
                 try {
-                    WeatherAlarmScheduler.scheduleNext(context.applicationContext)
+                    WeatherAlarmScheduler.scheduleNext(appContext)
                 } catch (e: Exception) {
                     Log.w("WeatherAlarm", "reschedule failed", e)
                 }
@@ -82,9 +90,6 @@ object WeatherAlarmScheduler {
         context.getSystemService(AlarmManager::class.java)
             ?.cancel(alarmPendingIntent(context))
     }
-
-    /** true, когда точные будильники недоступны и нужен запрос у пользователя. */
-    fun needsExactPermission(context: Context): Boolean = false
 
     private fun alarmPendingIntent(context: Context): PendingIntent {
         val intent = Intent(context, WeatherAlarmReceiver::class.java).setAction(ACTION_REFRESH)

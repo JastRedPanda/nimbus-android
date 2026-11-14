@@ -7,22 +7,44 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File
 import java.util.concurrent.atomic.AtomicLong
+import kotlin.math.abs
 
 class WeatherCache(private val context: Context) {
+
+    companion object {
+        /**
+         * Допуск сравнения координат: 0.01° ≈ 1 км. Open-Meteo возвращает
+         * эхо координат с округлением, поэтому точное равенство Double
+         * сравнивать нельзя.
+         */
+        internal const val COORD_TOLERANCE = 0.01
+
+        internal fun coordsMatch(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Boolean =
+            abs(lat1 - lat2) <= COORD_TOLERANCE && abs(lon1 - lon2) <= COORD_TOLERANCE
+    }
 
     private val json = Json { ignoreUnknownKeys = true }
 
     private val weatherFile: File get() =
         File(context.cacheDir, "weather_cache.json").apply { parentFile?.mkdirs() }
 
+    private val weatherCoordsFile: File get() =
+        File(context.cacheDir, "weather_coords.txt").apply { parentFile?.mkdirs() }
+
     private val aqiFile: File get() =
         File(context.cacheDir, "aqi_cache.json").apply { parentFile?.mkdirs() }
+
+    private val aqiCoordsFile: File get() =
+        File(context.cacheDir, "aqi_coords.txt").apply { parentFile?.mkdirs() }
 
     private val metaFile: File get() =
         File(context.cacheDir, "cache_meta.txt").apply { parentFile?.mkdirs() }
 
     private val widgetWeatherFile: File get() =
         File(context.cacheDir, "widget_weather_cache.json").apply { parentFile?.mkdirs() }
+
+    private val widgetCoordsFile: File get() =
+        File(context.cacheDir, "widget_coords.txt").apply { parentFile?.mkdirs() }
 
     private val widgetMetaFile: File get() =
         File(context.cacheDir, "widget_cache_meta.txt").apply { parentFile?.mkdirs() }
@@ -37,6 +59,24 @@ class WeatherCache(private val context: Context) {
         return try {
             json.decodeFromString<WeatherResponse>(weatherFile.readText())
         } catch (_: Exception) { null }
+    }
+
+    /**
+     * Кэш для конкретного города. Ответ API без проверки координат
+     * после смены города показывал бы погоду предыдущего — поэтому
+     * сверяем запрошенные координаты, сохранённые при записи кэша.
+     * Для кэша, записанного до появления файла координат, сверяемся
+     * с эхом координат в самом ответе.
+     */
+    fun getCachedWeatherFor(lat: Double, lon: Double, allowExpired: Boolean = true): WeatherResponse? {
+        val cached = getCachedWeather(allowExpired = allowExpired) ?: return null
+        val stored = readCoords(weatherCoordsFile)
+        val matches = if (stored != null) {
+            coordsMatch(stored.first, stored.second, lat, lon)
+        } else {
+            coordsMatch(cached.latitude, cached.longitude, lat, lon)
+        }
+        return if (matches) cached else null
     }
 
     fun getCachedWidgetWeather(allowExpired: Boolean = true): WeatherResponse? {
@@ -57,16 +97,29 @@ class WeatherCache(private val context: Context) {
         } catch (_: Exception) { null }
     }
 
-    fun cacheWeather(response: WeatherResponse) {
+    /**
+     * AQI без координат в ответе, поэтому город определяется только
+     * по метаданным записи. Кэш без них (старая версия) считается чужим:
+     * показать AQI другого города хуже, чем не показать ничего.
+     */
+    fun getCachedAqiFor(lat: Double, lon: Double, allowExpired: Boolean = true): AirQualityResponse? {
+        val stored = readCoords(aqiCoordsFile) ?: return null
+        if (!coordsMatch(stored.first, stored.second, lat, lon)) return null
+        return getCachedAqi(allowExpired = allowExpired)
+    }
+
+    fun cacheWeather(response: WeatherResponse, lat: Double = response.latitude, lon: Double = response.longitude) {
         try {
             weatherFile.writeText(json.encodeToString(response))
+            writeCoords(weatherCoordsFile, lat, lon)
             updateTimestamp()
         } catch (_: Exception) {}
     }
 
-    fun cacheWidgetWeather(response: WeatherResponse) {
+    fun cacheWidgetWeather(response: WeatherResponse, lat: Double = response.latitude, lon: Double = response.longitude) {
         try {
             widgetWeatherFile.writeText(json.encodeToString(response))
+            writeCoords(widgetCoordsFile, lat, lon)
             val now = System.currentTimeMillis()
             synchronized(metaAccessLock) {
                 widgetCachedExpiry = now
@@ -75,11 +128,28 @@ class WeatherCache(private val context: Context) {
         } catch (_: Exception) {}
     }
 
-    fun cacheAqi(response: AirQualityResponse) {
+    fun cacheAqi(response: AirQualityResponse, lat: Double, lon: Double) {
         try {
             aqiFile.writeText(json.encodeToString(response))
+            writeCoords(aqiCoordsFile, lat, lon)
             updateTimestamp()
         } catch (_: Exception) {}
+    }
+
+    private fun readCoords(file: File): Pair<Double, Double>? {
+        if (!file.exists()) return null
+        return try {
+            val parts = file.readText().split(',')
+            val lat = parts.getOrNull(0)?.trim()?.toDoubleOrNull() ?: return null
+            val lon = parts.getOrNull(1)?.trim()?.toDoubleOrNull() ?: return null
+            lat to lon
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun writeCoords(file: File, lat: Double, lon: Double) {
+        try { file.writeText("$lat,$lon") } catch (_: Exception) {}
     }
 
     private fun isExpired(): Boolean {
@@ -118,8 +188,11 @@ class WeatherCache(private val context: Context) {
 
     fun clear() {
         weatherFile.delete()
+        weatherCoordsFile.delete()
         widgetWeatherFile.delete()
+        widgetCoordsFile.delete()
         aqiFile.delete()
+        aqiCoordsFile.delete()
         metaFile.delete()
         widgetMetaFile.delete()
         synchronized(metaAccessLock) {

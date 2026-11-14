@@ -221,7 +221,8 @@ class SettingsDataStore(private val context: Context) {
         context.dataStore.edit { prefs ->
             prefs[KEY_APP_LANGUAGE] = language
         }
-        // Дубликат для attachBaseContext: DataStore там недоступен без runBlocking.
+        // Дубликат для attachBaseContext: DataStore там синхронно не прочитать,
+        // а блокировать главный поток холодного старта нельзя.
         LanguageHelper.writeCachedLanguage(context, language)
     }
 

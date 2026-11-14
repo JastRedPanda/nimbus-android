@@ -179,7 +179,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             // AppWidgetManager. На главном потоке они давали заметный провал
             // в кадрах сразу после загрузки погоды.
             withContext(Dispatchers.Default) {
-                WidgetUpdateManager.updateAllWidgets(ctx, response, home.cityName)
+                WidgetUpdateManager.updateAllWidgets(ctx, response)
                 if (home.notificationsEnabled) {
                     NotificationHelper.showWeatherNotification(ctx, response)
                 }

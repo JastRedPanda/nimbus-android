@@ -15,7 +15,8 @@ import kotlinx.coroutines.flow.first
 object WidgetUpdateManager {
 
     private var cachedWeather: WeatherResponse? = null
-    private var cachedForCity: String? = null
+    private var cachedLat: Double? = null
+    private var cachedLon: Double? = null
     private var cachedTimestamp: Long = 0L
 
     fun getCachedWeather(): WeatherResponse? = cachedWeather
@@ -24,11 +25,16 @@ object WidgetUpdateManager {
      * Notify that a fresh weather response arrived. Cached only when it
      * matches the widget's target city (first favourite, or current if no
      * favourites). Otherwise discarded — the next refresh will pull it.
+     * Город сравниваем по координатам: имя зависит от языка и переименований,
+     * а координаты — нет.
      */
-    suspend fun updateAllWidgets(context: Context, response: WeatherResponse, cityName: String) {
+    suspend fun updateAllWidgets(context: Context, response: WeatherResponse) {
         val target = resolveTargetCity(context)
-        if (target != null && target.name != cityName) {
-            if (cachedWeather == null || cachedForCity != target.name) {
+        if (target != null && !WeatherCache.coordsMatch(
+                target.lat, target.lon, response.latitude, response.longitude
+            )
+        ) {
+            if (cachedWeather == null || !cachedMatches(target)) {
                 updateFromTargetCity(context)
             } else {
                 refreshAllWidgets(context)
@@ -36,11 +42,20 @@ object WidgetUpdateManager {
             return
         }
         cachedWeather = response
-        cachedForCity = cityName
+        cachedLat = response.latitude
+        cachedLon = response.longitude
         cachedTimestamp = System.currentTimeMillis()
-        runCatching { WeatherCache(context).cacheWidgetWeather(response) }
+        runCatching {
+            WeatherCache(context).cacheWidgetWeather(response, response.latitude, response.longitude)
+        }
         markWeatherUpdated(context)
         refreshAllWidgets(context)
+    }
+
+    private fun cachedMatches(target: SettingsDataStore.FavouriteCity): Boolean {
+        val lat = cachedLat ?: return false
+        val lon = cachedLon ?: return false
+        return WeatherCache.coordsMatch(lat, lon, target.lat, target.lon)
     }
 
     suspend fun refreshAllWidgets(context: Context) {
@@ -70,7 +85,7 @@ object WidgetUpdateManager {
         val maxAgeMillis = interval * 60 * 60 * 1000L
         val isStale = (now - cachedTimestamp) > maxAgeMillis
 
-        if (!force && cachedForCity == target.name && cachedWeather != null && !isStale) {
+        if (!force && cachedWeather != null && cachedMatches(target) && !isStale) {
             refreshAllWidgets(context)
             return
         }
@@ -79,9 +94,10 @@ object WidgetUpdateManager {
             repository.setTtlHours(interval * 2)
             val response = repository.getWeather(target.lat, target.lon, context)
             cachedWeather = response
-            cachedForCity = target.name
+            cachedLat = target.lat
+            cachedLon = target.lon
             cachedTimestamp = now
-            WeatherCache(context).cacheWidgetWeather(response)
+            WeatherCache(context).cacheWidgetWeather(response, target.lat, target.lon)
             markWeatherUpdated(context)
             refreshAllWidgets(context)
         }.onFailure {

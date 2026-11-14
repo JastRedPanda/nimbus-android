@@ -87,11 +87,13 @@ class WeatherRepository {
         try {
             val response = weatherApi.getForecast(latitude = lat, longitude = lon)
             showingCachedWeather = false
-            c?.cacheWeather(response)
+            c?.cacheWeather(response, lat, lon)
             response
         } catch (e: Exception) {
             if (e is CancellationException) throw e
-            val cached = c?.getCachedWeather(allowExpired = true)
+            // Только кэш того же города: иначе после смены города офлайн
+            // показывалась бы погода предыдущего.
+            val cached = c?.getCachedWeatherFor(lat, lon, allowExpired = true)
             if (cached != null) {
                 showingCachedWeather = true
                 cached
@@ -106,11 +108,11 @@ class WeatherRepository {
         val c = context?.let { getCache(it) }
         try {
             val response = airQualityApi.getAirQuality(latitude = lat, longitude = lon)
-            c?.cacheAqi(response)
+            c?.cacheAqi(response, lat, lon)
             response
         } catch (e: Exception) {
             if (e is CancellationException) throw e
-            val cached = c?.getCachedAqi(allowExpired = true)
+            val cached = c?.getCachedAqiFor(lat, lon, allowExpired = true)
             if (cached != null) cached else throw e
         }
     }

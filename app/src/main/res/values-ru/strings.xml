@@ -45,8 +45,6 @@
     <string name="interval_12h">Каждые 12 часов</string>
     <string name="interval_24h">Каждые 24 часа</string>
     <string name="last_weather_update">Погода обновлена: %1$s</string>
-    <string name="exact_alarm_summary">Фоновое обновление погоды может опаздывать. Разрешите «Будильники и напоминания» для Nimbus.</string>
-    <string name="exact_alarm_allow">Разрешить</string>
     <string name="sky_animation">Анимация фона</string>
     <string name="hourly_forecast">Почасовой прогноз</string>
     <string name="weekly_forecast">Прогноз на неделю</string>

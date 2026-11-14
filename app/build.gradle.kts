@@ -17,8 +17,14 @@ val versionProps = Properties().apply {
 }
 val localNextVersionCode: Int = (versionProps.getProperty("versionCode")?.toIntOrNull() ?: 0) + 1
 val ciVersionCode: Int? = (project.findProperty("versionCode") as String?)?.toIntOrNull()
+// versionName передаётся при релизе из тега. Локально берём из version.properties
+// (файл gitignored), а без него ставим "dev" — чтобы сборка не выдавала
+// чужую версию вроде 1.1 и не путала с релизом.
+val storedVersionName: String? = versionProps.getProperty("versionName")?.takeIf { it.isNotBlank() }
 val releaseVersionName: String =
-    (project.findProperty("versionName") as String?)?.takeIf { it.isNotBlank() } ?: "1.1"
+    (project.findProperty("versionName") as String?)?.takeIf { it.isNotBlank() }
+        ?: storedVersionName
+        ?: "dev"
 val userHome: String = System.getenv("HOME") ?: System.getenv("USERPROFILE") ?: "."
 
 android {

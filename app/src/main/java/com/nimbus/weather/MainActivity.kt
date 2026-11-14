@@ -57,23 +57,44 @@ import com.nimbus.weather.util.LanguageHelper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import java.util.Locale
 
 class MainActivity : ComponentActivity() {
 
     override fun attachBaseContext(newBase: Context) {
-        // Быстрый путь — SharedPreferences-кэш языка, без DataStore.
-        // runBlocking остаётся только как разовая миграция для установок,
-        // где язык ещё не попал в кэш.
-        val language = try {
-            LanguageHelper.readCachedLanguage(newBase)
-                ?: runBlocking { SettingsDataStore(newBase).appLanguage.first() }
-                    .also { LanguageHelper.writeCachedLanguage(newBase, it) }
-        } catch (_: Exception) { LanguageHelper.AUTO }
+        // Читаем только SharedPreferences-кэш: DataStore здесь недоступен
+        // без runBlocking, а блокировать главный поток холодного старта
+        // на парсинг protobuf нельзя. Кэша может не быть после обновления
+        // с версии без него или очистки данных — тогда стартуем на системном
+        // языке, а onCreate дописывает кэш и при расхождении пересоздаёт Activity.
+        val language = LanguageHelper.readCachedLanguage(newBase) ?: LanguageHelper.AUTO
         val locale = LanguageHelper.resolveLocale(language)
         Locale.setDefault(locale)
         super.attachBaseContext(LanguageHelper.createContextWithLocale(newBase, locale))
+    }
+
+    /**
+     * Досинхронизирует SharedPreferences-кэш языка с DataStore. Нужен
+     * только на установках, где кэш пуст (обновление с версии до кэша,
+     * очистка данных) или рассинхронизирован. Если фактически применённый
+     * язык отличается от сохранённого, Activity пересоздаётся — это разово.
+     */
+    private suspend fun syncLanguageCache(settings: SettingsDataStore) {
+        val cachedBefore = LanguageHelper.readCachedLanguage(this)
+        val stored = try {
+            settings.appLanguage.first()
+        } catch (_: Exception) {
+            return
+        }
+        if (cachedBefore == stored) return
+        LanguageHelper.writeCachedLanguage(this, stored)
+        val appliedLocale = LanguageHelper.resolveLocale(cachedBefore ?: LanguageHelper.AUTO)
+        if (appliedLocale != LanguageHelper.resolveLocale(stored)) {
+            withContext(Dispatchers.Main) {
+                if (!isFinishing && !isDestroyed) recreate()
+            }
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -85,16 +106,7 @@ class MainActivity : ComponentActivity() {
 
         lifecycleScope.launch(Dispatchers.IO) {
             val settings = SettingsDataStore(this@MainActivity)
-            // Если кэш языка пуст (обновление с версии без кэша),
-            // заполняем его из DataStore — attachBaseContext следующего
-            // старта обойдётся без runBlocking. Существующий кэш
-            // не трогаем: его пишет setAppLanguage.
-            if (LanguageHelper.readCachedLanguage(this@MainActivity) == null) {
-                LanguageHelper.writeCachedLanguage(
-                    this@MainActivity,
-                    settings.appLanguage.first()
-                )
-            }
+            syncLanguageCache(settings)
             val interval = settings.updateIntervalHours.first()
             WeatherUpdateScheduler.schedule(this@MainActivity, interval)
             WeatherAlarmScheduler.schedule(this@MainActivity, interval)

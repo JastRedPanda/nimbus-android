@@ -5,6 +5,8 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <!-- Нужно WeatherAlarmReceiver: без него BOOT_COMPLETED не доставляется. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
         android:allowBackup="true"
@@ -38,6 +40,10 @@
             android:name=".service.WeatherAlarmReceiver"
             android:enabled="true"
             android:exported="false">
+            <!-- exported="false" допустим: системные broadcast (BOOT_COMPLETED,
+                 MY_PACKAGE_REPLACED, TIME_SET) доставляются и неэкспортируемым
+                 получателям, а внешним приложениям дёргать будильник нельзя.
+                 RECEIVE_BOOT_COMPLETED объявлен выше. -->
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />

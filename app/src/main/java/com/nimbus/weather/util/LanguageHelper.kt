@@ -21,9 +21,9 @@ object LanguageHelper {
      * с версии, где язык жил только в DataStore).
      *
      * `attachBaseContext` вызывается до того, как в процессе появится
-     * хоть один scope, и читать DataStore там приходилось через
-     * `runBlocking`, то есть поднимать корутинный движок и парсить protobuf
-     * прямо на главном потоке холодного старта. Кэш пишется рядом
+     * хоть один scope, а DataStore синхронно не читается: `runBlocking`
+     * поднимал бы корутинный движок и парсил protobuf прямо на главном
+     * потоке холодного старта. Кэш пишется рядом
      * с `SettingsDataStore.setAppLanguage`.
      */
     fun readCachedLanguage(context: Context): String? =
