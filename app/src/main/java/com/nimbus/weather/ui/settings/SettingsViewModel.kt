@@ -1,6 +1,7 @@
 package com.nimbus.weather.ui.settings
 
 import android.app.Application
+import androidx.compose.runtime.Immutable
 import android.content.Intent
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -24,6 +25,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
+@Immutable
 data class SettingsUiState(
     val tempUnit: TemperatureUnit = TemperatureUnit.CELSIUS,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
