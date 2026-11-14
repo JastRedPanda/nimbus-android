@@ -286,4 +286,4 @@
 - **Compose UI-тест без устройства**: `AqiCardTest` поднимает реальную композицию через `createComposeRule` и Robolectric, проверяет значение AQI и заголовки загрязнителей
 - **`@Preview`** для `CurrentWeatherCard` (день и ночь/°F), `HourlyForecastBar`, `DailyForecastCard`, `WeeklyForecastBar`, `AqiCard` — в `ComponentPreviews.kt`
 - **Compose stability**: `@Immutable` на четырёх UiState. Списки внутри не мутируются, состояние пересоздаётся через `copy`, поэтому обещание аннотации корректно и Compose не считает экран нестабильным
-- **Итог:** 83 теста, lint — 0 ошибок. Screenshot-тесты и baseline profile остаются: эталоны требуют Linux-CI, профиль — устройства
+- **Единицы измерения:** добавлены настройки давления (`HPA` / `MMHG`) и скорости ветра (`MS` / `KMH`). Дефолт определяется по языку интерфейса (`RU`/``UK`` — мм рт. ст. и м/с, остальные — гПа и км/ч), пользователь может переопределить их в настройках. Поддержано в `SettingsDataStore`, `SettingsViewModel`, `SettingsScreen`, `HomeViewModel`, `CurrentWeatherCard`, `DailyForecastCard`, `HourlyForecastBar` и покрыто тестами (`UnitPreferencesTest`). Тестов 86, lint — 0 ошибок.

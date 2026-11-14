@@ -48,8 +48,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.nimbus.weather.R
+import com.nimbus.weather.util.PressureUnit
 import com.nimbus.weather.util.ThemeMode
 import com.nimbus.weather.util.TemperatureUnit
+import com.nimbus.weather.util.WindSpeedUnit
 
     @Composable
     private fun SectionHeader(title: String) {
@@ -137,6 +139,38 @@ import com.nimbus.weather.util.TemperatureUnit
                 label = stringResource(R.string.fahrenheit),
                 checked = state.tempUnit == TemperatureUnit.FAHRENHEIT,
                 onCheck = { viewModel.setTempUnit(TemperatureUnit.FAHRENHEIT) }
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Pressure units
+            SectionHeader(title = stringResource(R.string.units_pressure))
+
+            SettingsToggle(
+                label = stringResource(R.string.pressure_hpa),
+                checked = state.resolvedPressureUnit == PressureUnit.HPA,
+                onCheck = { viewModel.setPressureUnit(PressureUnit.HPA) }
+            )
+            SettingsToggle(
+                label = stringResource(R.string.pressure_mmhg),
+                checked = state.resolvedPressureUnit == PressureUnit.MMHG,
+                onCheck = { viewModel.setPressureUnit(PressureUnit.MMHG) }
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Wind units
+            SectionHeader(title = stringResource(R.string.units_wind))
+
+            SettingsToggle(
+                label = stringResource(R.string.wind_ms),
+                checked = state.resolvedWindSpeedUnit == WindSpeedUnit.MS,
+                onCheck = { viewModel.setWindSpeedUnit(WindSpeedUnit.MS) }
+            )
+            SettingsToggle(
+                label = stringResource(R.string.wind_kmh),
+                checked = state.resolvedWindSpeedUnit == WindSpeedUnit.KMH,
+                onCheck = { viewModel.setWindSpeedUnit(WindSpeedUnit.KMH) }
             )
 
             Spacer(modifier = Modifier.height(16.dp))

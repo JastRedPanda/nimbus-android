@@ -34,10 +34,14 @@ import com.nimbus.weather.data.model.CurrentWeather
 import com.nimbus.weather.ui.theme.rememberColdAccent
 import com.nimbus.weather.ui.theme.rememberPrecipitationAccent
 import com.nimbus.weather.ui.theme.rememberSkyTextColors
+import com.nimbus.weather.util.PressureUnit
 import com.nimbus.weather.util.TemperatureUnit
+import com.nimbus.weather.util.WindSpeedUnit
 import com.nimbus.weather.util.displayString
 import com.nimbus.weather.util.formatTime
 import com.nimbus.weather.util.toCelsiusOrFahrenheit
+import com.nimbus.weather.util.toPressure
+import com.nimbus.weather.util.toWindSpeed
 import com.nimbus.weather.util.weatherDescriptionRes
 import com.nimbus.weather.util.windDirection
 
@@ -48,6 +52,8 @@ fun CurrentWeatherCard(
     sunrise: String,
     sunset: String,
     tempUnit: TemperatureUnit = TemperatureUnit.CELSIUS,
+    pressureUnit: PressureUnit = PressureUnit.HPA,
+    windSpeedUnit: WindSpeedUnit = WindSpeedUnit.MS,
     isDay: Boolean = true,
     modifier: Modifier = Modifier
 ) {
@@ -130,17 +136,25 @@ fun CurrentWeatherCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
+                val windVal = current.windSpeed.toWindSpeed(windSpeedUnit)
+                val windUnitStr = stringResource(
+                    if (windSpeedUnit == WindSpeedUnit.MS) R.string.wind_ms else R.string.wind_kmh
+                )
                 WeatherDetailItem(
                     icon = Icons.Default.Air,
                     iconTint = coldAccent,
                     label = stringResource(R.string.wind),
-                    value = "${current.windSpeed.toInt()} ${stringResource(R.string.wind_ms)} ${windDirection(current.windDirection)}"
+                    value = "${windVal.toInt()} $windUnitStr ${windDirection(current.windDirection)}"
+                )
+                val pressureVal = current.pressure.toPressure(pressureUnit)
+                val pressureUnitStr = stringResource(
+                    if (pressureUnit == PressureUnit.MMHG) R.string.pressure_mmhg else R.string.pressure_hpa
                 )
                 WeatherDetailItem(
                     icon = Icons.Default.Compress,
                     iconTint = Color(0xFFCE93D8),
                     label = stringResource(R.string.pressure),
-                    value = "${current.pressure.toInt()} ${stringResource(R.string.pressure_hpa)}",
+                    value = "${pressureVal.toInt()} $pressureUnitStr",
                     align = Alignment.End
                 )
             }

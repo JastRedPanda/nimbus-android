@@ -19,7 +19,7 @@
 
 ### P2 — продукт и UX
 
-- [ ] **Единицы.** Добавить давление в мм рт. ст. (для RU) и скорость ветра в км/ч — настройки + строки во все 4 локали.
+- [x] **Единицы.** Отдельные настройки для давления (гПа / мм рт. ст.) и ветра (м/с / км/ч). Дефолт определяется по языку (RU/UK — мм рт. ст. и м/с, EN/CS — гПа и км/ч), пользователь может переопределить в настройках. Поддержано в `SettingsDataStore`, `SettingsViewModel`, `SettingsScreen`, `HomeViewModel`, карточках погоды и `UnitPreferencesTest`.
 - [ ] **Возраст кэша.** Показывать «данные за N ч назад» вместо просто «Offline cached data»; TTL сейчас не ограничивает fallback (`allowExpired = true`), может показаться кэш недельной давности.
 - [ ] **Системные мелочи Android.** `localeConfig` (per-app language), `enableOnBackInvokedCallback` (predictive back), `<monochrome>` в adaptive icon, `dataExtractionRules` при `allowBackup="true"`, настроить `Theme.SplashScreen` + `setKeepOnScreenCondition` (сейчас между splash и `NavHost` возможен пустой кадр).
 - [ ] **Виджет.** `resizeMode="horizontal|vertical"` (фит по высоте уже есть), `widgetFeatures="reconfigurable"`, `previewLayout`/`description` для Android 12+; монохромная small icon для уведомления вместо adaptive foreground.

@@ -16,8 +16,12 @@ import com.nimbus.weather.service.WeatherUpdateScheduler
 import com.nimbus.weather.util.CityNameResolver
 import com.nimbus.weather.util.CityNameTranslator
 import com.nimbus.weather.util.LanguageHelper
+import com.nimbus.weather.util.PressureUnit
 import com.nimbus.weather.util.ThemeMode
 import com.nimbus.weather.util.TemperatureUnit
+import com.nimbus.weather.util.WindSpeedUnit
+import com.nimbus.weather.util.defaultPressureUnit
+import com.nimbus.weather.util.defaultWindSpeedUnit
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -28,6 +32,10 @@ import kotlinx.coroutines.launch
 @Immutable
 data class SettingsUiState(
     val tempUnit: TemperatureUnit = TemperatureUnit.CELSIUS,
+    /** `null` — явный выбор не сделан, действует единица по языку. */
+    val pressureUnit: PressureUnit? = null,
+    /** `null` — явный выбор не сделан, действует единица по языку. */
+    val windSpeedUnit: WindSpeedUnit? = null,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val cityName: String = "",
     val notificationsEnabled: Boolean = true,
@@ -40,7 +48,14 @@ data class SettingsUiState(
     val favouriteDisplayNames: Map<String, String> = emptyMap(),
     val keepAliveEnabled: Boolean = false,
     val skyAnimationEnabled: Boolean = true
-)
+) {
+    /** Что реально показывается в UI: явный выбор или единица по языку. */
+    val resolvedPressureUnit: PressureUnit
+        get() = pressureUnit ?: defaultPressureUnit(LanguageHelper.resolve(appLanguage))
+
+    val resolvedWindSpeedUnit: WindSpeedUnit
+        get() = windSpeedUnit ?: defaultWindSpeedUnit(LanguageHelper.resolve(appLanguage))
+}
 
 class SettingsViewModel(
     application: Application,
@@ -60,6 +75,8 @@ class SettingsViewModel(
 
     init {
         settings.tempUnit.intoState { copy(tempUnit = it) }
+        settings.pressureUnit.intoState { copy(pressureUnit = it) }
+        settings.windSpeedUnit.intoState { copy(windSpeedUnit = it) }
         settings.themeMode.intoState { copy(themeMode = it) }
         settings.cityName.intoState { copy(cityName = it) }
         settings.cityLocalNames.intoState { copy(cityLocalNames = it) }
@@ -137,6 +154,18 @@ class SettingsViewModel(
     fun setTempUnit(unit: TemperatureUnit) {
         viewModelScope.launch {
             settings.setTempUnit(unit)
+        }
+    }
+
+    fun setPressureUnit(unit: PressureUnit) {
+        viewModelScope.launch {
+            settings.setPressureUnit(unit)
+        }
+    }
+
+    fun setWindSpeedUnit(unit: WindSpeedUnit) {
+        viewModelScope.launch {
+            settings.setWindSpeedUnit(unit)
         }
     }
 

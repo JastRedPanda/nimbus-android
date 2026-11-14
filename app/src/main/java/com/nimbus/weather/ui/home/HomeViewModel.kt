@@ -15,7 +15,11 @@ import com.nimbus.weather.ui.components.HourlyForecastData
 import com.nimbus.weather.util.CityNameResolver
 import com.nimbus.weather.util.CityNameTranslator
 import com.nimbus.weather.util.LanguageHelper
+import com.nimbus.weather.util.PressureUnit
 import com.nimbus.weather.util.TemperatureUnit
+import com.nimbus.weather.util.WindSpeedUnit
+import com.nimbus.weather.util.defaultPressureUnit
+import com.nimbus.weather.util.defaultWindSpeedUnit
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import androidx.compose.runtime.Immutable
@@ -40,6 +44,8 @@ data class HomeUiState(
     val sunrise: String = "",
     val sunset: String = "",
     val tempUnit: TemperatureUnit = TemperatureUnit.CELSIUS,
+    val pressureUnit: PressureUnit? = null,
+    val windSpeedUnit: WindSpeedUnit? = null,
     val showAqi: Boolean = true,
     val fromCache: Boolean = false,
     val appLanguage: String = "auto",
@@ -52,7 +58,13 @@ data class HomeUiState(
     val hourlyIntervalHours: Int = SettingsDataStore.DEFAULT_HOURLY_INTERVAL_HOURS,
     val skyAnimationEnabled: Boolean = true,
     val lastWeatherUpdateMillis: Long = 0L
-)
+) {
+    val resolvedPressureUnit: PressureUnit
+        get() = pressureUnit ?: defaultPressureUnit(LanguageHelper.resolve(appLanguage))
+
+    val resolvedWindSpeedUnit: WindSpeedUnit
+        get() = windSpeedUnit ?: defaultWindSpeedUnit(LanguageHelper.resolve(appLanguage))
+}
 
 class HomeViewModel(
     private val settings: SettingsDataStore,
@@ -90,6 +102,8 @@ class HomeViewModel(
                     appLanguage = prefs.appLanguage,
                     showAqi = prefs.showAqi,
                     tempUnit = prefs.tempUnit,
+                    pressureUnit = prefs.pressureUnit,
+                    windSpeedUnit = prefs.windSpeedUnit,
                     hourlyIntervalHours = prefs.hourlyIntervalHours,
                     notificationsEnabled = prefs.notificationsEnabled,
                     skyAnimationEnabled = prefs.skyAnimationEnabled,
