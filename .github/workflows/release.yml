@@ -74,4 +74,6 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
-        run: gh release create "$GITHUB_REF_NAME" "app/build/outputs/apk/release/Nimbus ${GITHUB_REF_NAME#v}.apk" --notes-file release_notes.md --title "Nimbus Weather ${GITHUB_REF_NAME#v}"
+        run: |
+          gh release delete "$GITHUB_REF_NAME" --yes || true
+          gh release create "$GITHUB_REF_NAME" "app/build/outputs/apk/release/Nimbus ${GITHUB_REF_NAME#v}.apk" --notes-file release_notes.md --title "Nimbus Weather ${GITHUB_REF_NAME#v}"
