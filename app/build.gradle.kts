@@ -57,13 +57,11 @@ android {
     }
 
     signingConfigs {
-        if (hasReleaseKeystore) {
-            create("release") {
-                storeFile = releaseKeystore
-                storePassword = "android"
-                keyAlias = "androiddebugkey"
-                keyPassword = "android"
-            }
+        create("release") {
+            storeFile = releaseKeystore
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
         }
     }
 
@@ -71,7 +69,9 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            if (hasReleaseKeystore) signingConfig = signingConfigs.getByName("release")
+            if (releaseKeystore.exists() || System.getenv("CI") != null) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
