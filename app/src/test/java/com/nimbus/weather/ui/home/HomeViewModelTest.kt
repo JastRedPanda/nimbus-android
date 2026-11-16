@@ -39,7 +39,7 @@ class HomeViewModelTest {
     private val repository = mockk<WeatherRepository>()
     private val effects = mockk<WeatherEffects>(relaxed = true)
 
-    private val uiSettingsFlow = MutableStateFlow(SettingsDataStore.UiSettings())
+    private val uiSettingsFlow = MutableStateFlow(SettingsDataStore.UiSettings(appLanguage = "ru"))
 
     private var homeSettings = SettingsDataStore.HomeSettings(
         cityName = "Киев",
@@ -48,7 +48,7 @@ class HomeViewModelTest {
         updateIntervalHours = 2,
         hourlyIntervalHours = 1,
         notificationsEnabled = true,
-        appLanguage = "auto",
+        appLanguage = "ru",
         showAqi = true
     )
 
@@ -74,7 +74,7 @@ class HomeViewModelTest {
     @Before
     fun setup() {
         every { settings.uiSettings } returns uiSettingsFlow
-        every { settings.appLanguage } returns flowOf("auto")
+        every { settings.appLanguage } returns flowOf("ru")
         every { settings.favouriteCities } returns flowOf(emptyList())
         coEvery { settings.getLocationSnapshot() } returns SettingsDataStore.LocationSnapshot()
         coEvery { settings.getHomeSettings() } answers { homeSettings }

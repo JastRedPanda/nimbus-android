@@ -96,6 +96,11 @@ android {
         // на инициализации JvmMockKGateway.
         unitTests.all {
             it.jvmArgs("-Djdk.attach.allowAttachSelf=true", "-XX:+EnableDynamicAgentLoading")
+            // Тесты не должны зависеть от локали машины: на CI-раннере
+            // (en-US) и на локальной Windows/RU поведение расходилось —
+            // «Киев» при language=auto превращался в «Kyiv».
+            it.systemProperty("user.language", "en")
+            it.systemProperty("user.country", "US")
         }
     }
 }
