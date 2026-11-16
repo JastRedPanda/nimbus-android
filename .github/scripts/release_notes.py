@@ -23,7 +23,6 @@ GROUPS = [
     ("perf", "Performance"),
     ("fix", "Fixes"),
     ("refactor", "Refactoring"),
-    ("docs", "Documentation"),
     ("test", "Tests"),
     ("build", "Build"),
     ("ci", "CI"),
@@ -33,6 +32,10 @@ GROUPS = [
 ]
 GROUP_TITLES = dict(GROUPS)
 FALLBACK = "Other"
+
+# Внутренние коммиты: документация проекта ведётся только для себя,
+# в публичные заметки релиза она не попадает.
+IGNORED_TYPES = {"docs"}
 
 # feat(ui)!: text  ->  type=feat, scope=ui, breaking=True, text=text
 COMMIT_RE = re.compile(r"^(\w+)(?:\(([^)]*)\))?(!)?:\s*(.+)$")
@@ -68,6 +71,8 @@ def build_sections(messages: list[str]) -> tuple[dict[str, list[str]], list[str]
         match = COMMIT_RE.match(raw)
         if match:
             kind, scope, bang, text = match.groups()
+            if kind.lower() in IGNORED_TYPES:
+                continue
             title = GROUP_TITLES.get(kind.lower(), FALLBACK)
             if bang:
                 breaking.append(text)
@@ -83,7 +88,7 @@ def build_sections(messages: list[str]) -> tuple[dict[str, list[str]], list[str]
 def render(tag: str, prev: str | None, messages: list[str]) -> str:
     sections, breaking = build_sections(messages)
 
-    if not messages:
+    if not messages or (not sections and not breaking):
         summary = ["## What changed", "", "- Maintenance release, no user-facing changes."]
     else:
         summary = ["## What changed", ""]
