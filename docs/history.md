@@ -13,6 +13,15 @@
   - Метаданные и превью для виджета (`widget_clock_temp_preview.xml`, `reconfigurable`, `resizeMode="horizontal|vertical"`).
 - **Исправление CI**: GitHub Actions переведены на JDK 21 (требование AGP 9.5.1).
 
+- **Почему релиз v1.53 падал пять раз подряд** (чинилось по одной ошибке, все — в CI):
+  1. JDK 17 на раннере: AGP 9.5.1 и Gradle 9.9.1 требуют 21.
+  2. Несуществующие версии экшенов (`checkout@v7`, `cache@v6`, `upload-artifact@v7`) → `v4`.
+  3. В `release.yml` не хватало `sdkmanager --licenses`, кэша Gradle и `chmod +x gradlew` (на Linux-раннере `Permission denied`).
+  4. `project.findProperty("versionCode") as String?` падал `ClassCastException`: Gradle 9 отдаёт числовые `-P` как `Integer`. Заменено на `when`-разбор типов.
+  5. `platforms;android-37` в `sdkmanager` не существует — платформа ставится как `platforms;android-37.2` (minor-версия SDK). Ошибочный «фикс» на `android-37` вернули назад.
+  6. `HomeViewModelTest > loads weather into state` падал только на Linux: при `appLanguage = "auto"` `LanguageHelper.resolve` брал локаль машины (en-US) и `CityNameResolver` отдавал «Kyiv» вместо «Киев». Тест переведён на явный `"ru"`, а тестовой JVM зафиксированы `user.language=en`, `user.country=US` — результат больше не зависит от машины.
+  - Итог: релиз `v1.53` собран, подпись `b9cdf73d…` подтверждена apksigner в CI, CI на `main` зелёный.
+
 ## Сессия 2026-08-08 — первая волна (текущая на старте)
 
 - **AQI не появлялся на главном экране**: AQI запрашивался с `api.open-meteo.com` → 404 (хосты Open-Meteo раздельные). Фикс: отдельный Retrofit на `air-quality-api.open-meteo.com` в `ApiClient` (константа `AIR_QUALITY_BASE_URL`)
